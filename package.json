@@ -8,7 +8,8 @@
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
-    "test:webhook": "ts-node test/webhook-test.ts"
+    "test:webhook": "ts-node test/webhook-test.ts",
+    "test:integration": "ts-node test/integration-test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.679.0",
@@ -16,6 +17,7 @@
     "@aws-sdk/lib-dynamodb": "^3.679.0",
     "@aws-sdk/s3-request-presigner": "^3.679.0",
     "@types/node": "^20.11.0",
+    "dotenv": "^16.4.0",
     "square": "^39.0.0",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1"
