@@ -17,7 +17,7 @@ dotenv.config();
 import * as dynamodb from '../lib/aws/dynamodb';
 import * as s3 from '../lib/aws/s3';
 import * as jobService from '../lib/services/job-service';
-import { JobStatus } from '../lib/types';
+import { WorkStatus } from '../lib/types';
 import type { Job } from '../lib/types';
 
 console.log('🧪 Testing Phase C - AWS Integration\n');
@@ -41,7 +41,7 @@ async function runTests() {
         color: 'Blue',
       },
       serviceType: 'Full Detail',
-      status: JobStatus.PENDING,
+      status: WorkStatus.SCHEDULED,
       bookingId: 'test-booking-123',
       appointmentTime: new Date().toISOString(),
       photos: [],
@@ -67,10 +67,10 @@ async function runTests() {
     // Test 3: Update job in DynamoDB
     console.log('Test 3: Update job in DynamoDB');
     const updatedJob = await dynamodb.updateJob(testJobId, {
-      status: JobStatus.IN_PROGRESS,
+      status: WorkStatus.IN_PROGRESS,
       notes: 'Updated via integration test',
     });
-    if (updatedJob.status === JobStatus.IN_PROGRESS) {
+    if (updatedJob.status === WorkStatus.IN_PROGRESS) {
       console.log(`✓ Job updated to status: ${updatedJob.status}\n`);
     } else {
       throw new Error('Job update failed');
@@ -132,10 +132,10 @@ async function runTests() {
     console.log('Test 9: Job service - update job status');
     const updatedByService = await jobService.updateJobStatus(
       testJobId,
-      JobStatus.COMPLETED,
+      WorkStatus.WORK_COMPLETED,
       'integration-test'
     );
-    if (updatedByService.status === JobStatus.COMPLETED) {
+    if (updatedByService.status === WorkStatus.WORK_COMPLETED) {
       console.log(`✓ Job status updated via service layer\n`);
     } else {
       throw new Error('Job service update failed');
