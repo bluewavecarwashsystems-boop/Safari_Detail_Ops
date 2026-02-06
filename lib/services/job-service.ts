@@ -55,7 +55,12 @@ export async function updateJobFromBooking(
     updatedBy: 'square-webhook',
   };
   
-  return dynamodb.updateJob(jobId, updates);
+  // Remove undefined values to prevent DynamoDB UpdateExpression errors
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, value]) => value !== undefined)
+  ) as Partial<Job>;
+  
+  return dynamodb.updateJob(jobId, cleanUpdates);
 }
 
 /**
