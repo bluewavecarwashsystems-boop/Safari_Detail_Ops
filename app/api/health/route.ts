@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getConfig } from '@/lib/config';
 
 /**
  * Health Check Endpoint - Phase A/B
@@ -24,28 +25,20 @@ interface PhaseAHealthResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Phase A/B: Defensive - never crash if env vars missing
-    const appEnv = process.env.APP_ENV || 'unknown';
-    const squareEnv = process.env.SQUARE_ENV || 'unknown';
-    const franklinLocationId = process.env.FRANKLIN_SQUARE_LOCATION_ID || null;
+    const config = getConfig();
     const build = process.env.VERCEL_GIT_COMMIT_SHA || null;
-    
-    // AWS configuration check
-    const awsRegion = process.env.AWS_REGION || 'us-east-1';
-    const dynamoTable = process.env.DYNAMODB_JOBS_TABLE || 'jobs';
-    const s3Bucket = process.env.S3_PHOTOS_BUCKET || 'photos';
     const hasAwsCreds = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
     
     const healthData: PhaseAHealthResponse = {
-      app_env: appEnv,
-      square_env: squareEnv,
+      app_env: config.env,
+      square_env: config.square.environment,
       timestamp: new Date().toISOString(),
-      franklin_location_id: franklinLocationId,
+      franklin_location_id: config.square.franklinLocationId,
       build: build,
       aws: {
-        region: awsRegion,
-        dynamodb_table: `safari-detail-ops-${appEnv}-${dynamoTable}`,
-        s3_bucket: `safari-detail-ops-${appEnv}-${s3Bucket}`,
+        region: config.aws.region,
+        dynamodb_table: config.aws.dynamodb.jobsTable,
+        s3_bucket: config.aws.s3.photosBucket,
         credentials_configured: hasAwsCreds,
       },
     };

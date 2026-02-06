@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dynamodb from '../aws/dynamodb';
 import * as s3 from '../aws/s3';
 import type { Job } from '../types';
-import { JobStatus } from '../types';
+import { WorkStatus } from '../types';
 import type { ParsedBooking } from '../square/booking-parser';
 
 /**
@@ -64,18 +64,20 @@ export async function updateJobFromBooking(
 }
 
 /**
- * Map Square booking status to job status
+ * Map Square booking status to work status
  */
-function mapBookingStatusToJobStatus(bookingStatus: string): JobStatus {
+function mapBookingStatusToJobStatus(bookingStatus: string): WorkStatus {
   switch (bookingStatus.toUpperCase()) {
     case 'ACCEPTED':
     case 'PENDING':
-      return JobStatus.PENDING;
+      return WorkStatus.SCHEDULED;
     case 'CANCELLED':
     case 'DECLINED':
-      return JobStatus.CANCELLED;
+      // Note: We don't have a CANCELLED status in WorkStatus, 
+      // so we'll keep them as SCHEDULED and handle cancellations separately
+      return WorkStatus.SCHEDULED;
     default:
-      return JobStatus.PENDING;
+      return WorkStatus.SCHEDULED;
   }
 }
 
@@ -156,7 +158,7 @@ export async function removePhotoFromJob(jobId: string, photoKey: string): Promi
  */
 export async function updateJobStatus(
   jobId: string,
-  status: JobStatus,
+  status: WorkStatus,
   updatedBy?: string
 ): Promise<Job> {
   return dynamodb.updateJob(jobId, { status, updatedBy });
@@ -177,7 +179,7 @@ export async function updateJobVehicle(
  * List jobs with filters
  */
 export async function listJobs(options?: {
-  status?: JobStatus;
+  status?: WorkStatus;
   customerId?: string;
   limit?: number;
   nextToken?: string;

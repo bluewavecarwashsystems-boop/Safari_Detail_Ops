@@ -16,7 +16,7 @@ import {
   DeleteCommand 
 } from '@aws-sdk/lib-dynamodb';
 import { getConfig } from '../config';
-import type { Job, JobStatus } from '../types';
+import type { Job, WorkStatus } from '../types';
 
 let dynamoClient: DynamoDBDocumentClient | null = null;
 
@@ -146,7 +146,7 @@ export async function updateJob(
  * List jobs with optional filters
  */
 export async function listJobs(options?: {
-  status?: JobStatus;
+  status?: WorkStatus;
   customerId?: string;
   limit?: number;
   nextToken?: string;

@@ -98,7 +98,7 @@ export interface Job {
     licensePlate?: string;
   };
   serviceType: string;
-  status: JobStatus;
+  status: WorkStatus; // Phase B: Use WorkStatus instead of JobStatus
   bookingId?: string; // Square booking ID
   appointmentTime?: string;
   photos?: string[]; // S3 keys

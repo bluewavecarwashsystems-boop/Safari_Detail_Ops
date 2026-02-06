@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/config';
-import type { ApiResponse, JobStatus } from '@/lib/types';
+import type { ApiResponse, WorkStatus } from '@/lib/types';
 import { listJobs } from '@/lib/services/job-service';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get('status') as JobStatus | undefined;
+    const status = searchParams.get('status') as WorkStatus | undefined;
     const customerId = searchParams.get('customerId') || undefined;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
     const nextToken = searchParams.get('nextToken') || undefined;
