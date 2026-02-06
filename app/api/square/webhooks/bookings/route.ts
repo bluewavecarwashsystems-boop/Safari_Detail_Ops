@@ -203,8 +203,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw new Error('Booking validation failed: missing required fields');
     }
 
-    // Filter by Franklin location only
-    if (parsedBooking.locationId && appConfig.square.franklinLocationId) {
+    // Filter by Franklin location only (disabled in QA for testing)
+    if (appConfig.env === 'prod' && parsedBooking.locationId && appConfig.square.franklinLocationId) {
       if (parsedBooking.locationId !== appConfig.square.franklinLocationId) {
         console.log('[WEBHOOK FILTERED]', {
           eventId: webhookEvent.event_id,
@@ -225,6 +225,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         
         return NextResponse.json(response, { status: 200 });
       }
+    } else if (parsedBooking.locationId && appConfig.square.franklinLocationId) {
+      // QA mode: Log location mismatch but process anyway
+      console.warn('[WEBHOOK QA MODE]', {
+        note: 'Processing booking from non-Franklin location (QA mode)',
+        locationId: parsedBooking.locationId,
+        franklinLocationId: appConfig.square.franklinLocationId,
+      });
     }
 
     console.log('[WEBHOOK PROCESSED]', {
