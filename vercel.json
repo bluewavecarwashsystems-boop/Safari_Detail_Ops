@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "env": {
+    "APP_ENV": "@app_env",
+    "AWS_REGION": "@aws_region",
+    "DYNAMODB_JOBS_TABLE": "@dynamodb_jobs_table",
+    "S3_PHOTOS_BUCKET": "@s3_photos_bucket",
+    "LOG_LEVEL": "@log_level"
+  }
+}

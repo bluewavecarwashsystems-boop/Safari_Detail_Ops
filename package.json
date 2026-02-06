@@ -1,0 +1,27 @@
+{
+  "name": "safari-detail-ops",
+  "version": "1.0.0",
+  "description": "Safari Detail Ops - Job management and Square integration",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vercel/node": "^3.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.0",
+    "vercel": "^33.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
