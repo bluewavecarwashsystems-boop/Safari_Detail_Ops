@@ -1,5 +1,5 @@
 /**
- * Square Webhooks - Bookings Endpoint - Phase B
+ * Square Webhooks - Bookings Endpoint - Phase B (Next.js API Route)
  * 
  * POST /api/square/webhooks/bookings
  * 
@@ -12,84 +12,45 @@
  * - Idempotent job creation/updates
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getConfig } from '../../../lib/config';
-import type { ApiResponse, SquareBookingWebhook } from '../../../lib/types';
+import { NextRequest, NextResponse } from 'next/server';
+import { getConfig } from '@/lib/config';
+import type { ApiResponse, SquareBookingWebhook } from '@/lib/types';
 import { 
   validateWebhookSignature, 
   extractSignature, 
   buildWebhookUrl 
-} from '../../../lib/square/webhook-validator';
+} from '@/lib/square/webhook-validator';
 import {
   parseBookingEvent,
   determineBookingAction,
   isValidBooking
-} from '../../../lib/square/booking-parser';
+} from '@/lib/square/booking-parser';
 import { 
   createJobFromBooking, 
   updateJobFromBooking 
-} from '../../../lib/services/job-service';
-import { getJobByBookingId } from '../../../lib/aws/dynamodb';
+} from '@/lib/services/job-service';
+import { getJobByBookingId } from '@/lib/aws/dynamodb';
 
-// Disable body parsing for signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-/**
- * Read raw body from request stream
- */
-async function getRawBody(req: VercelRequest): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => {
-      data += chunk.toString();
-    });
-    req.on('end', () => {
-      resolve(data);
-    });
-    req.on('error', reject);
-    
-    // Timeout protection
-    setTimeout(() => {
-      reject(new Error('Request timeout'));
-    }, 10000);
-  });
-}
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  // Only allow POST requests (Phase B)
-  if (req.method !== 'POST') {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only POST requests are allowed',
-      },
-      timestamp: new Date().toISOString(),
-    };
-    res.status(405).json(response);
-    return;
-  }
-
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Get configuration
     const appConfig = getConfig();
     
     // Read raw body for signature verification
-    const rawBody = await getRawBody(req);
+    const rawBody = await request.text();
+    
+    // Convert Next.js Headers to plain object for extractSignature
+    const headersObj: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      headersObj[key.toLowerCase()] = value;
+    });
     
     // Phase B: Signature Verification
-    const signature = extractSignature(req.headers);
+    const signature = extractSignature(headersObj);
     
     if (signature && appConfig.square.webhookSignatureKey) {
-      const host = req.headers.host || '';
-      const url = buildWebhookUrl(host, req.url || '');
+      const host = request.headers.get('host') || '';
+      const url = buildWebhookUrl(host, request.nextUrl.pathname);
       
       const isValid = validateWebhookSignature(
         rawBody,
@@ -113,8 +74,7 @@ export default async function handler(
           timestamp: new Date().toISOString(),
         };
         
-        res.status(401).json(response);
-        return;
+        return NextResponse.json(response, { status: 401 });
       }
       
       console.log('[WEBHOOK SIGNATURE VALID]');
@@ -135,8 +95,7 @@ export default async function handler(
           },
           timestamp: new Date().toISOString(),
         };
-        res.status(401).json(response);
-        return;
+        return NextResponse.json(response, { status: 401 });
       }
     }
 
@@ -170,8 +129,7 @@ export default async function handler(
         timestamp: new Date().toISOString(),
       };
       
-      res.status(200).json(response);
-      return;
+      return NextResponse.json(response, { status: 200 });
     }
 
     // Parse booking details
@@ -217,8 +175,7 @@ export default async function handler(
           timestamp: new Date().toISOString(),
         };
         
-        res.status(200).json(response);
-        return;
+        return NextResponse.json(response, { status: 200 });
       }
     }
 
@@ -320,7 +277,7 @@ export default async function handler(
     };
 
     // Return 200 OK to acknowledge receipt
-    res.status(200).json(response);
+    return NextResponse.json(response, { status: 200 });
     
   } catch (error: any) {
     console.error('[WEBHOOK ERROR]', {
@@ -339,6 +296,6 @@ export default async function handler(
     };
     
     // Return 500 to signal Square to retry
-    res.status(500).json(response);
+    return NextResponse.json(response, { status: 500 });
   }
 }
