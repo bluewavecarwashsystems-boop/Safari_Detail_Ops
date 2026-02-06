@@ -151,6 +151,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let webhookEvent: SquareBookingWebhook;
     try {
       webhookEvent = JSON.parse(rawBody);
+      
+      // Debug: Log webhook structure to understand customer data location
+      console.log('[WEBHOOK PAYLOAD DEBUG]', {
+        eventId: webhookEvent.event_id,
+        eventType: webhookEvent.type,
+        hasData: !!webhookEvent.data,
+        hasObject: !!webhookEvent.data?.object,
+        hasBooking: !!webhookEvent.data?.object?.booking,
+        bookingKeys: webhookEvent.data?.object?.booking ? Object.keys(webhookEvent.data.object.booking) : [],
+        customerId: webhookEvent.data?.object?.booking?.customer_id,
+        hasCustomerInBooking: !!webhookEvent.data?.object?.booking?.customer,
+      });
+      
     } catch (parseError) {
       console.error('[WEBHOOK PARSE ERROR]', { error: parseError });
       throw new Error('Invalid JSON in webhook body');
