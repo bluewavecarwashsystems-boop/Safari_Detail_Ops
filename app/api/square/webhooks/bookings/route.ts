@@ -5,6 +5,8 @@
  * 
  * Receives webhook events from Square for booking.created, booking.updated, booking.canceled
  * 
+ * QA MODE: GET/HEAD/POST all return 200 OK to allow Square webhook subscription creation
+ * 
  * Phase B: Full implementation with:
  * - Signature verification
  * - Booking parsing
@@ -31,13 +33,59 @@ import {
 } from '@/lib/services/job-service';
 import { getJobByBookingId } from '@/lib/aws/dynamodb';
 
+/**
+ * GET handler - Square webhook UI validation
+ * Returns 200 OK to allow webhook subscription creation
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  console.log('[WEBHOOK GET]', {
+    url: request.url,
+    method: 'GET',
+    timestamp: new Date().toISOString(),
+  });
+  
+  return new NextResponse('OK', { 
+    status: 200,
+    headers: { 'Content-Type': 'text/plain' }
+  });
+}
+
+/**
+ * HEAD handler - Square webhook UI validation
+ * Returns 200 OK with no body
+ */
+export async function HEAD(request: NextRequest): Promise<NextResponse> {
+  console.log('[WEBHOOK HEAD]', {
+    url: request.url,
+    method: 'HEAD',
+    timestamp: new Date().toISOString(),
+  });
+  
+  return new NextResponse(null, { status: 200 });
+}
+
+/**
+ * POST handler - Actual webhook receiver
+ * Wrapped to never throw, always returns 200 OK in QA mode
+ */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Get configuration (outside try block for error handler access)
+  const appConfig = getConfig();
+  
   try {
-    // Get configuration
-    const appConfig = getConfig();
-    
     // Read raw body for signature verification
     const rawBody = await request.text();
+    
+    // Log request details (non-sensitive)
+    console.log('[WEBHOOK POST]', {
+      url: request.url,
+      method: 'POST',
+      bodyLength: rawBody.length,
+      hasContentType: request.headers.has('content-type'),
+      contentType: request.headers.get('content-type'),
+      hasSignature: request.headers.has('x-square-hmacsha256-signature'),
+      timestamp: new Date().toISOString(),
+    });
     
     // Convert Next.js Headers to plain object for extractSignature
     const headersObj: Record<string, string> = {};
@@ -295,7 +343,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       timestamp: new Date().toISOString(),
     };
     
-    // Return 500 to signal Square to retry
-    return NextResponse.json(response, { status: 500 });
+    // QA MODE: Return 200 OK even on error to prevent Square retries during testing
+    // PROD MODE: Return 500 to signal Square to retry
+    const statusCode = appConfig.env === 'qa' ? 200 : 500;
+    return NextResponse.json(response, { status: statusCode });
   }
 }
