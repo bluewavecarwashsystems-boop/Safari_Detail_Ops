@@ -1,12 +1,12 @@
 /**
- * Square Webhooks - Bookings Endpoint (Phase B - With Verification)
+ * Square Webhooks - Bookings Endpoint (Phase C - With DynamoDB Integration)
  * 
  * POST /api/square/webhooks/bookings
  * 
  * Receives webhook events from Square for booking.created and booking.updated events.
  * 
  * Phase B: Signature verification and booking parsing ✓
- * Phase C: Will add DynamoDB integration to create/update jobs
+ * Phase C: DynamoDB integration to create/update jobs ✓
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -22,6 +22,11 @@ import {
   determineBookingAction,
   isValidBooking
 } from '../../../lib/square/booking-parser';
+import { 
+  createJobFromBooking, 
+  updateJobFromBooking 
+} from '../../../lib/services/job-service';
+import { getJobByBookingId } from '../../../lib/aws/dynamodb';
 
 // Disable body parsing for signature verification
 export const config = {
@@ -192,8 +197,71 @@ export default async function handler(
       },
     });
 
-    // Phase C: Will create/update job in DynamoDB here
-    // For now, just acknowledge successful processing
+    // Phase C: Create or update job in DynamoDB
+    let job;
+    let jobAction: 'created' | 'updated' | 'none' = 'none';
+
+    try {
+      if (action === 'create') {
+        // Check if job already exists for this booking
+        const existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        
+        if (existingJob) {
+          console.log('[JOB EXISTS]', {
+            jobId: existingJob.jobId,
+            bookingId: parsedBooking.bookingId,
+            action: 'updating existing job',
+          });
+          
+          job = await updateJobFromBooking(existingJob.jobId, parsedBooking);
+          jobAction = 'updated';
+        } else {
+          console.log('[JOB CREATING]', {
+            bookingId: parsedBooking.bookingId,
+          });
+          
+          job = await createJobFromBooking(parsedBooking);
+          jobAction = 'created';
+        }
+      } else if (action === 'update') {
+        // Find existing job by booking ID
+        const existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        
+        if (existingJob) {
+          console.log('[JOB UPDATING]', {
+            jobId: existingJob.jobId,
+            bookingId: parsedBooking.bookingId,
+          });
+          
+          job = await updateJobFromBooking(existingJob.jobId, parsedBooking);
+          jobAction = 'updated';
+        } else {
+          console.warn('[JOB NOT FOUND]', {
+            bookingId: parsedBooking.bookingId,
+            action: 'creating new job for update event',
+          });
+          
+          // Create job if it doesn't exist (in case we missed the create event)
+          job = await createJobFromBooking(parsedBooking);
+          jobAction = 'created';
+        }
+      }
+
+      console.log('[JOB SAVED]', {
+        jobId: job?.jobId,
+        bookingId: parsedBooking.bookingId,
+        action: jobAction,
+      });
+    } catch (dbError: any) {
+      console.error('[DATABASE ERROR]', {
+        eventId: webhookEvent.event_id,
+        bookingId: parsedBooking.bookingId,
+        error: dbError.message,
+        stack: dbError.stack,
+      });
+      
+      throw new Error(`Database operation failed: ${dbError.message}`);
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -203,7 +271,9 @@ export default async function handler(
         eventType: webhookEvent.type,
         action,
         bookingId: parsedBooking.bookingId,
-        processed: true, // Phase B: parsing complete
+        jobId: job?.jobId,
+        jobAction,
+        processed: true, // Phase C: fully processed with DynamoDB
       },
       timestamp: new Date().toISOString(),
     };

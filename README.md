@@ -125,7 +125,10 @@ Receives and processes Square booking webhooks (booking.created, booking.updated
 - ✓ Extracts customer and appointment information
 - ✓ Determines action (create/update job)
 
-**Phase C:** Will create/update jobs in DynamoDB.
+**Phase C Complete:**
+- ✓ Creates or updates jobs in DynamoDB
+- ✓ Handles both booking.created and booking.updated events
+- ✓ Links Square bookings to job records
 
 **Request Headers:**
 - `x-square-hmacsha256-signature`: Webhook signature from Square
@@ -151,6 +154,74 @@ Receives and processes Square booking webhooks (booking.created, booking.updated
 **Test locally:**
 ```bash
 npm run test:webhook
+```
+
+### Phase C - Job Management APIs
+
+#### List Jobs
+```
+GET /api/jobs?status=pending&limit=50
+```
+
+Query Parameters:
+- `status` (optional): Filter by job status (pending, in_progress, completed, cancelled)
+- `customerId` (optional): Filter by customer ID
+- `limit` (optional): Number of results (default: 50)
+- `nextToken` (optional): Pagination token
+
+#### Get Job
+```
+GET /api/jobs/[jobId]
+```
+
+Returns job details with pre-signed photo URLs.
+
+#### Update Job
+```
+PATCH /api/jobs/[jobId]/update
+```
+
+Update job status, vehicle info, or other fields.
+
+**Request Body:**
+```json
+{
+  "status": "in_progress",
+  "vehicleInfo": {
+    "make": "Toyota",
+    "model": "Camry",
+    "year": 2022,
+    "color": "Blue"
+  },
+  "updatedBy": "staff-name"
+}
+```
+
+#### Generate Photo Upload URL
+```
+POST /api/jobs/[jobId]/photos
+```
+
+Generates pre-signed S3 URL for direct photo upload.
+
+**Request Body:**
+```json
+{
+  "filename": "car-front.jpg",
+  "contentType": "image/jpeg"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "uploadUrl": "https://s3.amazonaws.com/...",
+    "photoKey": "jobs/{jobId}/photos/...",
+    "expiresIn": 3600
+  }
+}
 ```
 
 ## Environment Configuration
@@ -207,15 +278,21 @@ This project is isolated within a shared AWS account:
 - [x] Parse booking data from webhooks
 - [x] Booking validation and action determination
 
-### Phase C (Next)
-- [ ] DynamoDB integration
-- [ ] Job creation from bookings
-- [ ] Photo upload to S3
+### Phase C (Complete) ✓
+- [x] AWS SDK integration (DynamoDB, S3)
+- [x] DynamoDB service layer with full CRUD operations
+- [x] S3 service layer for photo storage
+- [x] Job service combining DynamoDB and S3
+- [x] Webhook endpoint creates/updates jobs in DynamoDB
+- [x] Job management API endpoints
+- [x] Photo upload with pre-signed URLs
+- [x] AWS resource setup documentation
 
-### Phase D
+### Phase D (Next)
 - [ ] Staff UI for job management
-- [ ] Photo viewing/uploading
-- [ ] Job status updates
+- [ ] Photo viewing/uploading interface
+- [ ] Job status updates UI
+- [ ] Real-time notifications
 
 ## Scripts
 
