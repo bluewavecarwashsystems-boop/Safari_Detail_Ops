@@ -6,31 +6,17 @@
  * Update job details (status, vehicle info, notes, etc.).
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { ApiResponse, JobStatus } from '../../../lib/types';
-import { updateJobStatus, updateJobVehicle } from '../../../lib/services/job-service';
-import { updateJob } from '../../../lib/aws/dynamodb';
+import { NextRequest, NextResponse } from 'next/server';
+import type { ApiResponse, JobStatus } from '@/lib/types';
+import { updateJobStatus, updateJobVehicle } from '@/lib/services/job-service';
+import { updateJob } from '@/lib/aws/dynamodb';
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  // Only allow PATCH requests
-  if (req.method !== 'PATCH') {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only PATCH requests are allowed',
-      },
-      timestamp: new Date().toISOString(),
-    };
-    res.status(405).json(response);
-    return;
-  }
-
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+): Promise<NextResponse> {
   try {
-    const jobId = req.query.jobId as string;
+    const jobId = params.jobId;
 
     if (!jobId) {
       const response: ApiResponse = {
@@ -41,12 +27,12 @@ export default async function handler(
         },
         timestamp: new Date().toISOString(),
       };
-      res.status(400).json(response);
-      return;
+      return NextResponse.json(response, { status: 400 });
     }
 
-    const updates = req.body;
-    const updatedBy = req.body.updatedBy || 'staff';
+    const body = await request.json();
+    const updates = body;
+    const updatedBy = body.updatedBy || 'staff';
 
     // Handle different types of updates
     let updatedJob;
@@ -68,7 +54,7 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(200).json(response);
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('[JOB UPDATE ERROR]', {
       error: error.message,
@@ -85,6 +71,6 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(500).json(response);
+    return NextResponse.json(response, { status: 500 });
   }
 }

@@ -6,37 +6,21 @@
  * List all jobs with optional filtering.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getConfig } from '../../lib/config';
-import type { ApiResponse, JobStatus } from '../../lib/types';
-import { listJobs } from '../../lib/services/job-service';
+import { NextRequest, NextResponse } from 'next/server';
+import { getConfig } from '@/lib/config';
+import type { ApiResponse, JobStatus } from '@/lib/types';
+import { listJobs } from '@/lib/services/job-service';
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only GET requests are allowed',
-      },
-      timestamp: new Date().toISOString(),
-    };
-    res.status(405).json(response);
-    return;
-  }
-
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const config = getConfig();
     
     // Parse query parameters
-    const status = req.query.status as JobStatus | undefined;
-    const customerId = req.query.customerId as string | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const nextToken = req.query.nextToken as string | undefined;
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get('status') as JobStatus | undefined;
+    const customerId = searchParams.get('customerId') || undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
+    const nextToken = searchParams.get('nextToken') || undefined;
 
     // List jobs with filters
     const result = await listJobs({
@@ -57,7 +41,7 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(200).json(response);
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('[JOBS LIST ERROR]', {
       error: error.message,
@@ -74,6 +58,6 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(500).json(response);
+    return NextResponse.json(response, { status: 500 });
   }
 }

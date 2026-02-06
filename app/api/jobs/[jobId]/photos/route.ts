@@ -6,30 +6,16 @@
  * Generate pre-signed URL for photo upload or handle direct upload.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { ApiResponse } from '../../../lib/types';
-import { generateUploadUrl } from '../../../lib/aws/s3';
+import { NextRequest, NextResponse } from 'next/server';
+import type { ApiResponse } from '@/lib/types';
+import { generateUploadUrl } from '@/lib/aws/s3';
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only POST requests are allowed',
-      },
-      timestamp: new Date().toISOString(),
-    };
-    res.status(405).json(response);
-    return;
-  }
-
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+): Promise<NextResponse> {
   try {
-    const jobId = req.query.jobId as string;
+    const jobId = params.jobId;
 
     if (!jobId) {
       const response: ApiResponse = {
@@ -40,11 +26,11 @@ export default async function handler(
         },
         timestamp: new Date().toISOString(),
       };
-      res.status(400).json(response);
-      return;
+      return NextResponse.json(response, { status: 400 });
     }
 
-    const { filename, contentType } = req.body;
+    const body = await request.json();
+    const { filename, contentType } = body;
 
     if (!filename) {
       const response: ApiResponse = {
@@ -55,8 +41,7 @@ export default async function handler(
         },
         timestamp: new Date().toISOString(),
       };
-      res.status(400).json(response);
-      return;
+      return NextResponse.json(response, { status: 400 });
     }
 
     // Generate pre-signed upload URL
@@ -78,7 +63,7 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(200).json(response);
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('[PHOTO UPLOAD URL ERROR]', {
       error: error.message,
@@ -95,6 +80,6 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(500).json(response);
+    return NextResponse.json(response, { status: 500 });
   }
 }

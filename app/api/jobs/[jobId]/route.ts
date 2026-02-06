@@ -6,31 +6,16 @@
  * Get a specific job by ID with photo URLs.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { ApiResponse } from '../../lib/types';
-import { getJobWithPhotos } from '../../lib/services/job-service';
+import { NextRequest, NextResponse } from 'next/server';
+import type { ApiResponse } from '@/lib/types';
+import { getJobWithPhotos } from '@/lib/services/job-service';
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  //Only allow GET requests
-  if (req.method !== 'GET') {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: 'METHOD_NOT_ALLOWED',
-        message: 'Only GET requests are allowed',
-      },
-      timestamp: new Date().toISOString(),
-    };
-    res.status(405).json(response);
-    return;
-  }
-
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+): Promise<NextResponse> {
   try {
-    // Extract jobId from query (Vercel routes [jobId].ts as query param)
-    const jobId = req.query.jobId as string;
+    const jobId = params.jobId;
 
     if (!jobId) {
       const response: ApiResponse = {
@@ -41,8 +26,7 @@ export default async function handler(
         },
         timestamp: new Date().toISOString(),
       };
-      res.status(400).json(response);
-      return;
+      return NextResponse.json(response, { status: 400 });
     }
 
     // Get job with photo URLs
@@ -57,8 +41,7 @@ export default async function handler(
         },
         timestamp: new Date().toISOString(),
       };
-      res.status(404).json(response);
-      return;
+      return NextResponse.json(response, { status: 404 });
     }
 
     const response: ApiResponse = {
@@ -67,7 +50,7 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(200).json(response);
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('[JOB GET ERROR]', {
       error: error.message,
@@ -84,6 +67,6 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     };
 
-    res.status(500).json(response);
+    return NextResponse.json(response, { status: 500 });
   }
 }
