@@ -1,18 +1,50 @@
 /**
- * Square Webhooks - Bookings Endpoint (STUB - Phase A)
+ * Square Webhooks - Bookings Endpoint (Phase B - With Verification)
  * 
  * POST /api/square/webhooks/bookings
  * 
  * Receives webhook events from Square for booking.created and booking.updated events.
  * 
- * Phase A: Stub implementation that logs and acknowledges webhooks
- * Phase B: Will add signature verification
+ * Phase B: Signature verification and booking parsing ✓
  * Phase C: Will add DynamoDB integration to create/update jobs
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getConfig } from '../../../lib/config';
+import { getConfig, validateConfig } from '../../../lib/config';
 import type { ApiResponse, SquareBookingWebhook } from '../../../lib/types';
+import { 
+  validateWebhookSignature, 
+  extractSignature, 
+  buildWebhookUrl 
+} from '../../../lib/square/webhook-validator';
+import {
+  parseBookingEvent,
+  determineBookingAction,
+  isValidBooking
+} from '../../../lib/square/booking-parser';
+
+// Disable body parsing for signature verification
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+/**
+ * Read raw body from request stream
+ */
+async function getRawBody(req: VercelRequest): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', (chunk) => {
+      data += chunk.toString();
+    });
+    req.on('end', () => {
+      resolve(data);
+    });
+    req.on('error', reject);
+  });
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -34,32 +66,144 @@ export default async function handler(
 
   try {
     // Get configuration
-    const config = getConfig();
+    const appConfig = getConfig();
+    
+    // Validate Square configuration is present
+    try {
+      validateConfig(appConfig, ['square.webhookSignatureKey']);
+    } catch (configError: any) {
+      console.warn('[WEBHOOK CONFIG WARNING]', configError.message);
+      // Continue without validation in development
+      if (appConfig.env === 'prod') {
+        throw configError;
+      }
+    }
+
+    // Read raw body for signature verification
+    const rawBody = await getRawBody(req);
     
     // Parse webhook payload
-    const webhookEvent = req.body as SquareBookingWebhook;
+    const webhookEvent: SquareBookingWebhook = JSON.parse(rawBody);
     
-    // Log webhook event (Phase A: basic logging only)
-    console.log('[WEBHOOK RECEIVED]', {
-      environment: config.env,
+    // Phase B: Signature Verification
+    const signature = extractSignature(req.headers);
+    
+    if (signature && appConfig.square.webhookSignatureKey) {
+      const host = req.headers.host || '';
+      const url = buildWebhookUrl(host, req.url || '');
+      
+      const isValid = validateWebhookSignature(
+        rawBody,
+        signature,
+        appConfig.square.webhookSignatureKey,
+        url
+      );
+      
+      if (!isValid) {
+        console.error('[WEBHOOK SIGNATURE INVALID]', {
+          eventId: webhookEvent.event_id,
+          url,
+        });
+        
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'INVALID_SIGNATURE',
+            message: 'Webhook signature validation failed',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        
+        res.status(401).json(response);
+        return;
+      }
+      
+      console.log('[WEBHOOK SIGNATURE VALID]', {
+        eventId: webhookEvent.event_id,
+      });
+    } else {
+      console.warn('[WEBHOOK SIGNATURE SKIPPED]', {
+        hasSignature: !!signature,
+        hasKey: !!appConfig.square.webhookSignatureKey,
+        environment: appConfig.env,
+      });
+    }
+
+    // Phase B: Parse booking data
+    const action = determineBookingAction(webhookEvent.type);
+    
+    if (action === 'skip') {
+      console.log('[WEBHOOK SKIPPED]', {
+        eventId: webhookEvent.event_id,
+        eventType: webhookEvent.type,
+        reason: 'Unsupported event type',
+      });
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          message: 'Event acknowledged but not processed',
+          eventId: webhookEvent.event_id,
+          eventType: webhookEvent.type,
+          processed: false,
+        },
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+      return;
+    }
+
+    // Parse booking details
+    let parsedBooking;
+    try {
+      parsedBooking = parseBookingEvent(webhookEvent);
+    } catch (parseError: any) {
+      console.error('[BOOKING PARSE ERROR]', {
+        eventId: webhookEvent.event_id,
+        error: parseError.message,
+      });
+      
+      throw new Error(`Failed to parse booking: ${parseError.message}`);
+    }
+
+    // Validate parsed booking
+    if (!isValidBooking(parsedBooking)) {
+      console.error('[BOOKING VALIDATION FAILED]', {
+        eventId: webhookEvent.event_id,
+        booking: parsedBooking,
+      });
+      
+      throw new Error('Booking validation failed: missing required fields');
+    }
+
+    // Log parsed booking
+    console.log('[WEBHOOK PROCESSED]', {
+      environment: appConfig.env,
       eventId: webhookEvent.event_id,
       eventType: webhookEvent.type,
-      merchantId: webhookEvent.merchant_id,
-      timestamp: webhookEvent.created_at,
-      bookingId: webhookEvent.data?.id,
+      action,
+      booking: {
+        bookingId: parsedBooking.bookingId,
+        customerId: parsedBooking.customerId,
+        customerName: parsedBooking.customerName,
+        appointmentTime: parsedBooking.appointmentTime,
+        status: parsedBooking.status,
+      },
     });
 
-    // Phase A: Stub response - acknowledge receipt
-    // Phase B: Will add signature verification
-    // Phase C: Will add DynamoDB job creation/update
+    // Phase C: Will create/update job in DynamoDB here
+    // For now, just acknowledge successful processing
 
     const response: ApiResponse = {
       success: true,
       data: {
-        message: 'Webhook received and acknowledged',
+        message: 'Webhook processed successfully',
         eventId: webhookEvent.event_id,
         eventType: webhookEvent.type,
-        processed: false, // Phase A: not yet processing
+        action,
+        bookingId: parsedBooking.bookingId,
+        processed: true, // Phase B: parsing complete
       },
       timestamp: new Date().toISOString(),
     };

@@ -112,29 +112,45 @@ Returns application health status and environment information.
 }
 ```
 
-#### Square Booking Webhook (Stub)
+#### Square Booking Webhook
 ```
 POST /api/square/webhooks/bookings
 ```
 
-Receives and acknowledges Square booking webhooks (booking.created, booking.updated).
+Receives and processes Square booking webhooks (booking.created, booking.updated).
 
-**Phase A:** Logs and acknowledges webhooks only.  
-**Phase B:** Will add signature verification.  
+**Phase B Complete:**
+- ✓ Signature verification using Square webhook signature key
+- ✓ Booking event parsing and validation
+- ✓ Extracts customer and appointment information
+- ✓ Determines action (create/update job)
+
 **Phase C:** Will create/update jobs in DynamoDB.
+
+**Request Headers:**
+- `x-square-hmacsha256-signature`: Webhook signature from Square
+
+**Request Body:** Square booking webhook event (JSON)
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "message": "Webhook received and acknowledged",
+    "message": "Webhook processed successfully",
     "eventId": "evt_123",
     "eventType": "booking.created",
-    "processed": false
+    "action": "create",
+    "bookingId": "booking_123",
+    "processed": true
   },
   "timestamp": "2026-02-05T12:00:00.000Z"
 }
+```
+
+**Test locally:**
+```bash
+npm run test:webhook
 ```
 
 ## Environment Configuration
@@ -179,18 +195,19 @@ This project is isolated within a shared AWS account:
 
 ## Development Phases
 
-### Phase A (Current) ✓
+### Phase A (Complete) ✓
 - [x] Project scaffolding
 - [x] Environment configuration
 - [x] Health check endpoint
 - [x] Square webhook stub endpoint
 
-### Phase B (Next)
-- [ ] Square API integration
-- [ ] Webhook signature verification
-- [ ] Parse booking data
+### Phase B (Complete) ✓
+- [x] Square SDK integration
+- [x] Webhook signature verification
+- [x] Parse booking data from webhooks
+- [x] Booking validation and action determination
 
-### Phase C
+### Phase C (Next)
 - [ ] DynamoDB integration
 - [ ] Job creation from bookings
 - [ ] Photo upload to S3
@@ -206,6 +223,7 @@ This project is isolated within a shared AWS account:
 - `npm run build` - Build TypeScript files
 - `npm run type-check` - Check TypeScript types without emitting
 - `npm run lint` - Lint code with ESLint
+- `npm run test:webhook` - Test Square webhook processing (Phase B)
 
 ## Deployment
 

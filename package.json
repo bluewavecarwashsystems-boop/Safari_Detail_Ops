@@ -7,10 +7,12 @@
     "dev": "vercel dev",
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "test:webhook": "ts-node test/webhook-test.ts"
   },
   "dependencies": {
     "@types/node": "^20.11.0",
+    "square": "^39.0.0",
     "typescript": "^5.3.3"
   },
   "devDependencies": {
@@ -18,6 +20,7 @@
     "@vercel/node": "^3.0.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "ts-node": "^10.9.2",
     "prettier": "^3.2.0",
     "vercel": "^33.0.0"
   },
