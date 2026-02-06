@@ -22,6 +22,7 @@ export interface Config {
     accessToken: string;
     webhookSignatureKey: string;
     environment: 'sandbox' | 'production';
+    franklinLocationId: string | null;
   };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
@@ -31,11 +32,16 @@ export interface Config {
 
 /**
  * Get environment from APP_ENV variable
+ * In Phase A (defensive mode), returns 'qa' as fallback if missing
+ * In Phase B+, will enforce strict validation
  */
 function getEnvironment(): Environment {
   const env = process.env.APP_ENV?.toLowerCase();
   if (env !== 'qa' && env !== 'prod') {
-    throw new Error(`Invalid APP_ENV: ${env}. Must be 'qa' or 'prod'.`);
+    // Phase A: defensive - return 'qa' as safe default
+    // TODO Phase B: throw new Error(`Invalid APP_ENV: ${env}. Must be 'qa' or 'prod'.`);
+    console.warn(`APP_ENV not set or invalid (${env}). Defaulting to 'qa' for Phase A.`);
+    return 'qa';
   }
   return env;
 }
@@ -50,6 +56,7 @@ function getResourceName(resourceName: string): string {
 
 /**
  * Get application configuration
+ * Phase A: Defensive mode - returns safe defaults if env vars missing
  */
 export function getConfig(): Config {
   const env = getEnvironment();
@@ -68,7 +75,8 @@ export function getConfig(): Config {
     square: {
       accessToken: process.env.SQUARE_ACCESS_TOKEN || '',
       webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || '',
-      environment: (process.env.SQUARE_ENVIRONMENT === 'production' ? 'production' : 'sandbox'),
+      environment: (process.env.SQUARE_ENV === 'production' ? 'production' : 'sandbox'),
+      franklinLocationId: process.env.FRANKLIN_SQUARE_LOCATION_ID || null,
     },
     logging: {
       level: (process.env.LOG_LEVEL as any) || 'info',
