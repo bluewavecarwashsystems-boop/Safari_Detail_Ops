@@ -42,7 +42,52 @@ const columns = [
 ];
 
 export default function TodayBoard() {
-  const [jobs, setJobs] = useState<JobCard[]>(mockJobs);
+  const [jobs, setJobs] = useState<JobCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/jobs');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch jobs: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data?.jobs) {
+          // Map API jobs to UI format
+          const formattedJobs: JobCard[] = data.data.jobs.map((job: any) => ({
+            jobId: job.jobId,
+            customerName: job.customerName || 'Unknown',
+            vehicleInfo: job.vehicleInfo?.year && job.vehicleInfo?.make 
+              ? `${job.vehicleInfo.year} ${job.vehicleInfo.make} ${job.vehicleInfo.model || ''} - ${job.vehicleInfo.licensePlate || ''}`.trim()
+              : 'Vehicle info pending',
+            serviceType: job.serviceType || 'Detail Service',
+            scheduledStart: job.appointmentTime || job.createdAt,
+            workStatus: job.status,
+          }));
+          setJobs(formattedJobs);
+        } else {
+          // Fallback to mock data if API fails
+          console.warn('API returned no jobs, using mock data');
+          setJobs(mockJobs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch jobs:', err);
+        setError((err as Error).message);
+        // Fallback to mock data on error
+        setJobs(mockJobs);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchJobs();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -81,9 +126,20 @@ export default function TodayBoard() {
               day: 'numeric' 
             })}
           </p>
+          {error && (
+            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800">
+              ⚠️ API Error: {error} (showing mock data)
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p className="mt-2 text-gray-600">Loading jobs...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {columns.map((column) => {
             const columnJobs = jobs.filter(job => job.workStatus === column.status);
             
@@ -128,6 +184,7 @@ export default function TodayBoard() {
             );
           })}
         </div>
+        )}
       </main>
     </div>
   );

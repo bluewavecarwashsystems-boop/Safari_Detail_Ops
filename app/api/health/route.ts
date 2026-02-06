@@ -14,6 +14,12 @@ interface PhaseAHealthResponse {
   timestamp: string;
   franklin_location_id: string | null;
   build: string | null;
+  aws: {
+    region: string;
+    dynamodb_table: string;
+    s3_bucket: string;
+    credentials_configured: boolean;
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -24,12 +30,24 @@ export async function GET(request: NextRequest) {
     const franklinLocationId = process.env.FRANKLIN_SQUARE_LOCATION_ID || null;
     const build = process.env.VERCEL_GIT_COMMIT_SHA || null;
     
+    // AWS configuration check
+    const awsRegion = process.env.AWS_REGION || 'us-east-1';
+    const dynamoTable = process.env.DYNAMODB_JOBS_TABLE || 'jobs';
+    const s3Bucket = process.env.S3_PHOTOS_BUCKET || 'photos';
+    const hasAwsCreds = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+    
     const healthData: PhaseAHealthResponse = {
       app_env: appEnv,
       square_env: squareEnv,
       timestamp: new Date().toISOString(),
       franklin_location_id: franklinLocationId,
       build: build,
+      aws: {
+        region: awsRegion,
+        dynamodb_table: `safari-detail-ops-${appEnv}-${dynamoTable}`,
+        s3_bucket: `safari-detail-ops-${appEnv}-${s3Bucket}`,
+        credentials_configured: hasAwsCreds,
+      },
     };
 
     return NextResponse.json(healthData);
