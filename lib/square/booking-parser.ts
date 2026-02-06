@@ -37,13 +37,10 @@ export function parseBookingEvent(event: SquareBookingWebhook): ParsedBooking {
     throw new Error('Invalid booking webhook: missing booking object');
   }
 
-  // Extract customer information from the customer object within booking
-  // Square webhooks may have customer data at different levels
-  const customer = booking.customer_id ? {
-    id: booking.customer_id,
-    // Customer details are usually fetched separately via API
-    // For now, we'll use placeholder values
-  } : undefined;
+  // NOTE: Square webhooks do NOT include customer details (name, email, phone)
+  // Only customer_id is provided. To get customer details, we need to:
+  // TODO Phase C: Implement Square Customers API call using customer_id
+  // For now, customer name will be set to a placeholder in job-service.ts
   
   // Parse appointment time
   const startAt = booking.start_at;
@@ -54,19 +51,12 @@ export function parseBookingEvent(event: SquareBookingWebhook): ParsedBooking {
     ? segments[0].service_variation_id 
     : undefined;
 
-  // Try to get customer name from booking fields (Square sometimes includes it)
-  let customerName: string | undefined = undefined;
-  
-  // Log the booking structure to help debug
-  console.log('[PARSER DEBUG] Booking keys:', Object.keys(booking));
-  console.log('[PARSER DEBUG] Has customer_id:', !!booking.customer_id);
-
   return {
     bookingId: booking.id,
     customerId: booking.customer_id,
-    customerName: customerName, // Will be undefined until we fetch from Square API
-    customerEmail: undefined, // Need to fetch from Square Customer API
-    customerPhone: undefined, // Need to fetch from Square Customer API
+    customerName: undefined, // Not included in webhook - need to fetch from API
+    customerEmail: undefined, // Not included in webhook - need to fetch from API
+    customerPhone: undefined, // Not included in webhook - need to fetch from API
     serviceType,
     appointmentTime: startAt,
     status: booking.status || 'PENDING',

@@ -17,10 +17,15 @@ import type { ParsedBooking } from '../square/booking-parser';
 export async function createJobFromBooking(booking: ParsedBooking): Promise<Job> {
   const jobId = uuidv4();
   
+  // TODO Phase C: Fetch customer details from Square Customers API using customerId
+  // For now, use placeholder if name not provided
+  const displayName = booking.customerName || 
+    (booking.customerId ? `Customer ${booking.customerId.substring(0, 8)}...` : 'Unknown Customer');
+  
   const job: Job = {
     jobId,
     customerId: booking.customerId || '',
-    customerName: booking.customerName || 'Unknown Customer',
+    customerName: displayName,
     customerEmail: booking.customerEmail,
     customerPhone: booking.customerPhone,
     vehicleInfo: {}, // Will be filled in by staff later
