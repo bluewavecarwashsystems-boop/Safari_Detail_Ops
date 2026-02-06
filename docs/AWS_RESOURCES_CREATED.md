@@ -7,15 +7,17 @@ This document tracks the AWS resources that have been created for the Safari Det
 ### DynamoDB Table
 - **Name:** `safari-detail-ops-qa-jobs`
 - **Status:** ACTIVE
-- **ARN:** `arn:aws:dynamodb:us-east-1:785825525738:table/safari-detail-ops-qa-jobs`
+- **ARN:** `arn:aws:dynamodb:us-east-1:402562447563:table/safari-detail-ops-qa-jobs`
+- **Account:** 402562447563
 - **Partition Key:** `jobId` (String)
 - **Billing Mode:** PAY_PER_REQUEST (on-demand)
 - **Region:** us-east-1
 
 ### S3 Bucket
-- **Name:** `safari-detail-ops-qa-photos`
+- **Name:** `safari-detail-ops-qa-photos-402562447563`
 - **Status:** Active
-- **ARN:** `arn:aws:s3:::safari-detail-ops-qa-photos`
+- **ARN:** `arn:aws:s3:::safari-detail-ops-qa-photos-402562447563`
+- **Account:** 402562447563
 - **Region:** us-east-1
 - **Encryption:** AES-256
 - **Public Access:** Blocked (all)
