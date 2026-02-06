@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { ApiResponse, JobStatus } from '@/lib/types';
+import type { ApiResponse, WorkStatus } from '@/lib/types';
 import { updateJobStatus, updateJobVehicle } from '@/lib/services/job-service';
 import { updateJob } from '@/lib/aws/dynamodb';
 
@@ -39,7 +39,7 @@ export async function PATCH(
 
     if (updates.status) {
       // Update status
-      updatedJob = await updateJobStatus(jobId, updates.status as JobStatus, updatedBy);
+      updatedJob = await updateJobStatus(jobId, updates.status as WorkStatus, updatedBy);
     } else if (updates.vehicleInfo) {
       // Update vehicle info
       updatedJob = await updateJobVehicle(jobId, updates.vehicleInfo, updatedBy);
