@@ -48,10 +48,19 @@ function getEnvironment(): Environment {
 
 /**
  * Build resource name with project namespace
+ * Handles case where resource name is already fully qualified
  */
 function getResourceName(resourceName: string): string {
   const env = getEnvironment();
-  return `safari-detail-ops-${env}-${resourceName}`;
+  const prefix = `safari-detail-ops-${env}-`;
+  
+  // If resource name already starts with the prefix, return as-is
+  if (resourceName.startsWith('safari-detail-ops-')) {
+    return resourceName;
+  }
+  
+  // Otherwise, add the prefix
+  return `${prefix}${resourceName}`;
 }
 
 /**
