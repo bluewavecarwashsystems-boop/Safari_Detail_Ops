@@ -1,53 +1,151 @@
-# Safari Detail Ops
+# Safari Detail Ops - Phase B Complete! 🎉
 
-Job management and Square integration for Safari Car Wash detail operations.
+**Internal Operations PWA for Safari Detailing - Franklin Location**
 
-## Project Overview
+Phase B delivers a fully functional V1 product with Square booking integration, DynamoDB job storage, and a touch-optimized frontend for staff phones and bay tablets.
 
-**Repository:** https://github.com/bluewavecarwashsystems-boop/Safari_Detail_Ops.git  
-**Branch:** main  
-**AWS Account:** Safari_Franklin (4025-6244-7563)
+---
 
-### Domains
-- **QA:** ops-qa.thesafaricarwash.com
-- **PROD:** ops.thesafaricarwash.com
+## 🚀 Quick Start (Deployment)
 
-### AWS Resource Namespace
-All AWS resources follow the naming convention:
-```
-safari-detail-ops-<env>-<resource>
+### 1. Install Dependencies
+```powershell
+npm install
 ```
 
-Where `<env>` is either `qa` or `prod`.
+### 2. Set Environment Variables in Vercel
+See `PHASE_B_DEPLOYMENT_GUIDE.md` for complete list of required variables.
 
-### Architecture
-- **Frontend/Routing:** Vercel (DNS routing to subdomain)
-- **Backend:** AWS (DynamoDB, S3)
-- **Integration:** Square API (webhooks for bookings)
-
-## Project Structure
-
-```
-Safari_Ops/
-├── api/                        # Vercel serverless functions
-│   ├── health.ts              # Health check endpoint
-│   └── square/
-│       └── webhooks/
-│           └── bookings.ts    # Square booking webhooks
-├── lib/                        # Shared utilities
-│   ├── config.ts              # Environment configuration
-│   └── types.ts               # TypeScript types
-├── package.json
-├── tsconfig.json
-├── .env.example               # Environment variables template
-└── README.md
+### 3. Deploy
+```powershell
+git add .
+git commit -m "Phase B: Full V1 implementation"
+git push origin main
 ```
 
-## Setup Instructions
+### 4. Create Square Webhook
+Follow steps in `PHASE_B_DEPLOYMENT_GUIDE.md` to set up Square webhook subscription.
 
-### Prerequisites
-- Node.js >= 18.0.0
-- npm or yarn
+---
+
+## 📁 Project Structure
+
+```
+safari-detail-ops/
+├── api/                    # Vercel serverless functions (Backend API)
+│   ├── health.ts          # Health check endpoint
+│   ├── jobs/              # Jobs API endpoints
+│   └── square/webhooks/   # Square webhook handlers
+│       └── bookings.ts    # Booking webhook (Phase B complete)
+│
+├── app/                    # Next.js App Router (Frontend)
+│   ├── layout.tsx         # Root layout with PWA metadata
+│   ├── page.tsx           # Today Board (home page, kanban)
+│   ├── globals.css        # Tailwind base styles + RTL support
+│   └── jobs/[jobId]/      # Job Detail pages
+│       └── page.tsx       # Job detail screen
+│
+├── lib/                    # Shared libraries
+│   ├── types.ts           # TypeScript types (Phase B model)
+│   ├── config.ts          # Environment configuration
+│   ├── aws/               # AWS integrations (DynamoDB, S3)
+│   ├── square/            # Square integrations (webhooks, parsing)
+│   └── services/          # Business logic (job service)
+│
+├── public/                 # Static assets
+│   ├── manifest.json      # PWA manifest
+│   └── (icons TBD)        # Add icon-192.png, icon-512.png
+│
+├── docs/                   # Documentation
+│   ├── AWS_SETUP.md       # AWS resource setup
+│   └── AWS_RESOURCES_CREATED.md
+│
+├── PHASE_A_*.md           # Phase A documentation
+├── PHASE_B_*.md           # Phase B documentation (← START HERE)
+└── package.json           # Dependencies (Next.js, React, Tailwind)
+```
+
+---
+
+## ✅ What's Implemented (Phase B)
+
+### Backend (Complete)
+- ✅ Square webhook handler with HMAC-SHA256 signature validation
+- ✅ Booking event parsing (created, updated, canceled)
+- ✅ Franklin location filtering
+- ✅ DynamoDB job storage (idempotent creation/updates)
+- ✅ S3 photo storage infrastructure
+- ✅ Jobs API endpoints (list, get, update)
+- ✅ Health check endpoint
+
+### Frontend (MVP)
+- ✅ Today Board kanban (5 status columns)
+- ✅ Job Detail screen
+- ✅ Responsive design
+- ✅ Touch-friendly UI (44px buttons)
+- ✅ PWA manifest
+
+### Not Yet Implemented
+- ⬜ Calendar view
+- ⬜ Multilingual support (EN/ES/AR)
+- ⬜ Authentication
+- ⬜ No-show manager flow
+- ⬜ Reconciliation service
+
+---
+
+## 📚 Documentation
+
+### Start Here
+1. **`PHASE_B_DEPLOYMENT_GUIDE.md`** - Quick deployment checklist
+2. **`PHASE_B_IMPLEMENTATION.md`** - Technical details, API docs
+3. **`PHASE_B_COMPLETE.md`** - Implementation summary
+
+### AWS Setup
+- `docs/AWS_SETUP.md` - DynamoDB & S3 setup
+- `docs/AWS_RESOURCES_CREATED.md` - Resource inventory
+
+---
+
+## 🔧 Development
+
+### Local Development
+```powershell
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
+### Type Checking
+```powershell
+npm run type-check
+```
+
+---
+
+## 🌐 Environment Variables
+
+See `PHASE_B_DEPLOYMENT_GUIDE.md` for complete list.
+
+**Required:** APP_ENV, SQUARE_ENV, SQUARE_ACCESS_TOKEN, SQUARE_WEBHOOK_SIGNATURE_KEY, FRANKLIN_SQUARE_LOCATION_ID, AWS credentials, DynamoDB/S3 config
+
+---
+
+## 🧪 Testing
+
+### Backend
+```powershell
+curl https://ops-qa.thesafaricarwash.com/api/health -UseBasicParsing
+```
+
+### Frontend
+Open `https://ops-qa.thesafaricarwash.com/`
+
+---
+
+**Deploy now:** `npm install && git push origin main`
+
+**Test at:** https://ops-qa.thesafaricarwash.com/
 - Vercel CLI (for local development)
 - AWS credentials configured
 

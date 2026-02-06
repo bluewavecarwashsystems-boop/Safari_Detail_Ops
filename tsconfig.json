@@ -1,23 +1,42 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["ES2020"],
-    "outDir": "./dist",
-    "rootDir": "./",
+    "lib": ["ES2020", "dom", "dom.iterable"],
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
     "strict": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "incremental": true,
+    "isolatedModules": true,
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/lib/*": ["lib/*"],
-      "@/api/*": ["api/*"]
-    }
+      "@/api/*": ["api/*"],
+      "@/app/*": ["app/*"],
+      "@/components/*": ["components/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["api/**/*", "lib/**/*"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "api/**/*",
+    "lib/**/*",
+    "app/**/*",
+    "components/**/*"
+  ],
   "exclude": ["node_modules", "dist", ".vercel"]
 }
