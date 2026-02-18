@@ -27,6 +27,11 @@ import {
   determineBookingAction,
   isValidBooking
 } from '@/lib/square/booking-parser';
+import {
+  fetchCustomerDetails,
+  formatCustomerName,
+  extractCustomerContact
+} from '@/lib/square/customers-api';
 import { 
   createJobFromBooking, 
   updateJobFromBooking 
@@ -201,6 +206,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
       
       throw new Error('Booking validation failed: missing required fields');
+    }
+
+    // Enrich booking with customer details from Square API
+    if (parsedBooking.customerId) {
+      try {
+        const customer = await fetchCustomerDetails(parsedBooking.customerId);
+        
+        if (customer) {
+          // Update parsed booking with customer details
+          parsedBooking.customerName = formatCustomerName(customer);
+          const contact = extractCustomerContact(customer);
+          parsedBooking.customerEmail = contact.email;
+          parsedBooking.customerPhone = contact.phone;
+          
+          console.log('[CUSTOMER ENRICHED]', {
+            customerId: parsedBooking.customerId,
+            customerName: parsedBooking.customerName,
+            hasEmail: !!contact.email,
+            hasPhone: !!contact.phone,
+          });
+        }
+      } catch (customerError: any) {
+        console.warn('[CUSTOMER FETCH FAILED]', {
+          customerId: parsedBooking.customerId,
+          error: customerError.message,
+          note: 'Continuing with booking ID only',
+        });
+        // Continue processing - customer name will be 'Unknown Customer'
+      }
     }
 
     // Filter by Franklin location only (disabled in QA for testing)
