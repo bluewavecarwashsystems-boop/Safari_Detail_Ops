@@ -32,6 +32,9 @@ import {
   formatCustomerName,
   extractCustomerContact
 } from '@/lib/square/customers-api';
+import {
+  fetchServiceName
+} from '@/lib/square/catalog-api';
 import { 
   createJobFromBooking, 
   updateJobFromBooking 
@@ -234,6 +237,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           note: 'Continuing with booking ID only',
         });
         // Continue processing - customer name will be 'Unknown Customer'
+      }
+    }
+
+    // Enrich booking with service name from Square Catalog API
+    if (parsedBooking.serviceType) {
+      try {
+        const serviceName = await fetchServiceName(parsedBooking.serviceType);
+        
+        console.log('[SERVICE ENRICHED]', {
+          variationId: parsedBooking.serviceType,
+          serviceName,
+        });
+        
+        // Update parsed booking with service name
+        parsedBooking.serviceType = serviceName;
+      } catch (serviceError: any) {
+        console.warn('[SERVICE FETCH FAILED]', {
+          variationId: parsedBooking.serviceType,
+          error: serviceError.message,
+          note: 'Continuing with variation ID',
+        });
+        // Continue processing - will use variation ID as fallback
       }
     }
 
