@@ -159,15 +159,15 @@ export default function JobDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-gray-600">Name</label>
-              <div className="font-medium">{job.customerName}</div>
+              <div className="font-medium text-gray-900">{job.customerName}</div>
             </div>
             <div>
               <label className="text-sm text-gray-600">Phone</label>
-              <div className="font-medium">{job.customerPhone || 'Not provided'}</div>
+              <div className="font-medium text-gray-900">{job.customerPhone || 'Not provided'}</div>
             </div>
             <div className="md:col-span-2">
               <label className="text-sm text-gray-600">Email</label>
-              <div className="font-medium">{job.customerEmail || 'Not provided'}</div>
+              <div className="font-medium text-gray-900">{job.customerEmail || 'Not provided'}</div>
             </div>
           </div>
         </section>
@@ -178,7 +178,7 @@ export default function JobDetail() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-gray-600">Make/Model</label>
-              <div className="font-medium">
+              <div className="font-medium text-gray-900">
                 {job.vehicleInfo.year || job.vehicleInfo.make || job.vehicleInfo.model
                   ? `${job.vehicleInfo.year || ''} ${job.vehicleInfo.make || ''} ${job.vehicleInfo.model || ''}`.trim()
                   : 'Pending'}
@@ -186,15 +186,15 @@ export default function JobDetail() {
             </div>
             <div>
               <label className="text-sm text-gray-600">License Plate</label>
-              <div className="font-medium">{job.vehicleInfo.licensePlate || 'Pending'}</div>
+              <div className="font-medium text-gray-900">{job.vehicleInfo.licensePlate || 'Pending'}</div>
             </div>
             <div>
               <label className="text-sm text-gray-600">Color</label>
-              <div className="font-medium">{job.vehicleInfo.color || 'Pending'}</div>
+              <div className="font-medium text-gray-900">{job.vehicleInfo.color || 'Pending'}</div>
             </div>
             <div>
               <label className="text-sm text-gray-600">Service</label>
-              <div className="font-medium text-sm">{job.serviceType}</div>
+              <div className="font-medium text-sm text-gray-900">{job.serviceType}</div>
             </div>
           </div>
         </section>
