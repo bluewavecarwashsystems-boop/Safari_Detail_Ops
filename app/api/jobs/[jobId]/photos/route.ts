@@ -10,6 +10,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse } from '@/lib/types';
 import { generateUploadUrl } from '@/lib/aws/s3';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { jobId: string } }

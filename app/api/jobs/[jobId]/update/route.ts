@@ -11,6 +11,9 @@ import type { ApiResponse, WorkStatus } from '@/lib/types';
 import { updateJobStatus, updateJobVehicle } from '@/lib/services/job-service';
 import { updateJob } from '@/lib/aws/dynamodb';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { jobId: string } }

@@ -16,6 +16,9 @@ import { listJobs, updateJob } from '@/lib/aws/dynamodb';
 import { WorkStatus } from '@/lib/types';
 import type { ApiResponse, Job } from '@/lib/types';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 /**
  * Map old JobStatus values to new WorkStatus values
  */

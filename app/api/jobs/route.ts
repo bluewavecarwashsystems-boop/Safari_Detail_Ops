@@ -11,6 +11,9 @@ import { getConfig } from '@/lib/config';
 import type { ApiResponse, WorkStatus } from '@/lib/types';
 import { listJobs } from '@/lib/services/job-service';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const config = getConfig();

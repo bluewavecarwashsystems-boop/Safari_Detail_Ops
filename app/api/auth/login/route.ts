@@ -4,6 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 import { getUserByEmail, updateLastLogin, toSafeUser } from '@/lib/services/user-service';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSessionCookie } from '@/lib/auth/session';
