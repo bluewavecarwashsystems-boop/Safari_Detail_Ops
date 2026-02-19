@@ -147,3 +147,81 @@ export function extractCustomerContact(customer: SquareCustomer | null): {
     phone: customer.phone_number,
   };
 }
+
+/**
+ * Phase 3: Convert Square customer to cached format for job records
+ * 
+ * @param customer - Square customer object
+ * @returns CustomerCached object
+ */
+export function toCustomerCached(customer: SquareCustomer): {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  cachedAt: string;
+} {
+  return {
+    id: customer.id,
+    name: formatCustomerName(customer),
+    email: customer.email_address,
+    phone: customer.phone_number,
+    cachedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Phase 3: Check if customer cache is stale (older than 24 hours)
+ * 
+ * @param cachedAt - ISO timestamp of when customer was cached
+ * @returns true if cache is stale or missing
+ */
+export function isCacheStale(cachedAt?: string): boolean {
+  if (!cachedAt) {
+    return true;
+  }
+
+  const cacheAge = Date.now() - new Date(cachedAt).getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  
+  return cacheAge > oneDayMs;
+}
+
+/**
+ * Phase 3: Fetch customer with retry logic for webhook safety
+ * 
+ * @param customerId - Square customer ID
+ * @param retries - Number of retries on failure (default: 1)
+ * @returns Customer cached data or null
+ */
+export async function fetchCustomerWithRetry(
+  customerId: string,
+  retries: number = 1
+): Promise<{
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  cachedAt: string;
+} | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const customer = await fetchCustomerDetails(customerId);
+      if (!customer) {
+        return null;
+      }
+      return toCustomerCached(customer);
+    } catch (error: any) {
+      if (attempt < retries) {
+        const delayMs = 500 * (attempt + 1);
+        console.log(`[SQUARE API] Retry ${attempt + 1}/${retries} after ${delayMs}ms`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      } else {
+        console.error(`[SQUARE API] Failed after ${retries} retries`);
+        return null;
+      }
+    }
+  }
+  
+  return null;
+}

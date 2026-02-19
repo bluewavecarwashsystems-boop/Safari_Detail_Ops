@@ -82,7 +82,51 @@ export enum JobStatus {
 }
 
 /**
- * Job record (future DynamoDB schema)
+ * Phase 3: Audit trail for user actions
+ */
+export interface UserAudit {
+  userId: string;
+  name: string;
+  role: UserRole;
+}
+
+/**
+ * Phase 3: Checklist item
+ */
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  checked: boolean;
+  checkedAt?: string;
+  checkedBy?: UserAudit;
+}
+
+/**
+ * Phase 3: Photo metadata
+ */
+export interface PhotoMeta {
+  photoId: string;
+  s3Key: string;
+  publicUrl: string;
+  contentType: string;
+  uploadedAt: string;
+  uploadedBy: UserAudit;
+  category?: 'before' | 'after' | 'damage' | 'other';
+}
+
+/**
+ * Phase 3: Cached customer details from Square
+ */
+export interface CustomerCached {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  cachedAt?: string;
+}
+
+/**
+ * Job record (DynamoDB schema with Phase 3 enhancements)
  */
 export interface Job {
   jobId: string;
@@ -99,14 +143,22 @@ export interface Job {
   };
   serviceType: string;
   status: WorkStatus; // Phase B: Use WorkStatus instead of JobStatus
+  workStatus?: WorkStatus; // Phase 3: Alias for status (for backward compatibility)
   bookingId?: string; // Square booking ID
   appointmentTime?: string;
-  photos?: string[]; // S3 keys
+  photos?: string[]; // S3 keys (legacy)
+  photosMeta?: PhotoMeta[]; // Phase 3: Enhanced photo metadata
   notes?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
-  updatedBy?: string;
+  updatedBy?: string | UserAudit; // Phase 3: Enhanced with UserAudit
+  // Phase 3: Additional fields
+  checklist?: {
+    tech?: ChecklistItem[];
+    qc?: ChecklistItem[];
+  };
+  customerCached?: CustomerCached;
 }
 
 /**
@@ -229,4 +281,56 @@ export interface SquareBookingWebhook extends SquareWebhookEvent {
       booking: any; // Square Booking object
     };
   };
+}
+
+/**
+ * Phase 3: API Request/Response Types
+ */
+
+/**
+ * PATCH /api/jobs/[jobId] request body
+ */
+export interface UpdateJobRequest {
+  workStatus?: WorkStatus;
+  checklist?: {
+    tech?: ChecklistItem[];
+    qc?: ChecklistItem[];
+  };
+  notes?: string;
+  vehicleInfo?: Job['vehicleInfo'];
+}
+
+/**
+ * POST /api/jobs/[jobId]/photos/presign request/response
+ */
+export interface PresignPhotoRequest {
+  files: Array<{
+    filename: string;
+    contentType: string;
+    category?: PhotoMeta['category'];
+  }>;
+}
+
+export interface PresignPhotoResponse {
+  uploads: Array<{
+    photoId: string;
+    s3Key: string;
+    putUrl: string;
+    publicUrl: string;
+    contentType: string;
+    category?: PhotoMeta['category'];
+  }>;
+}
+
+/**
+ * POST /api/jobs/[jobId]/photos/commit request
+ */
+export interface CommitPhotosRequest {
+  photos: Array<{
+    photoId: string;
+    s3Key: string;
+    publicUrl: string;
+    contentType: string;
+    category?: PhotoMeta['category'];
+  }>;
 }

@@ -7,57 +7,86 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as dynamodb from '../aws/dynamodb';
 import * as s3 from '../aws/s3';
-import type { Job } from '../types';
+import type { Job, UpdateJobRequest, UserAudit, PhotoMeta, ChecklistItem, CustomerCached } from '../types';
 import { WorkStatus } from '../types';
 import type { ParsedBooking } from '../square/booking-parser';
+import { fetchCustomerWithRetry, isCacheStale, toCustomerCached } from '../square/customers-api';
 
 /**
- * Create a job from a Square booking
+ * Create a job from a Square booking (Phase 3: with customer caching)
  */
 export async function createJobFromBooking(booking: ParsedBooking): Promise<Job> {
   const jobId = uuidv4();
   
-  // TODO Phase C: Fetch customer details from Square Customers API using customerId
-  // For now, use placeholder if name not provided
-  const displayName = booking.customerName || 
+  // Phase 3: Fetch and cache customer details from Square if available
+  let customerCached: CustomerCached | undefined;
+  if (booking.customerId) {
+    const cachedData = await fetchCustomerWithRetry(booking.customerId, 1);
+    if (cachedData) {
+      customerCached = cachedData;
+    }
+  }
+  
+  // Use cached customer name if available, otherwise use booking name or placeholder
+  const displayName = customerCached?.name || 
+    booking.customerName || 
     (booking.customerId ? `Customer ${booking.customerId.substring(0, 8)}...` : 'Unknown Customer');
   
   const job: Job = {
     jobId,
     customerId: booking.customerId || '',
     customerName: displayName,
-    customerEmail: booking.customerEmail,
-    customerPhone: booking.customerPhone,
+    customerEmail: customerCached?.email || booking.customerEmail,
+    customerPhone: customerCached?.phone || booking.customerPhone,
     vehicleInfo: {}, // Will be filled in by staff later
     serviceType: booking.serviceType || 'Detail Service',
     status: mapBookingStatusToJobStatus(booking.status),
     bookingId: booking.bookingId,
     appointmentTime: booking.appointmentTime,
     photos: [],
+    photosMeta: [], // Phase 3: Initialize empty photo metadata
     notes: booking.notes,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    createdBy: 'square-webhook',
+    customerCached, // Phase 3: Cache customer data on job creation
   };
-  
+
   return dynamodb.createJob(job);
 }
 
 /**
- * Update a job from a Square booking update
+ * Update a job from a Square booking update (Phase 3: with customer cache refresh)
  */
 export async function updateJobFromBooking(
   jobId: string,
   booking: ParsedBooking
 ): Promise<Job> {
+  const currentJob = await dynamodb.getJob(jobId);
+  
+  // Phase 3: Refresh customer cache if stale or missing
+  let customerCached: CustomerCached | undefined = currentJob?.customerCached;
+  if (booking.customerId && (!customerCached || isCacheStale(customerCached.cachedAt))) {
+    const cachedData = await fetchCustomerWithRetry(booking.customerId, 1);
+    if (cachedData) {
+      customerCached = cachedData;
+      console.log('[JOB SERVICE] Customer cache refreshed', {
+        jobId,
+        customerId: booking.customerId,
+      });
+    }
+  }
+  
+  const displayName = customerCached?.name || booking.customerName || currentJob?.customerName;
+  
   const updates: Partial<Job> = {
     status: mapBookingStatusToJobStatus(booking.status),
     appointmentTime: booking.appointmentTime,
-    customerName: booking.customerName,
-    customerEmail: booking.customerEmail,
-    customerPhone: booking.customerPhone,
+    customerName: displayName,
+    customerEmail: customerCached?.email || booking.customerEmail,
+    customerPhone: customerCached?.phone || booking.customerPhone,
     notes: booking.notes,
     updatedBy: 'square-webhook',
+    customerCached, // Phase 3: Update cached customer data
   };
   
   // Remove undefined values to prevent DynamoDB UpdateExpression errors
@@ -201,4 +230,137 @@ export async function deleteJobCompletely(jobId: string): Promise<void> {
   
   // Delete job record
   await dynamodb.deleteJob(jobId);
+}
+
+/**
+ * Phase 3: Update job with audit trail
+ * 
+ * Supports partial updates for workStatus, checklist, notes, vehicleInfo
+ */
+export async function updateJobWithAudit(
+  jobId: string,
+  updates: UpdateJobRequest,
+  userAudit: UserAudit
+): Promise<Job | null> {
+  const currentJob = await dynamodb.getJob(jobId);
+  
+  if (!currentJob) {
+    return null;
+  }
+
+  const updateData: Partial<Job> = {
+    updatedAt: new Date().toISOString(),
+    updatedBy: userAudit,
+  };
+
+  // Update work status
+  if (updates.workStatus !== undefined) {
+    updateData.status = updates.workStatus;
+  }
+
+  // Update checklist with audit trail
+  if (updates.checklist) {
+    const currentChecklist = currentJob.checklist || {};
+    updateData.checklist = {
+      tech: updates.checklist.tech || currentChecklist.tech || [],
+      qc: updates.checklist.qc || currentChecklist.qc || [],
+    };
+  }
+
+  // Update notes
+  if (updates.notes !== undefined) {
+    updateData.notes = updates.notes;
+  }
+
+  // Update vehicle info
+  if (updates.vehicleInfo !== undefined) {
+    updateData.vehicleInfo = {
+      ...currentJob.vehicleInfo,
+      ...updates.vehicleInfo,
+    };
+  }
+
+  return dynamodb.updateJob(jobId, updateData);
+}
+
+/**
+ * Phase 3: Generate presigned URLs for photo uploads
+ */
+export async function generatePresignedUploadUrls(
+  jobId: string,
+  files: Array<{ filename: string; contentType: string; category?: PhotoMeta['category'] }>
+): Promise<Array<{
+  photoId: string;
+  s3Key: string;
+  putUrl: string;
+  publicUrl: string;
+  contentType: string;
+  category?: PhotoMeta['category'];
+}>> {
+  const config = await import('../config').then(m => m.getConfig());
+  
+  const uploads = await Promise.all(
+    files.map(async (file) => {
+      const photoId = uuidv4();
+      const sanitizedFilename = file.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const s3Key = `jobs/${jobId}/${photoId}-${sanitizedFilename}`;
+      
+      // Generate presigned PUT URL (5 minutes expiry)
+      const { url: putUrl } = await s3.generateUploadUrl(jobId, sanitizedFilename, file.contentType, 300);
+      
+      // Build public URL
+      const publicUrl = `https://${config.aws.s3.photosBucket}.s3.${config.aws.region}.amazonaws.com/${s3Key}`;
+      
+      return {
+        photoId,
+        s3Key,
+        putUrl,
+        publicUrl,
+        contentType: file.contentType,
+        category: file.category,
+      };
+    })
+  );
+
+  return uploads;
+}
+
+/**
+ * Phase 3: Commit uploaded photos to job metadata
+ */
+export async function commitPhotosToJob(
+  jobId: string,
+  photos: Array<{
+    photoId: string;
+    s3Key: string;
+    publicUrl: string;
+    contentType: string;
+    category?: 'before' | 'after' | 'damage' | 'other';
+  }>,
+  userAudit: UserAudit
+): Promise<Job | null> {
+  const currentJob = await dynamodb.getJob(jobId);
+  
+  if (!currentJob) {
+    return null;
+  }
+
+  const newPhotosMeta: PhotoMeta[] = photos.map(photo => ({
+    photoId: photo.photoId,
+    s3Key: photo.s3Key,
+    publicUrl: photo.publicUrl,
+    contentType: photo.contentType,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy: userAudit,
+    category: photo.category,
+  }));
+
+  const existingPhotosMeta = currentJob.photosMeta || [];
+  const updatedPhotosMeta = [...existingPhotosMeta, ...newPhotosMeta];
+
+  return dynamodb.updateJob(jobId, {
+    photosMeta: updatedPhotosMeta,
+    updatedAt: new Date().toISOString(),
+    updatedBy: userAudit,
+  });
 }
