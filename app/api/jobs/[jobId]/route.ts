@@ -11,6 +11,7 @@ import { WorkStatus, UserRole } from '@/lib/types';
 import { getJobWithPhotos } from '@/lib/services/job-service';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { updateJobWithAudit } from '@/lib/services/job-service';
+import * as dynamodb from '@/lib/aws/dynamodb';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -154,6 +155,107 @@ export const PATCH = requireAuth(async (
           timestamp: new Date().toISOString(),
         };
         return NextResponse.json(response, { status: 403 });
+      }
+    }
+
+    // Get current job to check for backward movement and issue operations
+    const currentJob = await dynamodb.getJob(jobId);
+    
+    if (!currentJob) {
+      const response: ApiResponse = {
+        success: false,
+        error: {
+          code: 'JOB_NOT_FOUND',
+          message: `Job ${jobId} not found`,
+        },
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(response, { status: 404 });
+    }
+
+    // RULE: WORK_COMPLETED is irreversible - cannot move backward
+    if (body.workStatus && currentJob.status === WorkStatus.WORK_COMPLETED && body.workStatus !== WorkStatus.WORK_COMPLETED) {
+      const response: ApiResponse = {
+        success: false,
+        error: {
+          code: 'INVALID_STATUS_TRANSITION',
+          message: 'Completed jobs cannot be moved backward. Use post-completion issue tracking instead.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(response, { status: 400 });
+    }
+
+    // Validate post-completion issue operations
+    if (body.openPostCompletionIssue || body.resolvePostCompletionIssue) {
+      const userRole = session.role as UserRole;
+      
+      // Only MANAGER can open/resolve issues
+      if (userRole !== UserRole.MANAGER) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only MANAGER can open or resolve post-completion issues',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 403 });
+      }
+
+      // Can only open/resolve issues on WORK_COMPLETED jobs
+      if (currentJob.status !== WorkStatus.WORK_COMPLETED) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'INVALID_OPERATION',
+            message: 'Post-completion issues can only be managed on completed jobs',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 400 });
+      }
+
+      // Cannot open issue if one is already open
+      if (body.openPostCompletionIssue && currentJob.postCompletionIssue?.isOpen) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'ISSUE_ALREADY_OPEN',
+            message: 'An issue is already open for this job',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 400 });
+      }
+
+      // Cannot resolve issue if none is open
+      if (body.resolvePostCompletionIssue && !currentJob.postCompletionIssue?.isOpen) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'NO_OPEN_ISSUE',
+            message: 'No open issue to resolve',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 400 });
+      }
+
+      // Validate issue type if opening
+      if (body.openPostCompletionIssue) {
+        const validTypes = ['QC_MISS', 'CUSTOMER_COMPLAINT', 'DAMAGE', 'REDO', 'OTHER'];
+        if (!validTypes.includes(body.openPostCompletionIssue.type)) {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'INVALID_ISSUE_TYPE',
+              message: `Invalid issue type. Must be one of: ${validTypes.join(', ')}`,
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
       }
     }
 

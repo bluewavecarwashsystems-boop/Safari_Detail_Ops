@@ -91,6 +91,39 @@ export interface UserAudit {
 }
 
 /**
+ * Phase 3: Post-completion issue tracking
+ */
+export interface PostCompletionIssue {
+  isOpen: boolean;
+  type: 'QC_MISS' | 'CUSTOMER_COMPLAINT' | 'DAMAGE' | 'REDO' | 'OTHER';
+  notes?: string;
+  openedAt: string;
+  openedBy: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
+  resolvedAt?: string;
+  resolvedBy?: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
+}
+
+/**
+ * Phase 3: Status history entry
+ */
+export interface StatusHistoryEntry {
+  from: WorkStatus;
+  to: WorkStatus;
+  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE';
+  changedAt: string;
+  changedBy: UserAudit;
+  reason?: string;
+}
+
+/**
  * Phase 3: Checklist item
  */
 export interface ChecklistItem {
@@ -159,6 +192,8 @@ export interface Job {
     qc?: ChecklistItem[];
   };
   customerCached?: CustomerCached;
+  postCompletionIssue?: PostCompletionIssue;
+  statusHistory?: StatusHistoryEntry[];
 }
 
 /**
@@ -298,6 +333,11 @@ export interface UpdateJobRequest {
   };
   notes?: string;
   vehicleInfo?: Job['vehicleInfo'];
+  openPostCompletionIssue?: {
+    type: PostCompletionIssue['type'];
+    notes?: string;
+  };
+  resolvePostCompletionIssue?: boolean;
 }
 
 /**

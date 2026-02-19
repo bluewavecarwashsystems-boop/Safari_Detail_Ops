@@ -235,7 +235,7 @@ export async function deleteJobCompletely(jobId: string): Promise<void> {
 /**
  * Phase 3: Update job with audit trail
  * 
- * Supports partial updates for workStatus, checklist, notes, vehicleInfo
+ * Supports partial updates for workStatus, checklist, notes, vehicleInfo, post-completion issues
  */
 export async function updateJobWithAudit(
   jobId: string,
@@ -253,9 +253,68 @@ export async function updateJobWithAudit(
     updatedBy: userAudit,
   };
 
+  const statusHistory = currentJob.statusHistory || [];
+
   // Update work status
   if (updates.workStatus !== undefined) {
     updateData.status = updates.workStatus;
+    
+    // Add status history entry for status change
+    statusHistory.push({
+      from: currentJob.status,
+      to: updates.workStatus,
+      event: 'STATUS_CHANGE',
+      changedAt: new Date().toISOString(),
+      changedBy: userAudit,
+    });
+  }
+
+  // Handle opening post-completion issue
+  if (updates.openPostCompletionIssue) {
+    updateData.postCompletionIssue = {
+      isOpen: true,
+      type: updates.openPostCompletionIssue.type,
+      notes: updates.openPostCompletionIssue.notes,
+      openedAt: new Date().toISOString(),
+      openedBy: {
+        userId: userAudit.userId,
+        name: userAudit.name,
+        role: 'MANAGER' as const,
+      },
+    };
+
+    // Add status history entry for issue opened
+    statusHistory.push({
+      from: currentJob.status,
+      to: currentJob.status,
+      event: 'POST_COMPLETION_ISSUE_OPENED',
+      changedAt: new Date().toISOString(),
+      changedBy: userAudit,
+      reason: updates.openPostCompletionIssue.notes,
+    });
+  }
+
+  // Handle resolving post-completion issue
+  if (updates.resolvePostCompletionIssue && currentJob.postCompletionIssue) {
+    updateData.postCompletionIssue = {
+      ...currentJob.postCompletionIssue,
+      isOpen: false,
+      resolvedAt: new Date().toISOString(),
+      resolvedBy: {
+        userId: userAudit.userId,
+        name: userAudit.name,
+        role: 'MANAGER' as const,
+      },
+    };
+
+    // Add status history entry for issue resolved
+    statusHistory.push({
+      from: currentJob.status,
+      to: currentJob.status,
+      event: 'POST_COMPLETION_ISSUE_RESOLVED',
+      changedAt: new Date().toISOString(),
+      changedBy: userAudit,
+    });
   }
 
   // Update checklist with audit trail
@@ -278,6 +337,11 @@ export async function updateJobWithAudit(
       ...currentJob.vehicleInfo,
       ...updates.vehicleInfo,
     };
+  }
+
+  // Update status history if there are any changes
+  if (statusHistory.length > 0) {
+    updateData.statusHistory = statusHistory;
   }
 
   return dynamodb.updateJob(jobId, updateData);

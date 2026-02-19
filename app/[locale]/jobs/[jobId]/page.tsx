@@ -38,6 +38,19 @@ interface Job {
     email?: string;
     phone?: string;
   };
+  postCompletionIssue?: {
+    isOpen: boolean;
+    type: string;
+    notes?: string;
+    openedAt: string;
+    openedBy: {
+      name: string;
+    };
+    resolvedAt?: string;
+    resolvedBy?: {
+      name: string;
+    };
+  };
 }
 
 export default function JobDetail() {
@@ -55,6 +68,9 @@ export default function JobDetail() {
   const [updating, setUpdating] = useState(false);
   const [showPhotoUploader, setShowPhotoUploader] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  const [showIssueModal, setShowIssueModal] = useState(false);
+  const [issueType, setIssueType] = useState<'QC_MISS' | 'CUSTOMER_COMPLAINT' | 'DAMAGE' | 'REDO' | 'OTHER'>('OTHER');
+  const [issueNotes, setIssueNotes] = useState('');
 
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -111,6 +127,7 @@ export default function JobDetail() {
           },
           photosMeta: apiJob.photosMeta || [],
           customerCached: apiJob.customerCached,
+          postCompletionIssue: apiJob.postCompletionIssue,
         });
       } else {
         throw new Error('Invalid API response');
@@ -229,6 +246,76 @@ export default function JobDetail() {
           [type]: currentChecklist,
         },
       });
+    }
+  };
+
+  const handleOpenIssue = async () => {
+    if (!job || updating) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          openPostCompletionIssue: {
+            type: issueType,
+            notes: issueNotes,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to open issue');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, postCompletionIssue: data.data.job.postCompletionIssue } : null);
+        showToast('Issue reported successfully', 'success');
+        setShowIssueModal(false);
+        setIssueNotes('');
+        setIssueType('OTHER');
+      }
+    } catch (err) {
+      console.error('Failed to open issue:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleResolveIssue = async () => {
+    if (!job || updating) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resolvePostCompletionIssue: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to resolve issue');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, postCompletionIssue: data.data.job.postCompletionIssue } : null);
+        showToast('Issue resolved successfully', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to resolve issue:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -488,6 +575,84 @@ export default function JobDetail() {
           )}
         </section>
 
+        {/* Post-Completion Issue (Only for WORK_COMPLETED jobs) */}
+        {job.workStatus === WorkStatus.WORK_COMPLETED && (
+          <section className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">⚠️ Post-Completion Issue</h2>
+            
+            {!job.postCompletionIssue && (
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Report issues discovered after job completion. This does not change the job status.
+                </p>
+                <button
+                  onClick={() => setShowIssueModal(true)}
+                  className="px-6 py-3 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition"
+                >
+                  Report Issue
+                </button>
+              </div>
+            )}
+
+            {job.postCompletionIssue && (
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg border-2 ${
+                  job.postCompletionIssue.isOpen 
+                    ? 'bg-red-50 border-red-300' 
+                    : 'bg-green-50 border-green-300'
+                }`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">
+                          {job.postCompletionIssue.type.replace(/_/g, ' ')}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          job.postCompletionIssue.isOpen
+                            ? 'bg-red-200 text-red-800'
+                            : 'bg-green-200 text-green-800'
+                        }`}>
+                          {job.postCompletionIssue.isOpen ? 'OPEN' : 'RESOLVED'}
+                        </span>
+                      </div>
+                      {job.postCompletionIssue.notes && (
+                        <p className="text-sm text-gray-700 mt-2">{job.postCompletionIssue.notes}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>
+                      Opened by {job.postCompletionIssue.openedBy.name} on{' '}
+                      {new Date(job.postCompletionIssue.openedAt).toLocaleString()}
+                    </div>
+                    {job.postCompletionIssue.resolvedAt && job.postCompletionIssue.resolvedBy && (
+                      <div>
+                        Resolved by {job.postCompletionIssue.resolvedBy.name} on{' '}
+                        {new Date(job.postCompletionIssue.resolvedAt).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {job.postCompletionIssue.isOpen && (
+                  <button
+                    onClick={handleResolveIssue}
+                    disabled={updating}
+                    className={`px-6 py-3 rounded-lg font-medium transition ${
+                      updating
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {updating ? 'Resolving...' : 'Mark Issue Resolved'}
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Payment */}
         <section className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">💳 {t('payment.title')}</h2>
@@ -535,6 +700,74 @@ export default function JobDetail() {
                 className="mt-4 px-6 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Modal */}
+      {showIssueModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowIssueModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Report Post-Completion Issue</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Issue Type
+                </label>
+                <select
+                  value={issueType}
+                  onChange={(e) => setIssueType(e.target.value as 'QC_MISS' | 'CUSTOMER_COMPLAINT' | 'DAMAGE' | 'REDO' | 'OTHER')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="QC_MISS">QC Miss</option>
+                  <option value="CUSTOMER_COMPLAINT">Customer Complaint</option>
+                  <option value="DAMAGE">Damage</option>
+                  <option value="REDO">Redo Required</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  value={issueNotes}
+                  onChange={(e) => setIssueNotes(e.target.value)}
+                  placeholder="Describe the issue..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowIssueModal(false)}
+                disabled={updating}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleOpenIssue}
+                disabled={updating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                  updating
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {updating ? 'Submitting...' : 'Submit Issue'}
               </button>
             </div>
           </div>

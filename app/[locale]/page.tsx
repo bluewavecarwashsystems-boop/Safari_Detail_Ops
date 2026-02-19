@@ -14,6 +14,7 @@ interface JobCard {
   serviceType: string;
   scheduledStart: string;
   workStatus: WorkStatus;
+  hasOpenIssue: boolean;
 }
 
 const mockJobs: JobCard[] = [
@@ -24,6 +25,7 @@ const mockJobs: JobCard[] = [
     serviceType: 'Full Detail',
     scheduledStart: '2026-02-05T09:00:00Z',
     workStatus: WorkStatus.SCHEDULED,
+    hasOpenIssue: false,
   },
   {
     jobId: '2',
@@ -32,6 +34,7 @@ const mockJobs: JobCard[] = [
     serviceType: 'Express Wash',
     scheduledStart: '2026-02-05T10:00:00Z',
     workStatus: WorkStatus.CHECKED_IN,
+    hasOpenIssue: false,
   },
 ];
 
@@ -133,6 +136,7 @@ export default function TodayBoard() {
             serviceType: job.serviceType || 'Detail Service',
             scheduledStart: job.appointmentTime || job.createdAt,
             workStatus: job.status,
+            hasOpenIssue: job.postCompletionIssue?.isOpen || false,
           }));
           setJobs(formattedJobs);
         } else {
@@ -236,13 +240,22 @@ export default function TodayBoard() {
                         return (
                           <div
                             key={job.jobId}
-                            className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                            className={`bg-gray-50 rounded-lg p-3 border ${
+                              job.hasOpenIssue ? 'border-red-400 shadow-sm' : 'border-gray-200'
+                            }`}
                           >
                             <Link
                               href={`/${locale}/jobs/${job.jobId}`}
                               className="block hover:bg-gray-100 rounded transition"
                             >
-                              <div className="font-medium text-gray-900">{job.customerName}</div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-gray-900">{job.customerName}</div>
+                                {job.hasOpenIssue && (
+                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                                    ⚠ Issue Open
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-sm text-gray-600 mt-1">{job.vehicleInfo}</div>
                               <div className="text-xs text-gray-500 mt-2">{job.serviceType}</div>
                               <div className="text-xs text-primary-600 mt-1">

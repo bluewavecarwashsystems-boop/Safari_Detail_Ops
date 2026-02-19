@@ -1,0 +1,25 @@
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": [
+        "*"
+      ],
+      "AllowedMethods": [
+        "GET",
+        "PUT",
+        "POST",
+        "DELETE"
+      ],
+      "AllowedOrigins": [
+        "https://ops-qa.thesafaricarwash.com",
+        "https://ops.thesafaricarwash.com",
+        "http://localhost:3000"
+      ],
+      "ExposeHeaders": [
+        "ETag",
+        "x-amz-meta-jobid"
+      ],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}
