@@ -68,14 +68,11 @@ function getDynamoClient(): DynamoDBDocumentClient {
 }
 
 /**
- * Get users table name from environment
+ * Get users table name from config
  */
 function getUsersTableName(): string {
-  const tableName = process.env.DYNAMODB_USERS_TABLE;
-  if (!tableName) {
-    throw new Error('DYNAMODB_USERS_TABLE environment variable is not set');
-  }
-  return tableName;
+  const config = getConfig();
+  return config.aws.dynamodb.usersTable;
 }
 
 /**

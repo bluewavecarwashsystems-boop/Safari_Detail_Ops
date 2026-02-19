@@ -13,6 +13,7 @@ export interface Config {
     region: string;
     dynamodb: {
       jobsTable: string;
+      usersTable: string;
     };
     s3: {
       photosBucket: string;
@@ -76,6 +77,7 @@ export function getConfig(): Config {
       region: process.env.AWS_REGION || 'us-east-1',
       dynamodb: {
         jobsTable: getResourceName(process.env.DYNAMODB_JOBS_TABLE || 'jobs'),
+        usersTable: getResourceName(process.env.DYNAMODB_USERS_TABLE || 'users'),
       },
       s3: {
         photosBucket: getResourceName(process.env.S3_PHOTOS_BUCKET || 'photos'),
