@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "test:webhook": "ts-node test/webhook-test.ts",
-    "test:integration": "ts-node test/integration-test.ts"
+    "test:integration": "ts-node test/integration-test.ts",
+    "seed-admin": "ts-node scripts/seed-admin-user.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.679.0",
@@ -24,6 +25,7 @@
     "clsx": "^2.1.0",
     "date-fns": "^3.0.6",
     "dotenv": "^16.4.0",
+    "jose": "^5.2.0",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
