@@ -7,7 +7,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from './lib/auth/session';
-import { locales, defaultLocale, isValidLocale, type Locale } from './i18n';
+
+// Inline locale configuration to avoid import issues in Edge Runtime
+const locales = ['en', 'es', 'ar'] as const;
+type Locale = (typeof locales)[number];
+const defaultLocale: Locale = 'en';
+
+function isValidLocale(locale: string): locale is Locale {
+  return locales.includes(locale as Locale);
+}
 
 const LOCALE_COOKIE_NAME = 'safari_locale';
 
