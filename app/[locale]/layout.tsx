@@ -8,8 +8,15 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/i18n';
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'Safari Detail Ops',
+  description: 'Internal operations app for Safari Detailing - Franklin',
+  manifest: '/manifest.json',
+};
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
