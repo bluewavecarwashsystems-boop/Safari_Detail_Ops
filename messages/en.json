@@ -1,0 +1,114 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "noData": "No data available"
+  },
+  "nav": {
+    "calendar": "Calendar",
+    "settings": "Settings",
+    "todayBoard": "Today Board"
+  },
+  "today": {
+    "title": "Safari Detail Ops",
+    "boardTitle": "Today's Board",
+    "loadingJobs": "Loading jobs...",
+    "noJobs": "No jobs",
+    "apiError": "API Error: {error} (showing mock data)",
+    "status": {
+      "scheduled": "Scheduled",
+      "checkedIn": "Checked In",
+      "inProgress": "In Progress",
+      "qcReady": "QC Ready",
+      "workCompleted": "Work Done"
+    }
+  },
+  "job": {
+    "title": "Job Details",
+    "loadingDetails": "Loading job details...",
+    "failedToLoad": "Failed to Load Job",
+    "notFound": "Job not found",
+    "goBack": "Go Back",
+    "customer": {
+      "title": "Customer",
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "notProvided": "Not provided"
+    },
+    "vehicle": {
+      "title": "Vehicle",
+      "makeModel": "Make/Model",
+      "licensePlate": "License Plate",
+      "color": "Color",
+      "service": "Service",
+      "pending": "Pending"
+    },
+    "status": {
+      "title": "Status",
+      "current": "Current Status"
+    },
+    "actions": {
+      "checkIn": "Check In",
+      "startWork": "Start Work",
+      "requestQC": "Request QC",
+      "completeWork": "Complete Work"
+    },
+    "checklist": {
+      "title": "Checklist",
+      "vacuumInterior": "Vacuum interior",
+      "cleanWindows": "Clean windows",
+      "washExterior": "Wash exterior",
+      "dryDetail": "Dry & detail"
+    },
+    "photos": {
+      "title": "Photos",
+      "uploadedCount": "{count} of {required} required photos uploaded",
+      "upload": "Upload Photo"
+    },
+    "payment": {
+      "title": "Payment",
+      "amount": "Amount",
+      "status": "Status"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "loadingProfile": "Loading...",
+    "userProfile": {
+      "title": "User Profile",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "userId": "User ID"
+    },
+    "language": {
+      "title": "Language Preferences",
+      "description": "Select your preferred language for the interface",
+      "english": "English",
+      "spanish": "Español",
+      "arabic": "العربية",
+      "selected": "Selected",
+      "changeSuccess": "Language changed successfully"
+    },
+    "account": {
+      "title": "Account Actions",
+      "logout": "Logout",
+      "loggingOut": "Logging out..."
+    }
+  },
+  "login": {
+    "title": "Safari Detail Ops",
+    "subtitle": "Sign in to your account",
+    "email": "Email Address",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "contactManager": "Contact your manager if you need access",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••"
+  }
+}

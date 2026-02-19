@@ -1,0 +1,11 @@
+{
+  "pk": {"S": "USER#a2af9a0e-7a98-49de-b7a7-8ebfd0ffe82c"},
+  "userId": {"S": "a2af9a0e-7a98-49de-b7a7-8ebfd0ffe82c"},
+  "email": {"S": "safariwashes@gmail.com"},
+  "name": {"S": "Admin User"},
+  "role": {"S": "MANAGER"},
+  "passwordHash": {"S": "6198af02764eec9db2e786be59f649b3:3e6b73342634eb96279ba81ad35389acc9258442952531d63693f40ec7080de3d10d2dce6f828835744aff84293514d46fd5b5426ff6be5cefc1fcc1108a4707"},
+  "isActive": {"BOOL": true},
+  "createdAt": {"S": "2026-02-19T12:21:00.000Z"},
+  "updatedAt": {"S": "2026-02-19T12:21:00.000Z"}
+}

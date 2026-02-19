@@ -1,0 +1,114 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "noData": "لا توجد بيانات متاحة"
+  },
+  "nav": {
+    "calendar": "التقويم",
+    "settings": "الإعدادات",
+    "todayBoard": "لوحة اليوم"
+  },
+  "today": {
+    "title": "Safari Detail Ops",
+    "boardTitle": "لوحة اليوم",
+    "loadingJobs": "جاري تحميل الأعمال...",
+    "noJobs": "لا توجد أعمال",
+    "apiError": "خطأ في API: {error} (عرض بيانات تجريبية)",
+    "status": {
+      "scheduled": "مجدول",
+      "checkedIn": "تم التسجيل",
+      "inProgress": "قيد التنفيذ",
+      "qcReady": "جاهز للفحص",
+      "workCompleted": "العمل منجز"
+    }
+  },
+  "job": {
+    "title": "تفاصيل العمل",
+    "loadingDetails": "جاري تحميل تفاصيل العمل...",
+    "failedToLoad": "فشل تحميل العمل",
+    "notFound": "العمل غير موجود",
+    "goBack": "العودة",
+    "customer": {
+      "title": "العميل",
+      "name": "الاسم",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "notProvided": "غير متوفر"
+    },
+    "vehicle": {
+      "title": "المركبة",
+      "makeModel": "الصنع/الطراز",
+      "licensePlate": "رقم اللوحة",
+      "color": "اللون",
+      "service": "الخدمة",
+      "pending": "معلق"
+    },
+    "status": {
+      "title": "الحالة",
+      "current": "الحالة الحالية"
+    },
+    "actions": {
+      "checkIn": "تسجيل الدخول",
+      "startWork": "بدء العمل",
+      "requestQC": "طلب الفحص",
+      "completeWork": "إكمال العمل"
+    },
+    "checklist": {
+      "title": "قائمة المراجعة",
+      "vacuumInterior": "تنظيف الداخل بالمكنسة",
+      "cleanWindows": "تنظيف النوافذ",
+      "washExterior": "غسل الخارج",
+      "dryDetail": "التجفيف والتفصيل"
+    },
+    "photos": {
+      "title": "الصور",
+      "uploadedCount": "{count} من {required} صورة مطلوبة تم رفعها",
+      "upload": "رفع صورة"
+    },
+    "payment": {
+      "title": "الدفع",
+      "amount": "المبلغ",
+      "status": "الحالة"
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "loadingProfile": "جاري التحميل...",
+    "userProfile": {
+      "title": "ملف المستخدم",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "role": "الدور",
+      "userId": "معرّف المستخدم"
+    },
+    "language": {
+      "title": "تفضيلات اللغة",
+      "description": "اختر اللغة المفضلة لديك للواجهة",
+      "english": "English",
+      "spanish": "Español",
+      "arabic": "العربية",
+      "selected": "محدد",
+      "changeSuccess": "تم تغيير اللغة بنجاح"
+    },
+    "account": {
+      "title": "إجراءات الحساب",
+      "logout": "تسجيل الخروج",
+      "loggingOut": "جاري تسجيل الخروج..."
+    }
+  },
+  "login": {
+    "title": "Safari Detail Ops",
+    "subtitle": "سجّل الدخول إلى حسابك",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "signingIn": "جاري تسجيل الدخول...",
+    "contactManager": "اتصل بالمدير إذا كنت بحاجة إلى الوصول",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••"
+  }
+}

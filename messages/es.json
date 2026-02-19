@@ -1,0 +1,114 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "noData": "No hay datos disponibles"
+  },
+  "nav": {
+    "calendar": "Calendario",
+    "settings": "Configuración",
+    "todayBoard": "Panel de Hoy"
+  },
+  "today": {
+    "title": "Safari Detail Ops",
+    "boardTitle": "Panel de Hoy",
+    "loadingJobs": "Cargando trabajos...",
+    "noJobs": "Sin trabajos",
+    "apiError": "Error de API: {error} (mostrando datos de prueba)",
+    "status": {
+      "scheduled": "Programado",
+      "checkedIn": "Registrado",
+      "inProgress": "En Progreso",
+      "qcReady": "Listo para QC",
+      "workCompleted": "Trabajo Completo"
+    }
+  },
+  "job": {
+    "title": "Detalles del Trabajo",
+    "loadingDetails": "Cargando detalles del trabajo...",
+    "failedToLoad": "Error al Cargar Trabajo",
+    "notFound": "Trabajo no encontrado",
+    "goBack": "Volver",
+    "customer": {
+      "title": "Cliente",
+      "name": "Nombre",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "notProvided": "No proporcionado"
+    },
+    "vehicle": {
+      "title": "Vehículo",
+      "makeModel": "Marca/Modelo",
+      "licensePlate": "Placa",
+      "color": "Color",
+      "service": "Servicio",
+      "pending": "Pendiente"
+    },
+    "status": {
+      "title": "Estado",
+      "current": "Estado Actual"
+    },
+    "actions": {
+      "checkIn": "Registrar Entrada",
+      "startWork": "Iniciar Trabajo",
+      "requestQC": "Solicitar QC",
+      "completeWork": "Completar Trabajo"
+    },
+    "checklist": {
+      "title": "Lista de Verificación",
+      "vacuumInterior": "Aspirar interior",
+      "cleanWindows": "Limpiar ventanas",
+      "washExterior": "Lavar exterior",
+      "dryDetail": "Secar y detallar"
+    },
+    "photos": {
+      "title": "Fotos",
+      "uploadedCount": "{count} de {required} fotos requeridas subidas",
+      "upload": "Subir Foto"
+    },
+    "payment": {
+      "title": "Pago",
+      "amount": "Monto",
+      "status": "Estado"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "loadingProfile": "Cargando...",
+    "userProfile": {
+      "title": "Perfil de Usuario",
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "userId": "ID de Usuario"
+    },
+    "language": {
+      "title": "Preferencias de Idioma",
+      "description": "Seleccione su idioma preferido para la interfaz",
+      "english": "English",
+      "spanish": "Español",
+      "arabic": "العربية",
+      "selected": "Seleccionado",
+      "changeSuccess": "Idioma cambiado exitosamente"
+    },
+    "account": {
+      "title": "Acciones de Cuenta",
+      "logout": "Cerrar Sesión",
+      "loggingOut": "Cerrando sesión..."
+    }
+  },
+  "login": {
+    "title": "Safari Detail Ops",
+    "subtitle": "Inicia sesión en tu cuenta",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "signIn": "Iniciar Sesión",
+    "signingIn": "Iniciando sesión...",
+    "contactManager": "Contacta a tu gerente si necesitas acceso",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "••••••••"
+  }
+}
