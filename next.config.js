@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 
-const withNextIntl = require('next-intl/plugin')(
-  // Specify the path to our i18n request configuration
-  './i18n/request.ts'
-);
+const withNextIntl = require('next-intl/plugin')();
 
 const nextConfig = {
   reactStrictMode: true,
