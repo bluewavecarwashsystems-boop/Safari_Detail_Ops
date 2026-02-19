@@ -116,6 +116,74 @@ export async function middleware(request: NextRequest) {
   // Extract locale from pathname
   const { locale, pathnameWithoutLocale } = getLocaleFromPathname(pathname);
 
+  // Handle API routes: strip locale prefix and rewrite to root /api path
+  if (pathnameWithoutLocale.startsWith('/api/')) {
+    // API routes should always be accessed without locale prefix
+    // Rewrite the URL to remove the locale segment
+    const apiUrl = new URL(pathnameWithoutLocale, request.url);
+    apiUrl.search = request.nextUrl.search; // Preserve query params
+    
+    // For public API routes, allow through
+    if (isPublicPath(pathnameWithoutLocale)) {
+      return NextResponse.rewrite(apiUrl);
+    }
+    
+    // For protected API routes, verify auth but still rewrite
+    const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+        { status: 401 }
+      );
+    }
+    
+    try {
+      const session = await verifySessionToken(token);
+      if (!session) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Invalid or expired session',
+            },
+          },
+          { status: 401 }
+        );
+      }
+      
+      // Add user info to headers and rewrite
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-user-id', session.sub);
+      requestHeaders.set('x-user-role', session.role);
+      requestHeaders.set('x-user-email', session.email);
+      
+      return NextResponse.rewrite(apiUrl, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    } catch (error) {
+      console.error('API auth error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'AUTH_ERROR',
+            message: 'Authentication verification failed',
+          },
+        },
+        { status: 500 }
+      );
+    }
+  }
+
   // If no locale in path, redirect to preferred locale
   if (!locale) {
     const preferredLocale = getPreferredLocale(request);
