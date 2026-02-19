@@ -72,7 +72,9 @@ function getDynamoClient(): DynamoDBDocumentClient {
  */
 function getUsersTableName(): string {
   const config = getConfig();
-  return config.aws.dynamodb.usersTable;
+  const tableName = config.aws.dynamodb.usersTable;
+  console.log('[user-service] Using users table:', tableName, 'Region:', config.aws.region, 'Env:', config.env);
+  return tableName;
 }
 
 /**

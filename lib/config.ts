@@ -57,11 +57,14 @@ function getResourceName(resourceName: string): string {
   
   // If resource name already starts with the prefix, return as-is
   if (resourceName.startsWith('safari-detail-ops-')) {
+    console.log(`[config] Resource '${resourceName}' already prefixed, returning as-is`);
     return resourceName;
   }
   
   // Otherwise, add the prefix
-  return `${prefix}${resourceName}`;
+  const result = `${prefix}${resourceName}`;
+  console.log(`[config] Building resource name: '${resourceName}' + env '${env}' = '${result}'`);
+  return result;
 }
 
 /**
