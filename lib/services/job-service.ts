@@ -302,13 +302,11 @@ export async function generatePresignedUploadUrls(
   const uploads = await Promise.all(
     files.map(async (file) => {
       const photoId = uuidv4();
-      const sanitizedFilename = file.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const s3Key = `jobs/${jobId}/${photoId}-${sanitizedFilename}`;
       
-      // Generate presigned PUT URL (5 minutes expiry)
-      const { url: putUrl } = await s3.generateUploadUrl(jobId, sanitizedFilename, file.contentType, 300);
+      // Generate presigned PUT URL (5 minutes expiry) - this returns the actual S3 key
+      const { url: putUrl, key: s3Key } = await s3.generateUploadUrl(jobId, file.filename, file.contentType, 300);
       
-      // Build public URL
+      // Build public URL using the actual S3 key
       const publicUrl = `https://${config.aws.s3.photosBucket}.s3.${config.aws.region}.amazonaws.com/${s3Key}`;
       
       return {
