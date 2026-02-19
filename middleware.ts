@@ -1,6 +1,7 @@
 /**
  * Next.js Middleware for i18n, authentication and route protection
  * Runs on Vercel Edge Runtime
+ * Last deployed: 2026-02-19
  */
 
 import { NextResponse } from 'next/server';
