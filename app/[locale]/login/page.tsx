@@ -173,14 +173,12 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  const tCommon = useTranslations('common');
-  
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
         <div className="text-white text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
-          <p>{tCommon('loading')}</p>
+          <p>Loading...</p>
         </div>
       </div>
     }>
