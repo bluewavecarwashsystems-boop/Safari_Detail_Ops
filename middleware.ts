@@ -32,14 +32,19 @@ const PUBLIC_FILE_PATTERNS = [
  * Check if a path is public (doesn't require auth)
  */
 function isPublicPath(pathname: string): boolean {
-  // Check exact matches
-  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
-    return true;
-  }
-
-  // Check file patterns
-  if (PUBLIC_FILE_PATTERNS.some((pattern) => pattern.test(pathname))) {
-    return true;
+  // Check exact matches or startsWith for API routes
+  for (const route of PUBLIC_ROUTES) {
+    if (route.startsWith('/api/')) {
+      // For API routes, check if pathname starts with the route
+      if (pathname.startsWith(route)) {
+        return true;
+      }
+    } else {
+      // For page routes, check exact match
+      if (pathname === route || pathname === route + '/') {
+        return true;
+      }
+    }
   }
 
   return false;
@@ -94,8 +99,8 @@ function getPreferredLocale(request: NextRequest): Locale {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes and static files (before locale check)
-  if (isPublicPath(pathname)) {
+  // Allow static files to pass through
+  if (PUBLIC_FILE_PATTERNS.some((pattern) => pattern.test(pathname))) {
     return NextResponse.next();
   }
 

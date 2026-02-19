@@ -34,8 +34,8 @@ export default async function LocaleLayout({
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
   return (
-    <html lang={locale} dir={dir}>
-      <body className={inter.className}>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen bg-gray-50">
             {children}

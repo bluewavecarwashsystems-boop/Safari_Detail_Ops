@@ -1,11 +1,6 @@
 /**
- * Root Layout - Redirects to locale-specific layout
- * This is a minimal wrapper that ensures all routes use locale prefixes
- */
-
-/**
  * Root Layout
- * This is the base layout - locale-specific layouts extend this
+ * Minimal wrapper - locale-specific layouts provide HTML structure
  */
 
 import './globals.css';
