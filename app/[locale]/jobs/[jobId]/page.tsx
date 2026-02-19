@@ -439,32 +439,62 @@ export default function JobDetail() {
                 ✅ {t('actions.checkIn')}
               </button>
             )}
+            
             {job.workStatus === WorkStatus.CHECKED_IN && (
-              <button
-                onClick={() => handleStatusChange(WorkStatus.IN_PROGRESS)}
-                disabled={updating}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                🔧 {t('actions.startWork')}
-              </button>
+              <>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.SCHEDULED)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                >
+                  ← Back to Scheduled
+                </button>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.IN_PROGRESS)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  🔧 {t('actions.startWork')}
+                </button>
+              </>
             )}
+            
             {job.workStatus === WorkStatus.IN_PROGRESS && (
-              <button
-                onClick={() => handleStatusChange(WorkStatus.QC_READY)}
-                disabled={updating}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
-              >
-                🔍 {t('actions.requestQC')}
-              </button>
+              <>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.CHECKED_IN)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                >
+                  ← Back to Checked In
+                </button>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.QC_READY)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
+                >
+                  🔍 {t('actions.requestQC')}
+                </button>
+              </>
             )}
+            
             {job.workStatus === WorkStatus.QC_READY && (
-              <button
-                onClick={() => handleStatusChange(WorkStatus.WORK_COMPLETED)}
-                disabled={updating}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
-              >
-                ✨ {t('actions.completeWork')}
-              </button>
+              <>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.IN_PROGRESS)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                >
+                  ← Back to In Progress
+                </button>
+                <button
+                  onClick={() => handleStatusChange(WorkStatus.WORK_COMPLETED)}
+                  disabled={updating}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
+                >
+                  ✨ {t('actions.completeWork')}
+                </button>
+              </>
             )}
           </div>
         </section>
