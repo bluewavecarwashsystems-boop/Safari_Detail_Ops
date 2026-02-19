@@ -4,13 +4,23 @@
  */
 
 import { Inter } from 'next/font/google';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/i18n';
+import { I18nProvider } from '@/lib/i18n/provider';
 import type { Metadata } from 'next';
 
+// Import all messages statically for Edge Runtime compatibility
+import enMessages from '@/messages/en.json';
+import esMessages from '@/messages/es.json';
+import arMessages from '@/messages/ar.json';
+
 const inter = Inter({ subsets: ['latin'] });
+
+const messages = {
+  en: enMessages,
+  es: esMessages,
+  ar: arMessages,
+};
 
 export const metadata: Metadata = {
   title: 'Safari Detail Ops',
@@ -34,20 +44,17 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  // Get messages for the locale
-  const messages = await getMessages();
-
   // Determine text direction for RTL languages
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <NextIntlClientProvider messages={messages}>
+        <I18nProvider locale={locale} messages={messages[locale as Locale]}>
           <div className="min-h-screen bg-gray-50">
             {children}
           </div>
-        </NextIntlClientProvider>
+        </I18nProvider>
       </body>
     </html>
   );

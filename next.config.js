@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-const withNextIntl = require('next-intl/plugin')();
-
 const nextConfig = {
   reactStrictMode: true,
   
@@ -23,4 +21,4 @@ const nextConfig = {
   // Future: Add PWA manifest and service worker config
 }
 
-module.exports = withNextIntl(nextConfig)
+module.exports = nextConfig

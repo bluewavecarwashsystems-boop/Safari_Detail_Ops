@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/lib/i18n/provider';
 import type { UserRole } from '@/lib/types';
 import { locales, localeNames, localeFlags, type Locale } from '@/i18n';
 

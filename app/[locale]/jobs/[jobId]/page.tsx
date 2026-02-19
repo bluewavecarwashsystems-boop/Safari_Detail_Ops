@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/lib/i18n/provider';
 import { WorkStatus, PaymentStatus } from '@/lib/types';
 import type { Locale } from '@/i18n';
 

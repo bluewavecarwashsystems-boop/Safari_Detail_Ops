@@ -7,7 +7,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
 
 function LoginForm() {
