@@ -28,8 +28,11 @@ export interface SessionPayload {
  */
 function getSecretKey(): Uint8Array {
   const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('AUTH_SECRET must be set and at least 32 characters long');
+  if (!secret) {
+    throw new Error('AUTH_SECRET environment variable is not set');
+  }
+  if (secret.length < 32) {
+    throw new Error('AUTH_SECRET must be at least 32 characters long');
   }
   return new TextEncoder().encode(secret);
 }

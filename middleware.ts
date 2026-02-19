@@ -127,26 +127,33 @@ export async function middleware(request: NextRequest) {
     return handleUnauthorized(request, locale, pathnameWithoutLocale);
   }
 
-  // Verify session token
-  const session = await verifySessionToken(token);
+  // Verify session token with error handling
+  try {
+    const session = await verifySessionToken(token);
 
-  if (!session) {
-    // Invalid or expired token
+    if (!session) {
+      // Invalid or expired token
+      return handleUnauthorized(request, locale, pathnameWithoutLocale);
+    }
+
+    // Session is valid, allow request to proceed
+    // Add user info to request headers for API routes
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', session.sub);
+    requestHeaders.set('x-user-role', session.role);
+    requestHeaders.set('x-user-email', session.email);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } catch (error) {
+    // If session verification fails due to missing env vars or other errors,
+    // treat as unauthorized
+    console.error('Middleware session verification error:', error);
     return handleUnauthorized(request, locale, pathnameWithoutLocale);
   }
-
-  // Session is valid, allow request to proceed
-  // Add user info to request headers for API routes
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-user-id', session.sub);
-  requestHeaders.set('x-user-role', session.role);
-  requestHeaders.set('x-user-email', session.email);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
 }
 
 /**
