@@ -4,11 +4,18 @@
  */
 
 /**
- * Root Layout - Redirects to locale-based routes
- * The actual app layout is in /app/[locale]/layout.tsx
+ * Root Layout
+ * This is the base layout - locale-specific layouts extend this
  */
 
 import './globals.css';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Safari Detail Ops',
+  description: 'Internal operations app for Safari Detailing - Franklin',
+  manifest: '/manifest.json',
+};
 
 export default function RootLayout({
   children,
