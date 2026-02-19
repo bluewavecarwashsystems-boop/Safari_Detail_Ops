@@ -73,7 +73,19 @@ export async function verifySessionToken(
       algorithms: ['HS256'],
     });
 
-    return payload as SessionPayload;
+    // Validate payload has required fields
+    if (
+      !payload.sub ||
+      typeof payload.email !== 'string' ||
+      typeof payload.name !== 'string' ||
+      typeof payload.role !== 'string' ||
+      typeof payload.iat !== 'number' ||
+      typeof payload.exp !== 'number'
+    ) {
+      return null;
+    }
+
+    return payload as unknown as SessionPayload;
   } catch (error) {
     // Token is invalid or expired
     return null;
