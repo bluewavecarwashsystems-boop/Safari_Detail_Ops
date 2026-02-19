@@ -17,9 +17,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  context: { params: Promise<{ jobId: string }> | { jobId: string } }
 ): Promise<NextResponse> {
   try {
+    // Await params in case it's a Promise (Next.js 15+)
+    const params = await Promise.resolve(context.params);
     const jobId = params.jobId;
 
     if (!jobId) {
@@ -89,9 +91,11 @@ export async function GET(
 export const PATCH = requireAuth(async (
   request: NextRequest,
   session,
-  { params }: { params: { jobId: string } }
+  context: { params: Promise<{ jobId: string }> | { jobId: string } }
 ): Promise<NextResponse> => {
   try {
+    // Await params in case it's a Promise (Next.js 15+)
+    const params = await Promise.resolve(context.params);
     const jobId = params.jobId;
 
     if (!jobId) {
