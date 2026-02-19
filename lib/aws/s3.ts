@@ -21,7 +21,7 @@ let s3Client: S3Client | null = null;
 /**
  * Get or create S3 Client
  */
-function getS3Client(): S3Client {
+export function getS3Client(): S3Client {
   if (!s3Client) {
     const config = getConfig();
     

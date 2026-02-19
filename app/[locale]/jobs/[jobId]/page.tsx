@@ -27,12 +27,26 @@ interface Job {
   payment?: {
     status: PaymentStatus;
     amountCents?: number;
+    paidAt?: string;
+    paidBy?: {
+      name: string;
+    };
+    unpaidReason?: string;
+    unpaidNote?: string;
   };
   checklist?: {
     tech?: ChecklistItem[];
     qc?: ChecklistItem[];
   };
   photosMeta?: Array<any>;
+  receiptPhotos?: Array<{
+    photoId: string;
+    publicUrl: string;
+    uploadedAt: string;
+    uploadedBy: {
+      name: string;
+    };
+  }>;
   customerCached?: {
     name?: string;
     email?: string;
@@ -71,6 +85,16 @@ export default function JobDetail() {
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [issueType, setIssueType] = useState<'QC_MISS' | 'CUSTOMER_COMPLAINT' | 'DAMAGE' | 'REDO' | 'OTHER'>('OTHER');
   const [issueNotes, setIssueNotes] = useState('');
+
+  // Payment toggle state
+  const [showReceiptUploadModal, setShowReceiptUploadModal] = useState(false);
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [unpaidReason, setUnpaidReason] = useState<string>('Refunded');
+  const [unpaidNote, setUnpaidNote] = useState('');
+  const [receiptFiles, setReceiptFiles] = useState<File[]>([]);
+  const [uploadingReceipts, setUploadingReceipts] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('TECH'); // Will be fetched from /api/auth/me
 
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -117,7 +141,7 @@ export default function JobDetail() {
           appointmentTime: apiJob.appointmentTime,
           workStatus: (apiJob.status?.toUpperCase() as WorkStatus) || WorkStatus.SCHEDULED,
           status: apiJob.status,
-          payment: {
+          payment: apiJob.payment || {
             status: PaymentStatus.UNPAID,
             amountCents: 0,
           },
@@ -126,6 +150,7 @@ export default function JobDetail() {
             qc: apiJob.checklist?.qc || defaultQcChecklist,
           },
           photosMeta: apiJob.photosMeta || [],
+          receiptPhotos: apiJob.receiptPhotos || [],
           customerCached: apiJob.customerCached,
           postCompletionIssue: apiJob.postCompletionIssue,
         });
@@ -143,6 +168,24 @@ export default function JobDetail() {
   useEffect(() => {
     fetchJob();
   }, [jobId]);
+
+  // Fetch current user role
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.role) {
+            setCurrentUserRole(data.data.role);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const refreshJob = async () => {
     try {
@@ -313,6 +356,174 @@ export default function JobDetail() {
       }
     } catch (err) {
       console.error('Failed to resolve issue:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Payment toggle handlers
+  const handlePaymentToggle = () => {
+    if (!job || currentUserRole !== 'MANAGER') return;
+
+    const currentStatus = job.payment?.status || PaymentStatus.UNPAID;
+
+    if (currentStatus === PaymentStatus.UNPAID) {
+      // Toggling to PAID - check for receipts
+      if (!job.receiptPhotos || job.receiptPhotos.length === 0) {
+        // No receipts, show upload modal
+        setShowReceiptUploadModal(true);
+      } else {
+        // Receipts exist, mark as paid directly
+        handleMarkPaid();
+      }
+    } else {
+      // Toggling to UNPAID - show reason modal
+      setShowUnpaidModal(true);
+    }
+  };
+
+  const handleReceiptUpload = async () => {
+    if (!receiptFiles.length || uploadingReceipts) return;
+
+    setUploadingReceipts(true);
+    try {
+      // Step 1: Get presigned URLs
+      const presignResponse = await fetch(`/api/jobs/${jobId}/receipts/presign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: receiptFiles.map(file => ({
+            filename: file.name,
+            contentType: file.type,
+          })),
+        }),
+      });
+
+      if (!presignResponse.ok) {
+        throw new Error('Failed to get upload URLs');
+      }
+
+      const presignData = await presignResponse.json();
+      const uploads = presignData.data.uploads;
+
+      // Step 2: Upload each file to S3
+      await Promise.all(
+        receiptFiles.map(async (file, index) => {
+          const upload = uploads[index];
+          const uploadResponse = await fetch(upload.putUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type },
+            body: file,
+          });
+          if (!uploadResponse.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+        })
+      );
+
+      // Step 3: Commit uploads to job record
+      const commitResponse = await fetch(`/api/jobs/${jobId}/receipts/commit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photos: uploads.map((upload: any) => ({
+            photoId: upload.photoId,
+            s3Key: upload.s3Key,
+            publicUrl: upload.publicUrl,
+            contentType: upload.contentType,
+          })),
+        }),
+      });
+
+      if (!commitResponse.ok) {
+        throw new Error('Failed to save receipt records');
+      }
+
+      const commitData = await commitResponse.json();
+      
+      // Update job with new receipt photos
+      setJob(prev => prev ? { 
+        ...prev, 
+        receiptPhotos: commitData.data.job.receiptPhotos 
+      } : null);
+
+      showToast('Receipt uploaded successfully', 'success');
+      setReceiptFiles([]);
+    } catch (err) {
+      console.error('Failed to upload receipt:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUploadingReceipts(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!job || updating) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment: { status: PaymentStatus.PAID },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to mark as paid');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, payment: data.data.job.payment } : null);
+        showToast('Payment marked as PAID', 'success');
+        setShowReceiptUploadModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to mark paid:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleMarkUnpaid = async () => {
+    if (!job || updating || !unpaidReason) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment: {
+            status: PaymentStatus.UNPAID,
+            unpaidReason,
+            unpaidNote,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to mark as unpaid');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, payment: data.data.job.payment } : null);
+        showToast('Payment marked as UNPAID', 'success');
+        setShowUnpaidModal(false);
+        setUnpaidNote('');
+        setUnpaidReason('Refunded');
+      }
+    } catch (err) {
+      console.error('Failed to mark unpaid:', err);
       showToast((err as Error).message, 'error');
     } finally {
       setUpdating(false);
@@ -686,23 +897,73 @@ export default function JobDetail() {
         {/* Payment */}
         <section className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">💳 {t('payment.title')}</h2>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-sm text-gray-600">{t('payment.amount')}</div>
               <div className="text-2xl font-bold text-gray-900">
                 ${((job.payment?.amountCents || 0) / 100).toFixed(2)}
               </div>
             </div>
-            <div>
-              <span className={`px-4 py-2 rounded-lg font-medium ${
-                job.payment?.status === PaymentStatus.PAID
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {job.payment?.status || PaymentStatus.UNPAID}
-              </span>
+            <div className="flex items-center gap-3">
+              {currentUserRole === 'MANAGER' ? (
+                <button
+                  onClick={handlePaymentToggle}
+                  disabled={updating}
+                  className={`px-6 py-3 rounded-lg font-medium transition ${
+                    job.payment?.status === PaymentStatus.PAID
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                  } disabled:opacity-50`}
+                >
+                  {job.payment?.status === PaymentStatus.PAID ? '✓ PAID' : 'UNPAID'}
+                </button>
+              ) : (
+                <span className={`px-4 py-2 rounded-lg font-medium ${
+                  job.payment?.status === PaymentStatus.PAID
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {job.payment?.status || PaymentStatus.UNPAID}
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Payment metadata */}
+          {job.payment?.paidAt && job.payment?.paidBy && (
+            <div className="text-xs text-gray-600 mb-3">
+              Marked paid by {job.payment.paidBy.name} on {new Date(job.payment.paidAt).toLocaleString()}
+            </div>
+          )}
+
+          {job.payment?.unpaidReason && (
+            <div className="text-xs text-gray-600 bg-yellow-50 p-3 rounded-lg mb-3">
+              <span className="font-semibold">Unpaid Reason:</span> {job.payment.unpaidReason}
+              {job.payment.unpaidNote && <div className="mt-1">{job.payment.unpaidNote}</div>}
+            </div>
+          )}
+
+          {/* Receipt photos */}
+          {job.receiptPhotos && job.receiptPhotos.length > 0 && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Receipts ({job.receiptPhotos.length})</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {job.receiptPhotos.map((receipt) => (
+                  <div
+                    key={receipt.photoId}
+                    className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedReceipt(receipt)}
+                  >
+                    <img
+                      src={receipt.publicUrl}
+                      alt="Receipt"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       </main>
 
@@ -798,6 +1059,192 @@ export default function JobDetail() {
                 }`}
               >
                 {updating ? 'Submitting...' : 'Submit Issue'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Upload Modal */}
+      {showReceiptUploadModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowReceiptUploadModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Upload Receipt to Mark as Paid</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Receipt Photo(s)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  onChange={(e) => setReceiptFiles(Array.from(e.target.files || []))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                {receiptFiles.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    {receiptFiles.length} file(s) selected
+                  </div>
+                )}
+              </div>
+
+              {job.receiptPhotos && job.receiptPhotos.length > 0 && (
+                <div className="border-t pt-3">
+                  <p className="text-sm text-gray-700 mb-2">
+                    {job.receiptPhotos.length} receipt(s) already uploaded
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowReceiptUploadModal(false);
+                  setReceiptFiles([]);
+                }}
+                disabled={uploadingReceipts || updating}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {receiptFiles.length > 0 && (
+                <button
+                  onClick={async () => {
+                    await handleReceiptUpload();
+                    await handleMarkPaid();
+                  }}
+                  disabled={uploadingReceipts || updating}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                    uploadingReceipts || updating
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {uploadingReceipts ? 'Uploading...' : updating ? 'Marking Paid...' : 'Upload & Mark Paid'}
+                </button>
+              )}
+              {!receiptFiles.length && job.receiptPhotos && job.receiptPhotos.length > 0 && (
+                <button
+                  onClick={handleMarkPaid}
+                  disabled={updating}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                    updating
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {updating ? 'Marking Paid...' : 'Mark Paid'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unpaid Reason Modal */}
+      {showUnpaidModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowUnpaidModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Mark Payment as Unpaid</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={unpaidReason}
+                  onChange={(e) => setUnpaidReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="Refunded">Refunded</option>
+                  <option value="Mistake">Mistake</option>
+                  <option value="Chargeback">Chargeback</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Notes (Optional)
+                </label>
+                <textarea
+                  value={unpaidNote}
+                  onChange={(e) => setUnpaidNote(e.target.value)}
+                  placeholder="Add any additional details..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowUnpaidModal(false);
+                  setUnpaidNote('');
+                  setUnpaidReason('Refunded');
+                }}
+                disabled={updating}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkUnpaid}
+                disabled={updating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                  updating
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                }`}
+              >
+                {updating ? 'Saving...' : 'Mark Unpaid'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {selectedReceipt && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
+          onClick={() => setSelectedReceipt(null)}
+        >
+          <div className="max-w-4xl max-h-full">
+            <img
+              src={selectedReceipt.publicUrl}
+              alt="Receipt"
+              className="max-w-full max-h-screen rounded-lg"
+            />
+            <div className="mt-4 text-white text-center">
+              <div className="text-sm">
+                Uploaded by: {selectedReceipt.uploadedBy.name}
+              </div>
+              <div className="text-xs text-gray-300 mt-1">
+                {new Date(selectedReceipt.uploadedAt).toLocaleString()}
+              </div>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                className="mt-4 px-6 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition"
+              >
+                Close
               </button>
             </div>
           </div>

@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dynamodb from '../aws/dynamodb';
 import * as s3 from '../aws/s3';
 import type { Job, UpdateJobRequest, UserAudit, PhotoMeta, ChecklistItem, CustomerCached } from '../types';
-import { WorkStatus } from '../types';
+import { WorkStatus, PaymentStatus } from '../types';
 import type { ParsedBooking } from '../square/booking-parser';
 import { fetchCustomerWithRetry, isCacheStale, toCustomerCached } from '../square/customers-api';
 
@@ -339,6 +339,57 @@ export async function updateJobWithAudit(
     };
   }
 
+  // Handle payment status updates
+  if (updates.payment) {
+    const now = new Date().toISOString();
+    const currentPayment = currentJob.payment || { status: PaymentStatus.UNPAID };
+
+    if (updates.payment.status === PaymentStatus.PAID) {
+      // Mark as PAID
+      updateData.payment = {
+        ...currentPayment,
+        status: PaymentStatus.PAID,
+        paidAt: now,
+        paidBy: {
+          userId: userAudit.userId,
+          name: userAudit.name,
+          role: 'MANAGER' as const,
+        },
+        // Clear unpaid reason/note when marking as paid
+        unpaidReason: undefined,
+        unpaidNote: undefined,
+      };
+
+      // Add payment history entry
+      statusHistory.push({
+        from: null,
+        to: null,
+        event: 'PAYMENT_MARKED_PAID',
+        changedAt: now,
+        changedBy: userAudit,
+      });
+    } else if (updates.payment.status === PaymentStatus.UNPAID) {
+      // Mark as UNPAID
+      updateData.payment = {
+        ...currentPayment,
+        status: PaymentStatus.UNPAID,
+        unpaidReason: updates.payment.unpaidReason,
+        unpaidNote: updates.payment.unpaidNote,
+        // Keep paidAt/paidBy for history if they exist
+      };
+
+      // Add payment history entry
+      statusHistory.push({
+        from: null,
+        to: null,
+        event: 'PAYMENT_MARKED_UNPAID',
+        changedAt: now,
+        changedBy: userAudit,
+        reason: `${updates.payment.unpaidReason}${updates.payment.unpaidNote ? `: ${updates.payment.unpaidNote}` : ''}`,
+      });
+    }
+  }
+
   // Update status history if there are any changes
   if (statusHistory.length > 0) {
     updateData.statusHistory = statusHistory;
@@ -422,6 +473,105 @@ export async function commitPhotosToJob(
 
   return dynamodb.updateJob(jobId, {
     photosMeta: updatedPhotosMeta,
+    updatedAt: new Date().toISOString(),
+    updatedBy: userAudit,
+  });
+}
+
+/**
+ * Payment toggle: Generate presigned URLs for receipt uploads
+ */
+export async function generatePresignedReceiptUrls(
+  jobId: string,
+  files: Array<{ filename: string; contentType: string }>
+): Promise<Array<{
+  photoId: string;
+  s3Key: string;
+  putUrl: string;
+  publicUrl: string;
+  contentType: string;
+}>> {
+  const config = await import('../config').then(m => m.getConfig());
+  
+  const uploads = await Promise.all(
+    files.map(async (file) => {
+      const photoId = uuidv4();
+      const timestamp = Date.now();
+      const sanitizedFilename = file.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      
+      // Receipt-specific S3 key convention
+      const s3Key = `jobs/${jobId}/receipts/${photoId}-${sanitizedFilename}`;
+      
+      // Generate presigned PUT URL (5 minutes expiry)
+      const client = s3.getS3Client();
+      const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+      
+      const command = new PutObjectCommand({
+        Bucket: config.aws.s3.photosBucket,
+        Key: s3Key,
+        ContentType: file.contentType,
+        Metadata: {
+          jobId,
+          type: 'receipt',
+        },
+      });
+      
+      const putUrl = await getSignedUrl(client, command, { expiresIn: 300 });
+      
+      // Build public URL
+      const publicUrl = `https://${config.aws.s3.photosBucket}.s3.${config.aws.region}.amazonaws.com/${s3Key}`;
+      
+      return {
+        photoId,
+        s3Key,
+        putUrl,
+        publicUrl,
+        contentType: file.contentType,
+      };
+    })
+  );
+
+  return uploads;
+}
+
+/**
+ * Payment toggle: Commit uploaded receipts to job record
+ */
+export async function commitReceiptsToJob(
+  jobId: string,
+  receipts: Array<{
+    photoId: string;
+    s3Key: string;
+    publicUrl: string;
+    contentType: string;
+  }>,
+  userAudit: UserAudit
+): Promise<Job | null> {
+  const currentJob = await dynamodb.getJob(jobId);
+  
+  if (!currentJob) {
+    return null;
+  }
+
+  const newReceipts = receipts.map(receipt => ({
+    photoId: receipt.photoId,
+    s3Key: receipt.s3Key,
+    publicUrl: receipt.publicUrl,
+    contentType: receipt.contentType,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy: {
+      userId: userAudit.userId,
+      name: userAudit.name,
+      role: 'MANAGER' as const,
+    },
+  }));
+
+  const existingReceipts = currentJob.receiptPhotos || [];
+  const updatedReceipts = [...existingReceipts, ...newReceipts];
+
+  return dynamodb.updateJob(jobId, {
+    receiptPhotos: updatedReceipts,
     updatedAt: new Date().toISOString(),
     updatedBy: userAudit,
   });

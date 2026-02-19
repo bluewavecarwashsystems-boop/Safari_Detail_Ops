@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse, UpdateJobRequest } from '@/lib/types';
-import { WorkStatus, UserRole } from '@/lib/types';
+import { WorkStatus, UserRole, PaymentStatus } from '@/lib/types';
 import { getJobWithPhotos } from '@/lib/services/job-service';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { updateJobWithAudit } from '@/lib/services/job-service';
@@ -251,6 +251,54 @@ export const PATCH = requireAuth(async (
             error: {
               code: 'INVALID_ISSUE_TYPE',
               message: `Invalid issue type. Must be one of: ${validTypes.join(', ')}`,
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
+      }
+    }
+
+    // Validate payment status updates
+    if (body.payment) {
+      const userRole = session.role as UserRole;
+      
+      // Only MANAGER can change payment status
+      if (userRole !== UserRole.MANAGER) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only MANAGER can change payment status',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 403 });
+      }
+
+      // If marking as PAID, require at least one receipt photo
+      if (body.payment.status === 'PAID') {
+        if (!currentJob.receiptPhotos || currentJob.receiptPhotos.length === 0) {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'RECEIPT_REQUIRED',
+              message: 'At least one receipt photo is required to mark payment as PAID',
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
+      }
+
+      // If marking as UNPAID, require a reason
+      if (body.payment.status === 'UNPAID') {
+        if (!body.payment.unpaidReason) {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'UNPAID_REASON_REQUIRED',
+              message: 'A reason is required when marking payment as UNPAID',
             },
             timestamp: new Date().toISOString(),
           };

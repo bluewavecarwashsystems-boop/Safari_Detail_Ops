@@ -115,9 +115,9 @@ export interface PostCompletionIssue {
  * Phase 3: Status history entry
  */
 export interface StatusHistoryEntry {
-  from: WorkStatus;
-  to: WorkStatus;
-  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE';
+  from: WorkStatus | null;
+  to: WorkStatus | null;
+  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE' | 'PAYMENT_MARKED_PAID' | 'PAYMENT_MARKED_UNPAID';
   changedAt: string;
   changedBy: UserAudit;
   reason?: string;
@@ -145,6 +145,39 @@ export interface PhotoMeta {
   uploadedAt: string;
   uploadedBy: UserAudit;
   category?: 'before' | 'after' | 'damage' | 'other';
+}
+
+/**
+ * Payment toggle: Receipt photo metadata
+ */
+export interface ReceiptPhoto {
+  photoId: string;
+  s3Key: string;
+  publicUrl: string;
+  contentType: string;
+  uploadedAt: string;
+  uploadedBy: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
+}
+
+/**
+ * Payment toggle: Enhanced payment details
+ */
+export interface Payment {
+  status: PaymentStatus;
+  amountCents?: number;
+  currency?: string;
+  paidAt?: string;
+  paidBy?: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
+  unpaidReason?: string;
+  unpaidNote?: string;
 }
 
 /**
@@ -194,6 +227,9 @@ export interface Job {
   customerCached?: CustomerCached;
   postCompletionIssue?: PostCompletionIssue;
   statusHistory?: StatusHistoryEntry[];
+  // Payment toggle: Payment and receipt photos
+  payment?: Payment;
+  receiptPhotos?: ReceiptPhoto[];
 }
 
 /**
@@ -338,6 +374,11 @@ export interface UpdateJobRequest {
     notes?: string;
   };
   resolvePostCompletionIssue?: boolean;
+  payment?: {
+    status: PaymentStatus;
+    unpaidReason?: string;
+    unpaidNote?: string;
+  };
 }
 
 /**
@@ -372,5 +413,37 @@ export interface CommitPhotosRequest {
     publicUrl: string;
     contentType: string;
     category?: PhotoMeta['category'];
+  }>;
+}
+
+/**
+ * Payment toggle: POST /api/jobs/[jobId]/receipts/presign request/response
+ */
+export interface PresignReceiptRequest {
+  files: Array<{
+    filename: string;
+    contentType: string;
+  }>;
+}
+
+export interface PresignReceiptResponse {
+  uploads: Array<{
+    photoId: string;
+    s3Key: string;
+    putUrl: string;
+    publicUrl: string;
+    contentType: string;
+  }>;
+}
+
+/**
+ * Payment toggle: POST /api/jobs/[jobId]/receipts/commit request
+ */
+export interface CommitReceiptsRequest {
+  photos: Array<{
+    photoId: string;
+    s3Key: string;
+    publicUrl: string;
+    contentType: string;
   }>;
 }
