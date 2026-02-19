@@ -109,8 +109,8 @@ export async function updateJob(
   const client = getDynamoClient();
   const config = getConfig();
   
-  // Remove fields that shouldn't be updated
-  const { jobId: _, createdAt, ...allowedUpdates } = updates as any;
+  // Remove fields that shouldn't be updated (including updatedAt since we add it separately)
+  const { jobId: _, createdAt, updatedAt, ...allowedUpdates } = updates as any;
   
   // Build update expression
   const updateExpressions: string[] = [];
@@ -125,10 +125,10 @@ export async function updateJob(
     expressionAttributeValues[valuePlaceholder] = allowedUpdates[key];
   });
   
-  // Always update the updatedAt timestamp
+  // Always update the updatedAt timestamp (use provided value or generate new one)
   updateExpressions.push('#updatedAt = :updatedAt');
   expressionAttributeNames['#updatedAt'] = 'updatedAt';
-  expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+  expressionAttributeValues[':updatedAt'] = updates.updatedAt || new Date().toISOString();
   
   const result = await client.send(new UpdateCommand({
     TableName: config.aws.dynamodb.jobsTable,
