@@ -14,7 +14,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Safari Detail Ops',
-  description: 'Internal operations app for Safari Detailing - Franklin',
+  description: 'Internal operations app for Safari Detailing - Franklin, TN',
   manifest: '/manifest.json',
 };
 
