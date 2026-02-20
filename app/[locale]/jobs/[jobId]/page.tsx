@@ -176,9 +176,13 @@ export default function JobDetail() {
         const response = await fetch('/api/auth/me');
         if (response.ok) {
           const data = await response.json();
-          if (data.success && data.data?.role) {
-            setCurrentUserRole(data.data.role);
+          console.log('User data:', data); // Debug log
+          if (data.success && data.data?.user?.role) {
+            console.log('Setting role to:', data.data.user.role); // Debug log
+            setCurrentUserRole(data.data.user.role);
           }
+        } else {
+          console.error('Auth response not ok:', response.status);
         }
       } catch (err) {
         console.error('Failed to fetch user:', err);
@@ -364,7 +368,11 @@ export default function JobDetail() {
 
   // Payment toggle handlers
   const handlePaymentToggle = () => {
-    if (!job || currentUserRole !== 'MANAGER') return;
+    console.log('handlePaymentToggle called. currentUserRole:', currentUserRole); // Debug log
+    if (!job || currentUserRole !== 'MANAGER') {
+      console.log('Early return - job:', !!job, 'role:', currentUserRole); // Debug log
+      return;
+    }
 
     const currentStatus = job.payment?.status || PaymentStatus.UNPAID;
 
@@ -905,6 +913,7 @@ export default function JobDetail() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Debug: currentUserRole = {currentUserRole} */}
               {currentUserRole === 'MANAGER' ? (
                 <button
                   onClick={handlePaymentToggle}
