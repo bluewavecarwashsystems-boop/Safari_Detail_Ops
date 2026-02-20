@@ -80,7 +80,7 @@ export const POST = requireAuth(async (
     }
 
     const config = getConfig();
-    const locationId = config.square.locationId;
+    const locationId = config.square.franklinLocationId;
 
     if (!locationId) {
       const response: ApiResponse = {
