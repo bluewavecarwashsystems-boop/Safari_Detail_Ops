@@ -10,6 +10,7 @@ import PhotoUploader from './PhotoUploader';
 
 interface Job {
   jobId: string;
+  bookingId?: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
