@@ -73,6 +73,30 @@
       "title": "Pago",
       "amount": "Monto",
       "status": "Estado"
+    },
+    "noShow": {
+      "badge": "No se presentó",
+      "title": "Gestión de No-presentación",
+      "markButton": "Marcar como No-presentó",
+      "resolveButton": "Resolver No-presentación",
+      "openInSquare": "Abrir en Square",
+      "status": "Estado",
+      "reason": "Razón",
+      "notes": "Notas",
+      "markedBy": "Marcado por",
+      "resolvedBy": "Resuelto por",
+      "reasons": {
+        "NO_ARRIVAL": "Cliente no llegó",
+        "LATE_CANCEL": "Cancelación tardía",
+        "UNREACHABLE": "Cliente no localizable",
+        "OTHER": "Otra razón"
+      },
+      "confirmMark": "Confirmar No-presentación",
+      "confirmResolve": "Confirmar Resolución",
+      "selectReason": "Seleccionar razón",
+      "enterNotes": "Ingresar notas (opcional)",
+      "successMarked": "Trabajo marcado como no-presentación",
+      "successResolved": "No-presentación resuelta"
     }
   },
   "settings": {
@@ -110,5 +134,36 @@
     "contactManager": "Contacta a tu gerente si necesitas acceso",
     "emailPlaceholder": "tu@ejemplo.com",
     "passwordPlaceholder": "••••••••"
+  },
+  "manager": {
+    "phoneBooking": {
+      "title": "Crear Reserva Telefónica",
+      "customerSection": "Información del Cliente",
+      "vehicleSection": "Información del Vehículo (Opcional)",
+      "serviceSection": "Detalles del Servicio",
+      "appointmentSection": "Hora de la Cita",
+      "customerName": "Nombre del Cliente",
+      "customerPhone": "Número de Teléfono",
+      "customerEmail": "Correo (Opcional)",
+      "vehicleMake": "Marca",
+      "vehicleModel": "Modelo",
+      "vehicleYear": "Año",
+      "vehicleColor": "Color",
+      "vehicleNotes": "Notas del Vehículo",
+      "serviceName": "Tipo de Servicio",
+      "serviceDuration": "Duración (minutos)",
+      "serviceAmount": "Monto (opcional)",
+      "appointmentDate": "Fecha",
+      "appointmentTime": "Hora",
+      "bookingNotes": "Notas de la Reserva",
+      "createButton": "Crear Reserva",
+      "creating": "Creando...",
+      "successTitle": "Reserva Creada",
+      "successMessage": "Reserva telefónica creada exitosamente",
+      "viewJob": "Ver Trabajo",
+      "createAnother": "Crear Otra",
+      "errorTitle": "Error en Reserva",
+      "requiredField": "Este campo es requerido"
+    }
   }
 }

@@ -164,6 +164,22 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-role', session.role);
       requestHeaders.set('x-user-email', session.email);
       
+      // Phase 5: Check if accessing manager-only API routes
+      if (pathnameWithoutLocale.startsWith('/api/manager/')) {
+        if (session.role !== 'MANAGER') {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: 'FORBIDDEN',
+                message: 'Manager role required',
+              },
+            },
+            { status: 403 }
+          );
+        }
+      }
+      
       return NextResponse.rewrite(apiUrl, {
         request: {
           headers: requestHeaders,
@@ -219,6 +235,15 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-user-id', session.sub);
     requestHeaders.set('x-user-role', session.role);
     requestHeaders.set('x-user-email', session.email);
+
+    // Phase 5: Check if accessing manager-only routes
+    if (pathnameWithoutLocale.startsWith('/manager/')) {
+      if (session.role !== 'MANAGER') {
+        // Redirect non-managers to home with locale
+        const homeUrl = new URL(`/${locale}`, request.url);
+        return NextResponse.redirect(homeUrl);
+      }
+    }
 
     return NextResponse.next({
       request: {

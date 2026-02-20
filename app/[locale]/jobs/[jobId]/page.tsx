@@ -66,6 +66,23 @@ interface Job {
       name: string;
     };
   };
+  noShow?: {
+    status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
+    reason?: 'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER';
+    notes?: string;
+    updatedAt: string;
+    updatedBy: {
+      userId: string;
+      name: string;
+      role: 'MANAGER';
+    };
+    resolvedAt?: string;
+    resolvedBy?: {
+      userId: string;
+      name: string;
+      role: 'MANAGER';
+    };
+  };
 }
 
 export default function JobDetail() {
@@ -99,6 +116,12 @@ export default function JobDetail() {
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountInput, setAmountInput] = useState('');
   const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
+
+  // Phase 5: No-show state
+  const [showNoShowModal, setShowNoShowModal] = useState(false);
+  const [showNoShowResolveModal, setShowNoShowResolveModal] = useState(false);
+  const [noShowReason, setNoShowReason] = useState<'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER'>('NO_ARRIVAL');
+  const [noShowNotes, setNoShowNotes] = useState('');
 
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {
@@ -664,6 +687,83 @@ export default function JobDetail() {
     }
   };
 
+  // Phase 5: No-show handlers
+  const handleMarkNoShow = async () => {
+    if (!job || updating || !noShowReason) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          noShow: {
+            status: 'NO_SHOW',
+            reason: noShowReason,
+            notes: noShowNotes || undefined,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to mark as no-show');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, noShow: data.data.job.noShow } : null);
+        showToast(t('noShow.successMarked'), 'success');
+        setShowNoShowModal(false);
+        setNoShowNotes('');
+        setNoShowReason('NO_ARRIVAL');
+      }
+    } catch (err) {
+      console.error('Failed to mark no-show:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleResolveNoShow = async () => {
+    if (!job || updating) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          noShow: {
+            status: 'RESOLVED',
+            notes: noShowNotes || undefined,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to resolve no-show');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, noShow: data.data.job.noShow } : null);
+        showToast(t('noShow.successResolved'), 'success');
+        setShowNoShowResolveModal(false);
+        setNoShowNotes('');
+      }
+    } catch (err) {
+      console.error('Failed to resolve no-show:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -1183,6 +1283,107 @@ export default function JobDetail() {
         </div>
       )}
 
+      {/* Phase 5: No-show Section (Manager only) */}
+      {currentUserRole === 'MANAGER' && (
+        <section className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">🚫 {t('noShow.title')}</h2>
+          
+          {(!job.noShow || job.noShow.status === 'NONE') && (
+            <div>
+              <p className="text-sm text-gray-600 mb-4">
+                Mark this appointment as no-show if the customer did not arrive or canceled too late.
+              </p>
+              {(job.workStatus === WorkStatus.SCHEDULED || job.workStatus === WorkStatus.CHECKED_IN || job.workStatus === WorkStatus.IN_PROGRESS) && (
+                <button
+                  onClick={() => setShowNoShowModal(true)}
+                  className="px-6 py-3 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
+                >
+                  {t('noShow.markButton')}
+                </button>
+              )}
+              {(job.workStatus === WorkStatus.QC_READY || job.workStatus === WorkStatus.WORK_COMPLETED) && (
+                <p className="text-sm text-gray-500 italic">
+                  Cannot mark as no-show once work is in QC or completed.
+                </p>
+              )}
+            </div>
+          )}
+
+          {job.noShow && job.noShow.status === 'NO_SHOW' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg border-2 bg-orange-50 border-orange-300">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900">
+                        {t(`noShow.reasons.${job.noShow.reason || 'OTHER'}`)}
+                      </span>
+                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-200 text-orange-800">
+                        NO-SHOW
+                      </span>
+                    </div>
+                    {job.noShow.notes && (
+                      <p className="text-sm text-gray-700 mt-2">{job.noShow.notes}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div>
+                    {t('noShow.markedBy')} {job.noShow.updatedBy.name} on{' '}
+                    {new Date(job.noShow.updatedAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowNoShowResolveModal(true)}
+                  disabled={updating}
+                  className={`px-6 py-3 rounded-lg font-medium transition ${
+                    updating
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {updating ? 'Resolving...' : t('noShow.resolveButton')}
+                </button>
+                {job.bookingId && (
+                  <a
+                    href={`https://squareup.com/dashboard/appointments/bookings/${job.bookingId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                  >
+                    {t('noShow.openInSquare')} →
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {job.noShow && job.noShow.status === 'RESOLVED' && (
+            <div className="p-4 rounded-lg border-2 bg-green-50 border-green-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-gray-900">No-show Resolved</span>
+                <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-200 text-green-800">
+                  RESOLVED
+                </span>
+              </div>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div>
+                  Originally marked: {t(`noShow.reasons.${job.noShow.reason || 'OTHER'}`)}
+                </div>
+                <div>
+                  {t('noShow.resolvedBy')} {job.noShow.resolvedBy?.name} on{' '}
+                  {job.noShow.resolvedAt && new Date(job.noShow.resolvedAt).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Issue Modal */}
       {showIssueModal && (
         <div 
@@ -1432,6 +1633,126 @@ export default function JobDetail() {
                 className="mt-4 px-6 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 5: No-show Mark Modal */}
+      {showNoShowModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowNoShowModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('noShow.confirmMark')}</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('noShow.reason')} *
+                </label>
+                <select
+                  value={noShowReason}
+                  onChange={(e) => setNoShowReason(e.target.value as any)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="NO_ARRIVAL">{t('noShow.reasons.NO_ARRIVAL')}</option>
+                  <option value="LATE_CANCEL">{t('noShow.reasons.LATE_CANCEL')}</option>
+                  <option value="UNREACHABLE">{t('noShow.reasons.UNREACHABLE')}</option>
+                  <option value="OTHER">{t('noShow.reasons.OTHER')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('noShow.notes')}
+                </label>
+                <textarea
+                  value={noShowNotes}
+                  onChange={(e) => setNoShowNotes(e.target.value)}
+                  placeholder={t('noShow.enterNotes')}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNoShowModal(false)}
+                disabled={updating}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                {tCommon('cancel')}
+              </button>
+              <button
+                onClick={handleMarkNoShow}
+                disabled={updating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                  updating
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}
+              >
+                {updating ? 'Marking...' : t('noShow.confirmMark')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 5: No-show Resolve Modal */}
+      {showNoShowResolveModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowNoShowResolveModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('noShow.confirmResolve')}</h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              This will mark the no-show as resolved. You can add optional notes about the resolution.
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('noShow.notes')}
+              </label>
+              <textarea
+                value={noShowNotes}
+                onChange={(e) => setNoShowNotes(e.target.value)}
+                placeholder={t('noShow.enterNotes')}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowNoShowResolveModal(false)}
+                disabled={updating}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                {tCommon('cancel')}
+              </button>
+              <button
+                onClick={handleResolveNoShow}
+                disabled={updating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition ${
+                  updating
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {updating ? 'Resolving...' : t('noShow.confirmResolve')}
               </button>
             </div>
           </div>

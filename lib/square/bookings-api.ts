@@ -271,3 +271,96 @@ export async function retrieveBooking(bookingId: string): Promise<SquareBooking 
     throw error;
   }
 }
+
+/**
+ * Phase 5: Create a new booking in Square
+ * 
+ * @param booking - Booking details
+ * @returns Created booking
+ */
+export async function createBooking(params: {
+  customerId: string;
+  locationId: string;
+  serviceVariationId: string;
+  serviceVariationVersion: number;
+  startAt: string;
+  durationMinutes?: number;
+  customerNote?: string;
+  sellerNote?: string;
+}): Promise<SquareBooking> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    const url = `${baseUrl}/v2/bookings`;
+    
+    const bookingData = {
+      booking: {
+        location_id: params.locationId,
+        customer_id: params.customerId,
+        start_at: params.startAt,
+        appointment_segments: [
+          {
+            service_variation_id: params.serviceVariationId,
+            service_variation_version: params.serviceVariationVersion,
+            duration_minutes: params.durationMinutes || 60,
+          },
+        ],
+        customer_note: params.customerNote,
+        seller_note: params.sellerNote,
+      },
+    };
+    
+    console.log('[SQUARE BOOKINGS API] Creating booking', {
+      customerId: params.customerId,
+      locationId: params.locationId,
+      startAt: params.startAt,
+    });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[SQUARE BOOKINGS API] Create booking failed', {
+        status: response.status,
+        error: errorText,
+      });
+      
+      throw new Error(`Failed to create booking: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors && data.errors.length > 0) {
+      const errorMsg = data.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+    
+    console.log('[SQUARE BOOKINGS API] Booking created', {
+      bookingId: data.booking?.id,
+    });
+    
+    return data.booking as SquareBooking;
+  } catch (error: any) {
+    console.error('[SQUARE BOOKINGS API] Create booking error', {
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}

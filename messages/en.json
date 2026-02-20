@@ -73,6 +73,30 @@
       "title": "Payment",
       "amount": "Amount",
       "status": "Status"
+    },
+    "noShow": {
+      "badge": "No-show",
+      "title": "No-show Management",
+      "markButton": "Mark as No-show",
+      "resolveButton": "Resolve No-show",
+      "openInSquare": "Open in Square",
+      "status": "Status",
+      "reason": "Reason",
+      "notes": "Notes",
+      "markedBy": "Marked by",
+      "resolvedBy": "Resolved by",
+      "reasons": {
+        "NO_ARRIVAL": "Customer did not arrive",
+        "LATE_CANCEL": "Late cancellation",
+        "UNREACHABLE": "Customer unreachable",
+        "OTHER": "Other reason"
+      },
+      "confirmMark": "Confirm No-show",
+      "confirmResolve": "Confirm Resolve",
+      "selectReason": "Select reason",
+      "enterNotes": "Enter notes (optional)",
+      "successMarked": "Job marked as no-show",
+      "successResolved": "No-show resolved"
     }
   },
   "settings": {
@@ -110,5 +134,36 @@
     "contactManager": "Contact your manager if you need access",
     "emailPlaceholder": "you@example.com",
     "passwordPlaceholder": "••••••••"
+  },
+  "manager": {
+    "phoneBooking": {
+      "title": "Create Phone Booking",
+      "customerSection": "Customer Information",
+      "vehicleSection": "Vehicle Information (Optional)",
+      "serviceSection": "Service Details",
+      "appointmentSection": "Appointment Time",
+      "customerName": "Customer Name",
+      "customerPhone": "Phone Number",
+      "customerEmail": "Email (Optional)",
+      "vehicleMake": "Make",
+      "vehicleModel": "Model",
+      "vehicleYear": "Year",
+      "vehicleColor": "Color",
+      "vehicleNotes": "Vehicle Notes",
+      "serviceName": "Service Type",
+      "serviceDuration": "Duration (minutes)",
+      "serviceAmount": "Amount (optional)",
+      "appointmentDate": "Date",
+      "appointmentTime": "Time",
+      "bookingNotes": "Booking Notes",
+      "createButton": "Create Booking",
+      "creating": "Creating...",
+      "successTitle": "Booking Created",
+      "successMessage": "Phone booking created successfully",
+      "viewJob": "View Job",
+      "createAnother": "Create Another",
+      "errorTitle": "Booking Failed",
+      "requiredField": "This field is required"
+    }
   }
 }

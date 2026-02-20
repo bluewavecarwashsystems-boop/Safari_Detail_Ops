@@ -390,6 +390,66 @@ export async function updateJobWithAudit(
     }
   }
 
+  // Phase 5: Handle no-show operations
+  if (updates.noShow) {
+    const now = new Date().toISOString();
+    
+    if (updates.noShow.status === 'NO_SHOW') {
+      // Mark as NO_SHOW
+      updateData.noShow = {
+        status: 'NO_SHOW',
+        reason: updates.noShow.reason,
+        notes: updates.noShow.notes,
+        updatedAt: now,
+        updatedBy: {
+          userId: userAudit.userId,
+          name: userAudit.name,
+          role: 'MANAGER' as const,
+        },
+      };
+
+      // Add audit trail
+      statusHistory.push({
+        from: currentJob.status,
+        to: currentJob.status,
+        event: 'NO_SHOW_MARKED',
+        changedAt: now,
+        changedBy: userAudit,
+        reason: `${updates.noShow.reason}${updates.noShow.notes ? `: ${updates.noShow.notes}` : ''}`,
+      });
+    } else if (updates.noShow.status === 'RESOLVED') {
+      // Resolve NO_SHOW
+      const currentNoShow = currentJob.noShow;
+      if (currentNoShow) {
+        updateData.noShow = {
+          ...currentNoShow,
+          status: 'RESOLVED',
+          resolvedAt: now,
+          resolvedBy: {
+            userId: userAudit.userId,
+            name: userAudit.name,
+            role: 'MANAGER' as const,
+          },
+        };
+
+        // Update notes if provided
+        if (updates.noShow.notes) {
+          updateData.noShow.notes = updates.noShow.notes;
+        }
+
+        // Add audit trail
+        statusHistory.push({
+          from: currentJob.status,
+          to: currentJob.status,
+          event: 'NO_SHOW_RESOLVED',
+          changedAt: now,
+          changedBy: userAudit,
+          reason: updates.noShow.notes,
+        });
+      }
+    }
+  }
+
   // Update status history if there are any changes
   if (statusHistory.length > 0) {
     updateData.statusHistory = statusHistory;

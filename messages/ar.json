@@ -73,6 +73,30 @@
       "title": "الدفع",
       "amount": "المبلغ",
       "status": "الحالة"
+    },
+    "noShow": {
+      "badge": "لم يحضر",
+      "title": "إدارة عدم الحضور",
+      "markButton": "تحديد كعدم حضور",
+      "resolveButton": "حل عدم الحضور",
+      "openInSquare": "فتح في Square",
+      "status": "الحالة",
+      "reason": "السبب",
+      "notes": "ملاحظات",
+      "markedBy": "تم التحديد بواسطة",
+      "resolvedBy": "تم الحل بواسطة",
+      "reasons": {
+        "NO_ARRIVAL": "العميل لم يصل",
+        "LATE_CANCEL": "إلغاء متأخر",
+        "UNREACHABLE": "لا يمكن الوصول للعميل",
+        "OTHER": "سبب آخر"
+      },
+      "confirmMark": "تأكيد عدم الحضور",
+      "confirmResolve": "تأكيد الحل",
+      "selectReason": "اختر السبب",
+      "enterNotes": "أدخل ملاحظات (اختياري)",
+      "successMarked": "تم تحديد العمل كعدم حضور",
+      "successResolved": "تم حل عدم الحضور"
     }
   },
   "settings": {
@@ -109,6 +133,35 @@
     "signingIn": "جاري تسجيل الدخول...",
     "contactManager": "اتصل بالمدير إذا كنت بحاجة إلى الوصول",
     "emailPlaceholder": "you@example.com",
-    "passwordPlaceholder": "••••••••"
-  }
+    "passwordPlaceholder": "••••••••"  },
+  "manager": {
+    "phoneBooking": {
+      "title": "إنشاء حجز هاتفي",
+      "customerSection": "معلومات العميل",
+      "vehicleSection": "معلومات المركبة (اختياري)",
+      "serviceSection": "تفاصيل الخدمة",
+      "appointmentSection": "وقت الموعد",
+      "customerName": "اسم العميل",
+      "customerPhone": "رقم الهاتف",
+      "customerEmail": "البريد الإلكتروني (اختياري)",
+      "vehicleMake": "الصنع",
+      "vehicleModel": "الطراز",
+      "vehicleYear": "السنة",
+      "vehicleColor": "اللون",
+      "vehicleNotes": "ملاحظات المركبة",
+      "serviceName": "نوع الخدمة",
+      "serviceDuration": "المدة (دقائق)",
+      "serviceAmount": "المبلغ (اختياري)",
+      "appointmentDate": "التاريخ",
+      "appointmentTime": "الوقت",
+      "bookingNotes": "ملاحظات الحجز",
+      "createButton": "إنشاء حجز",
+      "creating": "جاري الإنشاء...",
+      "successTitle": "تم إنشاء الحجز",
+      "successMessage": "تم إنشاء الحجز الهاتفي بنجاح",
+      "viewJob": "عرض العمل",
+      "createAnother": "إنشاء آخر",
+      "errorTitle": "فشل الحجز",
+      "requiredField": "هذا الحقل مطلوب"
+    }  }
 }

@@ -117,10 +117,31 @@ export interface PostCompletionIssue {
 export interface StatusHistoryEntry {
   from: WorkStatus | null;
   to: WorkStatus | null;
-  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE' | 'PAYMENT_MARKED_PAID' | 'PAYMENT_MARKED_UNPAID';
+  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE' | 'PAYMENT_MARKED_PAID' | 'PAYMENT_MARKED_UNPAID' | 'NO_SHOW_MARKED' | 'NO_SHOW_RESOLVED';
   changedAt: string;
   changedBy: UserAudit;
   reason?: string;
+}
+
+/**
+ * Phase 5: No-show status (Manager-only)
+ */
+export interface NoShowStatus {
+  status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
+  reason?: 'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER';
+  notes?: string;
+  updatedAt: string;
+  updatedBy: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
+  resolvedAt?: string;
+  resolvedBy?: {
+    userId: string;
+    name: string;
+    role: 'MANAGER';
+  };
 }
 
 /**
@@ -230,6 +251,8 @@ export interface Job {
   // Payment toggle: Payment and receipt photos
   payment?: Payment;
   receiptPhotos?: ReceiptPhoto[];
+  // Phase 5: No-show tracking
+  noShow?: NoShowStatus;
 }
 
 /**
@@ -379,6 +402,11 @@ export interface UpdateJobRequest {
     unpaidReason?: string;
     unpaidNote?: string;
   };
+  noShow?: {
+    status: 'NO_SHOW' | 'RESOLVED';
+    reason?: 'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER';
+    notes?: string;
+  };
 }
 
 /**
@@ -446,4 +474,41 @@ export interface CommitReceiptsRequest {
     publicUrl: string;
     contentType: string;
   }>;
+}
+
+/**
+ * Phase 5: Manager phone booking creation request
+ */
+export interface CreateManagerBookingRequest {
+  customer: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  vehicle?: {
+    make?: string;
+    model?: string;
+    year?: number;
+    color?: string;
+    notes?: string;
+  };
+  service: {
+    serviceName: string;
+    serviceVariationId?: string;
+    durationMinutes: number;
+    amountCents?: number;
+  };
+  appointmentTime: {
+    startAt: string; // ISO timestamp
+  };
+  notes?: string;
+}
+
+/**
+ * Phase 5: Manager phone booking creation response
+ */
+export interface CreateManagerBookingResponse {
+  jobId: string;
+  bookingId: string;
+  job: Job;
 }

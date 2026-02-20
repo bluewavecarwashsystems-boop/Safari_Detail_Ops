@@ -307,6 +307,69 @@ export const PATCH = requireAuth(async (
       }
     }
 
+    // Phase 5: Validate no-show operations
+    if (body.noShow) {
+      const userRole = session.role as UserRole;
+      
+      // Only MANAGER can mark/resolve no-show
+      if (userRole !== UserRole.MANAGER) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only MANAGER can manage no-show status',
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 403 });
+      }
+
+      // Marking as NO_SHOW
+      if (body.noShow.status === 'NO_SHOW') {
+        // Cannot mark NO_SHOW if already QC_READY or WORK_COMPLETED
+        if (currentJob.status === WorkStatus.QC_READY || currentJob.status === WorkStatus.WORK_COMPLETED) {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'INVALID_STATUS_FOR_NO_SHOW',
+              message: 'Cannot mark as no-show when job is in QC_READY or WORK_COMPLETED status',
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
+
+        // Require reason when marking as NO_SHOW
+        if (!body.noShow.reason) {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'NO_SHOW_REASON_REQUIRED',
+              message: 'A reason is required when marking as no-show',
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
+      }
+
+      // Resolving NO_SHOW
+      if (body.noShow.status === 'RESOLVED') {
+        // Can only resolve if currently marked as NO_SHOW
+        if (!currentJob.noShow || currentJob.noShow.status !== 'NO_SHOW') {
+          const response: ApiResponse = {
+            success: false,
+            error: {
+              code: 'NO_OPEN_NO_SHOW',
+              message: 'Can only resolve when job is marked as no-show',
+            },
+            timestamp: new Date().toISOString(),
+          };
+          return NextResponse.json(response, { status: 400 });
+        }
+      }
+    }
+
     // Update job with audit trail
     const updatedJob = await updateJobWithAudit(jobId, body, {
       userId: session.sub,

@@ -15,6 +15,10 @@ interface JobCard {
   scheduledStart: string;
   workStatus: WorkStatus;
   hasOpenIssue: boolean;
+  noShow?: {
+    status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
+    reason?: string;
+  };
 }
 
 const mockJobs: JobCard[] = [
@@ -137,6 +141,7 @@ export default function TodayBoard() {
             scheduledStart: job.appointmentTime || job.createdAt,
             workStatus: job.status,
             hasOpenIssue: job.postCompletionIssue?.isOpen || false,
+            noShow: job.noShow,
           }));
           setJobs(formattedJobs);
         } else {
@@ -241,7 +246,8 @@ export default function TodayBoard() {
                           <div
                             key={job.jobId}
                             className={`bg-gray-50 rounded-lg p-3 border ${
-                              job.hasOpenIssue ? 'border-red-400 shadow-sm' : 'border-gray-200'
+                              job.noShow?.status === 'NO_SHOW' ? 'border-orange-400 shadow-sm' : 
+                              'border-gray-200'
                             }`}
                           >
                             <Link
@@ -250,10 +256,18 @@ export default function TodayBoard() {
                             >
                               <div className="flex items-center justify-between">
                                 <div className="font-medium text-gray-900">{job.customerName}</div>
-                                {job.hasOpenIssue && (
-                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
-                                    ⚠ Issue Open
-                                  </span>
+                                <div className="flex gap-1">
+                                  {job.hasOpenIssue && (
+                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                                      ⚠ Issue Open
+                                    </span>
+                                  )}
+                                  {job.noShow?.status === 'NO_SHOW' && (
+                                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                                      🚫 {t('job.noShow.badge' as any) || 'No-show'}
+                                    </span>
+                                  )}
+                                </div></span>
                                 )}
                               </div>
                               <div className="text-sm text-gray-600 mt-1">{job.vehicleInfo}</div>
