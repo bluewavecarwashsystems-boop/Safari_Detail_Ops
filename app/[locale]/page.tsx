@@ -267,8 +267,7 @@ export default function TodayBoard() {
                                       🚫 {t('job.noShow.badge' as any) || 'No-show'}
                                     </span>
                                   )}
-                                </div></span>
-                                )}
+                                </div>
                               </div>
                               <div className="text-sm text-gray-600 mt-1">{job.vehicleInfo}</div>
                               <div className="text-xs text-gray-500 mt-2">{job.serviceType}</div>
