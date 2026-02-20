@@ -202,7 +202,7 @@ export default function PhoneBookingPage() {
                   type="text"
                   value={formData.customerName}
                   onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.customerName ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.customerName ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                 />
                 {errors.customerName && (
@@ -217,7 +217,7 @@ export default function PhoneBookingPage() {
                   type="tel"
                   value={formData.customerPhone}
                   onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                 />
                 {errors.customerPhone && (
@@ -232,7 +232,7 @@ export default function PhoneBookingPage() {
                   type="email"
                   value={formData.customerEmail}
                   onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                 />
               </div>
@@ -251,7 +251,7 @@ export default function PhoneBookingPage() {
                   type="text"
                   value={formData.vehicleMake}
                   onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                 />
               </div>
@@ -263,7 +263,7 @@ export default function PhoneBookingPage() {
                   type="text"
                   value={formData.vehicleModel}
                   onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                 />
               </div>
@@ -275,7 +275,7 @@ export default function PhoneBookingPage() {
                   type="number"
                   value={formData.vehicleYear}
                   onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                   min="1900"
                   max="2100"
@@ -289,7 +289,7 @@ export default function PhoneBookingPage() {
                   type="text"
                   value={formData.vehicleColor}
                   onChange={(e) => setFormData({ ...formData, vehicleColor: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                 />
               </div>
@@ -300,7 +300,7 @@ export default function PhoneBookingPage() {
                 <textarea
                   value={formData.vehicleNotes}
                   onChange={(e) => setFormData({ ...formData, vehicleNotes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                   rows={2}
                 />
@@ -319,7 +319,7 @@ export default function PhoneBookingPage() {
                 <select
                   value={formData.serviceName}
                   onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.serviceName ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.serviceName ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                 >
                   <option value="Full Detail">Full Detail</option>
@@ -340,7 +340,7 @@ export default function PhoneBookingPage() {
                   type="number"
                   value={formData.serviceDuration}
                   onChange={(e) => setFormData({ ...formData, serviceDuration: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.serviceDuration ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.serviceDuration ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                   min="15"
                   step="15"
@@ -357,7 +357,7 @@ export default function PhoneBookingPage() {
                   type="number"
                   value={formData.serviceAmount}
                   onChange={(e) => setFormData({ ...formData, serviceAmount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   disabled={creating}
                   min="0"
                   step="0.01"
@@ -379,7 +379,7 @@ export default function PhoneBookingPage() {
                   type="date"
                   value={formData.appointmentDate}
                   onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.appointmentDate ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.appointmentDate ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                 />
                 {errors.appointmentDate && (
@@ -394,7 +394,7 @@ export default function PhoneBookingPage() {
                   type="time"
                   value={formData.appointmentTime}
                   onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg ${errors.appointmentTime ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.appointmentTime ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
                 />
                 {errors.appointmentTime && (
@@ -412,7 +412,7 @@ export default function PhoneBookingPage() {
             <textarea
               value={formData.bookingNotes}
               onChange={(e) => setFormData({ ...formData, bookingNotes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
               disabled={creating}
               rows={3}
             />
