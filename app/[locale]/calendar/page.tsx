@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
+import { usePolling } from '@/lib/hooks/usePolling';
 import type { Locale } from '@/i18n';
 
 interface Job {
@@ -26,39 +27,45 @@ export default function CalendarPage() {
   const params = useParams();
   const locale = params.locale as Locale;
 
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  useEffect(() => {
-    async function fetchJobs() {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/jobs');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch jobs: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data?.jobs) {
-          setJobs(data.data.jobs);
-        }
-      } catch (err) {
-        console.error('Failed to fetch jobs:', err);
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
+  // Fetch jobs with polling (every 20 seconds)
+  const fetchJobs = useCallback(async (): Promise<Job[]> => {
+    const response = await fetch('/api/jobs');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch jobs: ${response.status}`);
     }
-
-    fetchJobs();
+    
+    const data = await response.json();
+    
+    if (data.success && data.data?.jobs) {
+      return data.data.jobs;
+    }
+    
+    return [];
   }, []);
 
+  const { data: jobs, loading, error, lastUpdatedAt, refresh } = usePolling(
+    fetchJobs,
+    20000, // Poll every 20 seconds
+    { enabled: true, runOnMount: true, pauseWhenHidden: true }
+  );
+
+  // Format last updated time
+  const formatLastUpdated = (date: Date | null): string => {
+    if (!date) return '';
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 10) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
   // Group jobs by date
-  const jobsByDate = jobs.reduce((acc, job) => {
+  const jobsByDate = (jobs || []).reduce((acc, job) => {
     const date = new Date(job.appointmentTime).toDateString();
     if (!acc[date]) {
       acc[date] = [];
@@ -132,9 +139,16 @@ export default function CalendarPage() {
             >
               {locale === 'ar' ? '→' : '←'}
             </button>
-            <h2 className="text-2xl font-bold text-gray-800">
-              {monthNames[month]} {year}
-            </h2>
+            <div className="flex flex-col items-center">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {monthNames[month]} {year}
+              </h2>
+              {lastUpdatedAt && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Updated {formatLastUpdated(lastUpdatedAt)}
+                </p>
+              )}
+            </div>
             <button
               onClick={nextMonth}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium"
@@ -207,8 +221,14 @@ export default function CalendarPage() {
         )}
 
         {error && (
-          <div className="mt-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md">
-            {tCommon('error')}: {error}
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md flex items-center justify-between">
+            <span>{tCommon('error')}: {error.message || 'Failed to load jobs'}</span>
+            <button
+              onClick={refresh}
+              className="ml-4 px-3 py-1 bg-yellow-100 hover:bg-yellow-200 rounded transition text-sm font-medium"
+            >
+              Retry
+            </button>
           </div>
         )}
       </main>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from '@/lib/i18n/provider';
+import { usePolling } from '@/lib/hooks/usePolling';
 import { WorkStatus, PaymentStatus, ChecklistItem } from '@/lib/types';
 import type { Locale } from '@/i18n';
 import PhotoUploader from './PhotoUploader';
@@ -97,6 +98,19 @@ export default function JobDetail() {
   const [currentUserRole, setCurrentUserRole] = useState<string>('TECH'); // Will be fetched from /api/auth/me
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountInput, setAmountInput] = useState('');
+  const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
+
+  // Format last updated time
+  const formatLastUpdated = (date: Date | null): string => {
+    if (!date) return '';
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 10) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
 
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -170,6 +184,74 @@ export default function JobDetail() {
   useEffect(() => {
     fetchJob();
   }, [jobId]);
+
+  // Phase 4: Polling for real-time updates
+  const pollingFetcher = useCallback(async (): Promise<Job> => {
+    const response = await fetch(`/api/jobs/${jobId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch job: ${response.status}`);
+    }
+    const data = await response.json();
+    
+    if (data.success && data.data) {
+      const apiJob = data.data;
+      
+      const defaultTechChecklist: ChecklistItem[] = [
+        { id: 'tech-1', label: t('checklist.vacuumInterior'), checked: false },
+        { id: 'tech-2', label: t('checklist.cleanWindows'), checked: false },
+        { id: 'tech-3', label: t('checklist.washExterior'), checked: false },
+        { id: 'tech-4', label: t('checklist.dryDetail'), checked: false },
+      ];
+      
+      const defaultQcChecklist: ChecklistItem[] = [
+        { id: 'qc-1', label: 'Inspect interior cleanliness', checked: false },
+        { id: 'qc-2', label: 'Check exterior finish', checked: false },
+        { id: 'qc-3', label: 'Verify all surfaces dry', checked: false },
+      ];
+      
+      return {
+        jobId: apiJob.jobId,
+        customerName: apiJob.customerCached?.name || apiJob.customerName || 'Unknown Customer',
+        customerPhone: apiJob.customerCached?.phone || apiJob.customerPhone,
+        customerEmail: apiJob.customerCached?.email || apiJob.customerEmail,
+        vehicleInfo: apiJob.vehicleInfo || {},
+        serviceType: apiJob.serviceType || 'Service details pending',
+        scheduledStart: apiJob.appointmentTime || apiJob.createdAt,
+        appointmentTime: apiJob.appointmentTime,
+        workStatus: (apiJob.status?.toUpperCase() as WorkStatus) || WorkStatus.SCHEDULED,
+        status: apiJob.status,
+        payment: apiJob.payment || {
+          status: PaymentStatus.UNPAID,
+          amountCents: 0,
+        },
+        checklist: {
+          tech: apiJob.checklist?.tech || defaultTechChecklist,
+          qc: apiJob.checklist?.qc || defaultQcChecklist,
+        },
+        photosMeta: apiJob.photosMeta || [],
+        receiptPhotos: apiJob.receiptPhotos || [],
+        customerCached: apiJob.customerCached,
+        postCompletionIssue: apiJob.postCompletionIssue,
+      };
+    } else {
+      throw new Error('Invalid API response');
+    }
+  }, [jobId, t]);
+
+  // Poll every 20 seconds, pause when hidden
+  const { data: polledJob, lastUpdatedAt } = usePolling(
+    pollingFetcher,
+    20000,
+    { enabled: !loading && !error, runOnMount: false, pauseWhenHidden: true }
+  );
+
+  // Sync polled data to job state (only if not currently updating)
+  useEffect(() => {
+    if (polledJob && !updating) {
+      setJob(polledJob);
+      setLastPolledAt(lastUpdatedAt);
+    }
+  }, [polledJob, updating, lastUpdatedAt]);
 
   // Fetch current user role
   useEffect(() => {
@@ -625,14 +707,21 @@ export default function JobDetail() {
       {/* Header */}
       <header className="bg-primary-600 text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="px-4 py-2 bg-primary-700 rounded-lg hover:bg-primary-800 transition"
-            >
-              {locale === 'ar' ? '→' : '←'} {tCommon('back')}
-            </button>
-            <h1 className="text-xl font-bold">{t('title')}</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="px-4 py-2 bg-primary-700 rounded-lg hover:bg-primary-800 transition"
+              >
+                {locale === 'ar' ? '→' : '←'} {tCommon('back')}
+              </button>
+              <h1 className="text-xl font-bold">{t('title')}</h1>
+            </div>
+            {lastPolledAt && (
+              <div className="text-xs text-white/80">
+                Updated {formatLastUpdated(lastPolledAt)}
+              </div>
+            )}
           </div>
         </div>
       </header>
