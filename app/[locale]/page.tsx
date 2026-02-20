@@ -54,6 +54,7 @@ export default function TodayBoard() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [updatingJobs, setUpdatingJobs] = useState<Set<string>>(new Set());
+  const [userRole, setUserRole] = useState<'TECH' | 'MANAGER' | null>(null);
 
   const columns = [
     { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), icon: '📅' },
@@ -119,6 +120,20 @@ export default function TodayBoard() {
   };
 
   useEffect(() => {
+    async function fetchUser() {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.user) {
+            setUserRole(data.data.user.role);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    }
+
     async function fetchJobs() {
       try {
         setLoading(true);
@@ -157,6 +172,7 @@ export default function TodayBoard() {
       }
     }
 
+    fetchUser();
     fetchJobs();
   }, []);
 
@@ -175,6 +191,14 @@ export default function TodayBoard() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">🚗 {t('title')}</h1>
             <div className="flex gap-4">
+              {userRole === 'MANAGER' && (
+                <Link 
+                  href={`/${locale}/manager/phone-booking`}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                >
+                  📞 {tNav('phoneBooking')}
+                </Link>
+              )}
               <Link 
                 href={`/${locale}/calendar`}
                 className="px-4 py-2 bg-white text-primary-600 rounded-lg font-medium hover:bg-gray-100 transition"

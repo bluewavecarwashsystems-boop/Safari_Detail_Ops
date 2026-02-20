@@ -10,7 +10,8 @@
   "nav": {
     "calendar": "Calendario",
     "settings": "Configuración",
-    "todayBoard": "Panel de Hoy"
+    "todayBoard": "Panel de Hoy",
+    "phoneBooking": "Reserva Telefónica"
   },
   "today": {
     "title": "Safari Detail Ops",

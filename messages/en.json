@@ -10,7 +10,8 @@
   "nav": {
     "calendar": "Calendar",
     "settings": "Settings",
-    "todayBoard": "Today Board"
+    "todayBoard": "Today Board",
+    "phoneBooking": "Phone Booking"
   },
   "today": {
     "title": "Safari Detail Ops",

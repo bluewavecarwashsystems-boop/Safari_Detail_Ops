@@ -10,7 +10,8 @@
   "nav": {
     "calendar": "التقويم",
     "settings": "الإعدادات",
-    "todayBoard": "لوحة اليوم"
+    "todayBoard": "لوحة اليوم",
+    "phoneBooking": "حجز هاتفي"
   },
   "today": {
     "title": "Safari Detail Ops",
