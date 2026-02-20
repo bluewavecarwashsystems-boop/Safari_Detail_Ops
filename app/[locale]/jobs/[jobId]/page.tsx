@@ -95,6 +95,8 @@ export default function JobDetail() {
   const [uploadingReceipts, setUploadingReceipts] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('TECH'); // Will be fetched from /api/auth/me
+  const [editingAmount, setEditingAmount] = useState(false);
+  const [amountInput, setAmountInput] = useState('');
 
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -456,10 +458,10 @@ export default function JobDetail() {
         receiptPhotos: commitData.data.job.receiptPhotos 
       } : null);
 
-      showToast('Receipt uploaded successfully', 'success');
+      showToast('Receipt photo saved successfully', 'success');
       setReceiptFiles([]);
     } catch (err) {
-      console.error('Failed to upload receipt:', err);
+      console.error('Failed to save receipt:', err);
       showToast((err as Error).message, 'error');
     } finally {
       setUploadingReceipts(false);
@@ -532,6 +534,48 @@ export default function JobDetail() {
       }
     } catch (err) {
       console.error('Failed to mark unpaid:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAmountUpdate = async () => {
+    if (!job || updating || !amountInput) return;
+
+    const amountCents = Math.round(parseFloat(amountInput) * 100);
+    if (isNaN(amountCents) || amountCents < 0) {
+      showToast('Invalid amount', 'error');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment: {
+            ...job.payment,
+            amountCents,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to update amount');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { ...prev, payment: data.data.job.payment } : null);
+        showToast('Amount updated successfully', 'success');
+        setEditingAmount(false);
+      }
+    } catch (err) {
+      console.error('Failed to update amount:', err);
       showToast((err as Error).message, 'error');
     } finally {
       setUpdating(false);
@@ -906,11 +950,55 @@ export default function JobDetail() {
         <section className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">💳 {t('payment.title')}</h2>
           <div className="flex items-center justify-between mb-4">
-            <div>
+            <div className="flex-1">
               <div className="text-sm text-gray-600">{t('payment.amount')}</div>
-              <div className="text-2xl font-bold text-gray-900">
-                ${((job.payment?.amountCents || 0) / 100).toFixed(2)}
-              </div>
+              {editingAmount && currentUserRole === 'MANAGER' ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-2xl font-bold text-gray-900">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={amountInput}
+                    onChange={(e) => setAmountInput(e.target.value)}
+                    className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none w-32"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleAmountUpdate}
+                    disabled={updating}
+                    className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingAmount(false);
+                      setAmountInput('');
+                    }}
+                    className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl font-bold text-gray-900">
+                    ${((job.payment?.amountCents || 0) / 100).toFixed(2)}
+                  </div>
+                  {currentUserRole === 'MANAGER' && (
+                    <button
+                      onClick={() => {
+                        setAmountInput(((job.payment?.amountCents || 0) / 100).toFixed(2));
+                        setEditingAmount(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
+                      ✏️ Edit
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               {/* Debug: currentUserRole = {currentUserRole} */}
@@ -1084,23 +1172,24 @@ export default function JobDetail() {
             className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Upload Receipt to Mark as Paid</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Take Receipt Photo to Mark as Paid</h3>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receipt Photo(s)
+                  Take Receipt Photo(s)
                 </label>
                 <input
                   type="file"
-                  accept="image/*,application/pdf"
+                  accept="image/*"
+                  capture="environment"
                   multiple
                   onChange={(e) => setReceiptFiles(Array.from(e.target.files || []))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
                 {receiptFiles.length > 0 && (
                   <div className="mt-2 text-sm text-gray-600">
-                    {receiptFiles.length} file(s) selected
+                    {receiptFiles.length} photo(s) captured
                   </div>
                 )}
               </div>
@@ -1108,7 +1197,7 @@ export default function JobDetail() {
               {job.receiptPhotos && job.receiptPhotos.length > 0 && (
                 <div className="border-t pt-3">
                   <p className="text-sm text-gray-700 mb-2">
-                    {job.receiptPhotos.length} receipt(s) already uploaded
+                    {job.receiptPhotos.length} receipt photo(s) already saved
                   </p>
                 </div>
               )}
@@ -1138,7 +1227,7 @@ export default function JobDetail() {
                       : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
                 >
-                  {uploadingReceipts ? 'Uploading...' : updating ? 'Marking Paid...' : 'Upload & Mark Paid'}
+                  {uploadingReceipts ? 'Saving...' : updating ? 'Marking Paid...' : 'Save & Mark Paid'}
                 </button>
               )}
               {!receiptFiles.length && job.receiptPhotos && job.receiptPhotos.length > 0 && (
