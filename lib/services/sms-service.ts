@@ -9,6 +9,39 @@ import * as dynamodb from '../aws/dynamodb';
 import type { Job } from '../types';
 
 /**
+ * Normalize US phone number to E.164 format
+ * 
+ * @param phone - Phone number in various formats
+ * @returns E.164 formatted phone number (+1XXXXXXXXXX)
+ */
+function normalizePhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+  
+  // If it's 10 digits, assume US number and add +1
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  
+  // If it's 11 digits and starts with 1, add +
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  
+  // If it already starts with +, return as-is
+  if (phone.startsWith('+')) {
+    return phone;
+  }
+  
+  // Otherwise, assume US and add +1
+  if (digits.length > 0) {
+    return `+1${digits}`;
+  }
+  
+  return phone;
+}
+
+/**
  * Send completion SMS to customer when job is marked as WORK_COMPLETED
  * 
  * @param jobId - Job ID
@@ -51,15 +84,18 @@ export async function sendCompletionSms(jobId: string): Promise<{
     };
   }
 
-  // Normalize phone number if needed (basic validation)
-  const phone = job.customerPhone.trim();
-  if (!phone.startsWith('+')) {
-    console.error('[SMS SERVICE] Invalid phone format (must be E.164)', {
+  // Normalize phone number to E.164 format (handles various formats)
+  const phone = normalizePhoneNumber(job.customerPhone.trim());
+  
+  // Validate E.164 format after normalization
+  if (!phone.startsWith('+') || phone.length < 12) {
+    console.error('[SMS SERVICE] Failed to normalize phone to E.164', {
       jobId,
-      phone: job.customerPhone,
+      originalPhone: job.customerPhone,
+      normalizedPhone: phone,
     });
     throw new Error(
-      `Invalid phone number format: ${job.customerPhone}. Expected E.164 format (e.g., +1615xxxxxxx)`
+      `Invalid phone number format: ${job.customerPhone}. Could not normalize to E.164 format (e.g., +1615xxxxxxx)`
     );
   }
 
@@ -75,7 +111,8 @@ export async function sendCompletionSms(jobId: string): Promise<{
 
     console.log('[SMS SERVICE] Completion SMS sent successfully', {
       jobId,
-      phone,
+      originalPhone: job.customerPhone,
+      normalizedPhone: phone,
       messageSid,
     });
 
@@ -92,7 +129,8 @@ export async function sendCompletionSms(jobId: string): Promise<{
   } catch (error: any) {
     console.error('[SMS SERVICE] Failed to send completion SMS', {
       jobId,
-      phone,
+      originalPhone: job.customerPhone,
+      normalizedPhone: phone,
       error: error.message,
       stack: error.stack,
     });
