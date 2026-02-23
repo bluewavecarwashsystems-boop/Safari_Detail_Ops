@@ -27,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const customerId = searchParams.get('customerId') || undefined;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
     const nextToken = searchParams.get('nextToken') || undefined;
-    const boardDate = searchParams.get('boardDate') || getTodayInTimezone();
+    const boardDate = searchParams.get('boardDate') || null; // Only filter if explicitly provided
 
     // List jobs with filters
     const result = await listJobs({
@@ -37,25 +37,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       nextToken,
     });
 
-    // Apply board date filtering if boardDate is provided
+    // Apply board date filtering ONLY if boardDate is explicitly provided
+    // This allows calendar view to show all jobs, while Today's Board shows filtered jobs
     const filteredJobs = boardDate 
       ? filterJobsByBoardDate(result.jobs, boardDate)
       : result.jobs;
 
-    // Log filtering stats for debugging
-    const boundaries = getDayBoundaries(boardDate);
-    const stats = getFilteringStats(result.jobs, filteredJobs, boardDate);
-    
-    console.log('[JOBS API] Board date filtering applied', {
-      boardDate,
-      timezone: boundaries.timezone,
-      startBoundary: boundaries.start,
-      endBoundary: boundaries.end,
-      totalFetched: stats.total,
-      totalIncluded: stats.filtered,
-      totalExcluded: stats.excluded,
-      byStatus: stats.byStatus,
-    });
+    // Log filtering stats for debugging (only if filtering is applied)
+    if (boardDate) {
+      const boundaries = getDayBoundaries(boardDate);
+      const stats = getFilteringStats(result.jobs, filteredJobs, boardDate);
+      
+      console.log('[JOBS API] Board date filtering applied', {
+        boardDate,
+        timezone: boundaries.timezone,
+        startBoundary: boundaries.start,
+        endBoundary: boundaries.end,
+        totalFetched: stats.total,
+        totalIncluded: stats.filtered,
+        totalExcluded: stats.excluded,
+        byStatus: stats.byStatus,
+      });
+    } else {
+      console.log('[JOBS API] No date filtering - returning all jobs', {
+        totalJobs: result.jobs.length,
+      });
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -64,8 +71,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         count: filteredJobs.length,
         nextToken: result.nextToken,
         environment: config.env,
-        boardDate,
-        timezone: boundaries.timezone,
+        ...(boardDate && { 
+          boardDate,
+          timezone: getDayBoundaries(boardDate).timezone 
+        }),
       },
       timestamp: new Date().toISOString(),
     };
