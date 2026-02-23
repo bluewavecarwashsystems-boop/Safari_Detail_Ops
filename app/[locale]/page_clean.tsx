@@ -115,6 +115,12 @@ export default function TodayBoard() {
     return currentIndex < workflow.length - 1 ? workflow[currentIndex + 1] : null;
   };
 
+  // Parse date string without timezone conversion issues
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const isToday = () => {
     const today = new Date().toISOString().split('T')[0];
     return boardDate === today;
@@ -125,7 +131,7 @@ export default function TodayBoard() {
       return t('boardTitle'); // "Today's Board"
     }
     // For other dates, show "Board for [Date]"
-    return `Board for ${new Date(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
+    return `Board for ${parseLocalDate(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
       month: 'short', 
       day: 'numeric',
       year: 'numeric'
@@ -231,7 +237,7 @@ export default function TodayBoard() {
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            {new Date(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
+            {parseLocalDate(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
