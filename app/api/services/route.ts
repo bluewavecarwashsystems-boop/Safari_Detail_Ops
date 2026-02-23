@@ -68,3 +68,4 @@ export const GET = requireAuth(
       return NextResponse.json(response, { status: 500 });
     }
   }
+);
