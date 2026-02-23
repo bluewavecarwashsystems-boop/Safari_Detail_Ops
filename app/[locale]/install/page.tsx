@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type Platform = 'ios' | 'android' | 'desktop' | 'unknown';
 
@@ -59,12 +60,12 @@ export default function InstallPage() {
 
   if (isInstalled) {
     return (
-      <div className="min-h-screen bg-[#0b1220] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--sf-bg)' }}>
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 text-center" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <div className="mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-[#DCFCE7] rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
-                className="w-10 h-10 text-green-600"
+                className="w-10 h-10 text-[#1F8A5B]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -77,21 +78,17 @@ export default function InstallPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>
               Already Installed!
             </h1>
-            <p className="text-gray-600">
+            <p style={{ color: 'var(--sf-muted)' }}>
               Safari Detail Ops is already installed on your device
             </p>
           </div>
 
           <Link
             href="/en"
-            className="
-              block w-full h-14 bg-blue-600 hover:bg-blue-700
-              text-white font-bold rounded-xl
-              transition-colors flex items-center justify-center
-            "
+            className="block w-full h-14 bg-[#F47C20] hover:bg-[#DB6E1C] text-white font-bold rounded-xl transition-colors flex items-center justify-center"
           >
             Open Dashboard
           </Link>
@@ -101,25 +98,30 @@ export default function InstallPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1220] text-white">
+    <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
       {/* Header */}
-      <header className="border-b border-white/10">
+      <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">Install Detail Ops</h1>
-          <p className="text-blue-200 mt-2">
-            Get quick access from your home screen
-          </p>
+          <div className="flex items-center gap-4 mb-2">
+            <Image src="/safari-logo.png" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
+            <div>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--sf-ink)' }}>Install Safari Detail Ops</h1>
+              <p className="mt-1" style={{ color: 'var(--sf-muted)' }}>
+                Get quick access from your home screen
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* iOS Instructions */}
         {platform === 'ios' && (
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm mb-6">
+          <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
+              <div className="w-12 h-12 bg-[#F47C20] rounded-xl flex items-center justify-center mr-4">
                 <svg
-                  className="w-7 h-7"
+                  className="w-7 h-7 text-white"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -127,19 +129,19 @@ export default function InstallPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold">iPhone/iPad Instructions</h2>
-                <p className="text-sm text-blue-200">Using Safari browser</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--sf-ink)' }}>iPhone/iPad Instructions</h2>
+                <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>Using Safari browser</p>
               </div>
             </div>
 
             <ol className="space-y-4 mt-6">
               <li className="flex items-start">
-                <span className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                <span className="flex-shrink-0 w-8 h-8 bg-[#F47C20] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                   1
                 </span>
                 <div>
-                  <p className="font-medium">Tap the Share button</p>
-                  <p className="text-sm text-blue-200 mt-1">
+                  <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Tap the Share button</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                     Look for{' '}
                     <svg
                       className="inline w-4 h-4"
@@ -153,23 +155,23 @@ export default function InstallPage() {
                 </div>
               </li>
               <li className="flex items-start">
-                <span className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                <span className="flex-shrink-0 w-8 h-8 bg-[#F47C20] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                   2
                 </span>
                 <div>
-                  <p className="font-medium">Scroll down and tap "Add to Home Screen"</p>
-                  <p className="text-sm text-blue-200 mt-1">
+                  <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Scroll down and tap "Add to Home Screen"</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                     You may need to scroll down in the share menu
                   </p>
                 </div>
               </li>
               <li className="flex items-start">
-                <span className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                <span className="flex-shrink-0 w-8 h-8 bg-[#F47C20] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                   3
                 </span>
                 <div>
-                  <p className="font-medium">Tap "Add" in the top right</p>
-                  <p className="text-sm text-blue-200 mt-1">
+                  <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Tap "Add" in the top right</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                     The app icon will appear on your home screen
                   </p>
                 </div>
@@ -180,11 +182,11 @@ export default function InstallPage() {
 
         {/* Android Instructions */}
         {platform === 'android' && (
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm mb-6">
+          <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mr-4">
+              <div className="w-12 h-12 bg-[#1F8A5B] rounded-xl flex items-center justify-center mr-4">
                 <svg
-                  className="w-7 h-7"
+                  className="w-7 h-7 text-white"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -192,8 +194,8 @@ export default function InstallPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold">Android Instructions</h2>
-                <p className="text-sm text-green-200">Using Chrome browser</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--sf-ink)' }}>Android Instructions</h2>
+                <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>Using Chrome browser</p>
               </div>
             </div>
 
@@ -201,11 +203,7 @@ export default function InstallPage() {
               <div className="mt-6">
                 <button
                   onClick={handleInstallClick}
-                  className="
-                    w-full h-16 bg-green-500 hover:bg-green-600
-                    text-white font-bold rounded-xl text-lg
-                    transition-colors flex items-center justify-center gap-3
-                  "
+                  className="w-full h-16 bg-[#1F8A5B] hover:bg-[#166B47] text-white font-bold rounded-xl text-lg transition-colors flex items-center justify-center gap-3"
                 >
                   <svg
                     className="w-6 h-6"
@@ -226,34 +224,34 @@ export default function InstallPage() {
             ) : (
               <ol className="space-y-4 mt-6">
                 <li className="flex items-start">
-                  <span className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#1F8A5B] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                     1
                   </span>
                   <div>
-                    <p className="font-medium">Tap the menu button</p>
-                    <p className="text-sm text-green-200 mt-1">
+                    <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Tap the menu button</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                       Three dots ⋮ in the top right corner
                     </p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <span className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#1F8A5B] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                     2
                   </span>
                   <div>
-                    <p className="font-medium">Tap "Add to Home screen"</p>
-                    <p className="text-sm text-green-200 mt-1">
+                    <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Tap "Add to Home screen"</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                       Or "Install app" if available
                     </p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <span className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3 font-bold">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#1F8A5B] text-white rounded-full flex items-center justify-center mr-3 font-bold">
                     3
                   </span>
                   <div>
-                    <p className="font-medium">Tap "Add" or "Install"</p>
-                    <p className="text-sm text-green-200 mt-1">
+                    <p className="font-medium" style={{ color: 'var(--sf-ink)' }}>Tap "Add" or "Install"</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--sf-muted)' }}>
                       The app will be added to your home screen
                     </p>
                   </div>
@@ -265,11 +263,11 @@ export default function InstallPage() {
 
         {/* Desktop */}
         {platform === 'desktop' && (
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm mb-6">
+          <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-[#F47C20] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
-                  className="w-8 h-8"
+                  className="w-8 h-8 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -282,16 +280,16 @@ export default function InstallPage() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold mb-2">Mobile Device Required</h2>
-              <p className="text-blue-200 mb-6">
+              <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>Mobile Device Required</h2>
+              <p className="mb-6" style={{ color: 'var(--sf-muted)' }}>
                 This app is designed for mobile devices only.
                 <br />
                 Please open this page on your iPhone or Android phone.
               </p>
-              <div className="bg-white/5 rounded-lg p-4 mt-6">
-                <p className="text-sm text-blue-200 mb-2">Scan with your phone:</p>
-                <div className="w-48 h-48 bg-white rounded-lg mx-auto flex items-center justify-center">
-                  <p className="text-gray-500 text-xs">QR Code Placeholder</p>
+              <div className="bg-[#FAF6EF] rounded-lg p-4 mt-6" style={{ border: '1px solid var(--sf-border)' }}>
+                <p className="text-sm mb-2" style={{ color: 'var(--sf-muted)' }}>Scan with your phone:</p>
+                <div className="w-48 h-48 bg-white rounded-lg mx-auto flex items-center justify-center" style={{ border: '1px solid var(--sf-border)' }}>
+                  <p className="text-xs" style={{ color: 'var(--sf-muted)' }}>QR Code Placeholder</p>
                 </div>
               </div>
             </div>
@@ -300,31 +298,31 @@ export default function InstallPage() {
 
         {/* Benefits */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="text-3xl mb-2">⚡</div>
-            <h3 className="font-bold mb-1">Instant Access</h3>
-            <p className="text-sm text-blue-200">
+            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Instant Access</h3>
+            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
               Launch directly from your home screen
             </p>
           </div>
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="text-3xl mb-2">📱</div>
-            <h3 className="font-bold mb-1">Full Screen</h3>
-            <p className="text-sm text-blue-200">
+            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Full Screen</h3>
+            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
               Works like a native app
             </p>
           </div>
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="text-3xl mb-2">🔒</div>
-            <h3 className="font-bold mb-1">Secure</h3>
-            <p className="text-sm text-blue-200">
+            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Secure</h3>
+            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
               All data encrypted and protected
             </p>
           </div>
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             <div className="text-3xl mb-2">📶</div>
-            <h3 className="font-bold mb-1">Works Offline</h3>
-            <p className="text-sm text-blue-200">
+            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Works Offline</h3>
+            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
               Basic functions available without internet
             </p>
           </div>
@@ -334,15 +332,11 @@ export default function InstallPage() {
         <div className="text-center">
           <Link
             href="/en"
-            className="
-              inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700
-              text-white font-bold rounded-xl text-lg
-              transition-colors
-            "
+            className="inline-block px-8 py-4 bg-[#F47C20] hover:bg-[#DB6E1C] text-white font-bold rounded-xl text-lg transition-colors"
           >
             Open Dashboard
           </Link>
-          <p className="text-sm text-blue-200 mt-4">
+          <p className="text-sm mt-4" style={{ color: 'var(--sf-muted)' }}>
             You can install the app later from the browser menu
           </p>
         </div>
