@@ -64,14 +64,35 @@ export async function getTemplate(
   const config = getConfig();
   const templateId = generateTemplateId(serviceType, type);
 
-  const result = await client.send(
-    new GetCommand({
-      TableName: config.aws.dynamodb.checklistTemplatesTable,
-      Key: { templateId },
-    })
-  );
+  console.log('[Checklist Template Service] Getting template:', {
+    serviceType,
+    type,
+    templateId,
+    tableName: config.aws.dynamodb.checklistTemplatesTable,
+  });
 
-  return result.Item as ChecklistTemplate | null;
+  try {
+    const result = await client.send(
+      new GetCommand({
+        TableName: config.aws.dynamodb.checklistTemplatesTable,
+        Key: { templateId },
+      })
+    );
+
+    console.log('[Checklist Template Service] Template result:', {
+      templateId,
+      found: !!result.Item,
+    });
+
+    return result.Item as ChecklistTemplate | null;
+  } catch (error) {
+    console.error('[Checklist Template Service] Error getting template:', {
+      templateId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /**

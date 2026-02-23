@@ -118,5 +118,5 @@ Write-Host "     /settings/checklists" -ForegroundColor White
 Write-Host ""
 Write-Host "  4. Create your first checklist template!" -ForegroundColor Gray
 Write-Host ""
-Write-Host "📖 Documentation: CHECKLIST_TEMPLATES_IMPLEMENTATION.md" -ForegroundColor Cyan
+Write-Host "Documentation: CHECKLIST_TEMPLATES_IMPLEMENTATION.md" -ForegroundColor Cyan
 Write-Host ""

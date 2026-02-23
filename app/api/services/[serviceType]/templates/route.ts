@@ -12,6 +12,9 @@ import { requireRole } from '@/lib/auth/requireAuth';
 import { UserRole, type ApiResponse, type GetTemplatesResponse } from '@/lib/types';
 import * as checklistTemplateService from '@/lib/services/checklist-template-service';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/services/[serviceType]/templates
  * Returns both TECH and QC templates for the service
@@ -24,7 +27,9 @@ export const GET = requireRole(
     { params }: { params: { serviceType: string } }
   ): Promise<NextResponse> => {
     try {
+      console.log('[Get Templates] Params received:', params);
       const serviceType = decodeURIComponent(params.serviceType);
+      console.log('[Get Templates] Service type decoded:', serviceType);
 
       if (!serviceType) {
         const response: ApiResponse = {
@@ -39,7 +44,12 @@ export const GET = requireRole(
       }
 
       // Get both TECH and QC templates
+      console.log('[Get Templates] Fetching templates for:', serviceType);
       const templates = await checklistTemplateService.getTemplatesByService(serviceType);
+      console.log('[Get Templates] Templates fetched:', { 
+        hasTech: !!templates.TECH, 
+        hasQC: !!templates.QC 
+      });
 
       const response: ApiResponse<GetTemplatesResponse> = {
         success: true,
@@ -51,12 +61,13 @@ export const GET = requireRole(
 
       return NextResponse.json(response);
     } catch (error) {
-      console.error('Get templates error:', error);
+      console.error('[Get Templates] Error:', error);
+      console.error('[Get Templates] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       const response: ApiResponse = {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Failed to get templates',
+          message: error instanceof Error ? error.message : 'Failed to get templates',
         },
         timestamp: new Date().toISOString(),
       };
