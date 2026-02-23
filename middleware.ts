@@ -1,7 +1,14 @@
 /**
  * Next.js Middleware for i18n, authentication and route protection
  * Runs on Vercel Edge Runtime
- * Last deployed: 2026-02-19
+ * 
+ * PWA SECURITY ENHANCEMENTS:
+ * - HTTPS enforcement in production
+ * - Secure session validation
+ * - Role-based access control
+ * - API route protection
+ * 
+ * Last deployed: 2026-02-23
  */
 
 import { NextResponse } from 'next/server';
@@ -26,15 +33,24 @@ const PUBLIC_ROUTES = [
   '/api/auth/logout',
   '/api/health',
   '/api/square/webhooks', // Square webhook endpoints
+  '/install', // PWA install page
 ];
 
 // Static assets and Next.js internals
 const PUBLIC_FILE_PATTERNS = [
   /^\/favicon\.ico$/,
   /^\/manifest\.json$/,
+  /^\/sw\.js$/,  // Service worker
+  /^\/icon-.*\.png$/,  // PWA icons
   /^\/.*\.(png|jpg|jpeg|gif|svg|ico|webp)$/,
   /^\/_next\//,
   /^\/api\/_next\//,
+];
+
+// Sensitive actions requiring re-authentication (future enhancement)
+const SENSITIVE_ACTIONS = [
+  '/api/jobs/*/delete',
+  '/api/jobs/*/refund',
 ];
 
 /**
@@ -107,6 +123,16 @@ function getPreferredLocale(request: NextRequest): Locale {
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // SECURITY: Enforce HTTPS in production
+  if (
+    process.env.NODE_ENV === 'production' &&
+    request.headers.get('x-forwarded-proto') !== 'https'
+  ) {
+    const httpsUrl = new URL(request.url);
+    httpsUrl.protocol = 'https:';
+    return NextResponse.redirect(httpsUrl);
+  }
 
   // Allow static files to pass through
   if (PUBLIC_FILE_PATTERNS.some((pattern) => pattern.test(pathname))) {
