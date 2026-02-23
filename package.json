@@ -22,6 +22,7 @@
     "@heroicons/react": "^2.1.1",
     "@tanstack/react-query": "^5.17.19",
     "@types/node": "^20.11.0",
+    "@types/twilio": "^3.19.2",
     "@vercel/node": "^3.0.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.0.6",
@@ -33,6 +34,7 @@
     "react-dom": "^18.2.0",
     "square": "^39.0.0",
     "tailwindcss": "^3.4.1",
+    "twilio": "^5.12.2",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1",
     "zustand": "^4.5.0"

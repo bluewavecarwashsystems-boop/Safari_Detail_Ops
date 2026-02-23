@@ -11,6 +11,7 @@ import type { Job, UpdateJobRequest, UserAudit, PhotoMeta, ChecklistItem, Custom
 import { WorkStatus, PaymentStatus } from '../types';
 import type { ParsedBooking } from '../square/booking-parser';
 import { fetchCustomerWithRetry, isCacheStale, toCustomerCached } from '../square/customers-api';
+import { sendCompletionSms } from './sms-service';
 
 /**
  * Create a job from a Square booking (Phase 3: with customer caching)
@@ -195,7 +196,37 @@ export async function updateJobStatus(
   status: WorkStatus,
   updatedBy?: string
 ): Promise<Job> {
-  return dynamodb.updateJob(jobId, { status, updatedBy });
+  // Get current job to check for status transition
+  const currentJob = await dynamodb.getJob(jobId);
+  const previousStatus = currentJob?.status;
+  
+  // Update job status
+  const updatedJob = await dynamodb.updateJob(jobId, { status, updatedBy });
+  
+  // Send completion SMS if transitioning to WORK_COMPLETED
+  if (status === WorkStatus.WORK_COMPLETED && previousStatus !== WorkStatus.WORK_COMPLETED) {
+    try {
+      const result = await sendCompletionSms(jobId);
+      console.log('[JOB SERVICE] Completion SMS result', {
+        jobId,
+        sent: result.sent,
+        skipped: result.skipped,
+        reason: result.reason,
+        messageSid: result.messageSid,
+      });
+    } catch (error: any) {
+      // Log error but don't fail the status update
+      console.error('[JOB SERVICE] Failed to send completion SMS', {
+        jobId,
+        error: error.message,
+        stack: error.stack,
+      });
+      // Note: We don't throw here because we want the status update to succeed
+      // even if SMS fails. The SMS can be retried manually if needed.
+    }
+  }
+  
+  return updatedJob;
 }
 
 /**

@@ -253,6 +253,9 @@ export interface Job {
   receiptPhotos?: ReceiptPhoto[];
   // Phase 5: No-show tracking
   noShow?: NoShowStatus;
+  // SMS notifications: Completion SMS tracking
+  completionSmsSentAt?: string;
+  completionSmsSid?: string;
 }
 
 /**
