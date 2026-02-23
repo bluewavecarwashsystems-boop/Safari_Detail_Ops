@@ -486,7 +486,33 @@ export async function updateJobWithAudit(
     updateData.statusHistory = statusHistory;
   }
 
-  return dynamodb.updateJob(jobId, updateData);
+  // Update the job in database
+  const updatedJob = await dynamodb.updateJob(jobId, updateData);
+
+  // Send completion SMS if transitioning to WORK_COMPLETED
+  if (updates.workStatus === WorkStatus.WORK_COMPLETED && currentJob.status !== WorkStatus.WORK_COMPLETED) {
+    try {
+      const smsResult = await sendCompletionSms(jobId);
+      console.log('[JOB SERVICE] Completion SMS result', {
+        jobId,
+        sent: smsResult.sent,
+        skipped: smsResult.skipped,
+        reason: smsResult.reason,
+        messageSid: smsResult.messageSid,
+      });
+    } catch (error: any) {
+      // Log error but don't fail the status update
+      console.error('[JOB SERVICE] Failed to send completion SMS', {
+        jobId,
+        error: error.message,
+        stack: error.stack,
+      });
+      // Note: We don't throw here because we want the status update to succeed
+      // even if SMS fails. The SMS can be retried manually if needed.
+    }
+  }
+
+  return updatedJob;
 }
 
 /**
