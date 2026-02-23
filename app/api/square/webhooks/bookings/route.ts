@@ -39,7 +39,7 @@ import {
   createJobFromBooking, 
   updateJobFromBooking 
 } from '@/lib/services/job-service';
-import { getJobByBookingId } from '@/lib/aws/dynamodb';
+import { getJobByBookingId, getJob } from '@/lib/aws/dynamodb';
 
 /**
  * GET handler - Square webhook UI validation
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           jobIdToCheck: parsedBooking.bookingId,
         });
         
-        let existingJob = await dynamodb.getJob(parsedBooking.bookingId);
+        let existingJob = await getJob(parsedBooking.bookingId);
         
         // Fallback: if not found by jobId, scan by bookingId field (for old jobs with random UUIDs)
         if (!existingJob) {
@@ -355,7 +355,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       } else if (action === 'update') {
         // Find existing job by direct lookup first, then fallback to scan
-        let existingJob = await dynamodb.getJob(parsedBooking.bookingId);
+        let existingJob = await getJob(parsedBooking.bookingId);
         
         if (!existingJob) {
           existingJob = await getJobByBookingId(parsedBooking.bookingId);
