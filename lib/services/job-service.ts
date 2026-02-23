@@ -135,7 +135,29 @@ export async function getJobWithPhotos(jobId: string): Promise<Job & { photoUrls
     return null;
   }
   
-  // Generate download URLs for all photos
+  // Generate presigned download URLs for photosMeta (Phase 3+)
+  if (job.photosMeta && job.photosMeta.length > 0) {
+    const photosMetaWithUrls = await Promise.all(
+      job.photosMeta.map(async (photo) => ({
+        ...photo,
+        publicUrl: await s3.generateDownloadUrl(photo.s3Key, 3600),
+      }))
+    );
+    job.photosMeta = photosMetaWithUrls;
+  }
+  
+  // Generate presigned download URLs for receipt photos
+  if (job.receiptPhotos && job.receiptPhotos.length > 0) {
+    const receiptPhotosWithUrls = await Promise.all(
+      job.receiptPhotos.map(async (receipt) => ({
+        ...receipt,
+        publicUrl: await s3.generateDownloadUrl(receipt.s3Key, 3600),
+      }))
+    );
+    job.receiptPhotos = receiptPhotosWithUrls;
+  }
+  
+  // Generate download URLs for legacy photos array
   if (job.photos && job.photos.length > 0) {
     const photoUrls = await Promise.all(
       job.photos.map(key => s3.generateDownloadUrl(key, 3600))
