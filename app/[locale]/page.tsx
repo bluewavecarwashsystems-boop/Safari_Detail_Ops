@@ -273,6 +273,20 @@ export default function TodayBoard() {
               <label htmlFor="boardDate" className="text-sm font-medium" style={{ color: 'var(--sf-brown)' }}>
                 Board Date:
               </label>
+              <button
+                onClick={() => {
+                  const currentDate = new Date(boardDate);
+                  currentDate.setDate(currentDate.getDate() - 1);
+                  setBoardDate(currentDate.toISOString().split('T')[0]);
+                }}
+                className="px-3 py-2 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
+                style={{ color: 'var(--sf-ink)' }}
+                title="Previous Day"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+                </svg>
+              </button>
               <input
                 type="date"
                 id="boardDate"
@@ -281,6 +295,20 @@ export default function TodayBoard() {
                 className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#F47C20] focus:border-[#F47C20] shadow-sm bg-white"
                 style={{ borderColor: 'var(--sf-border)', color: 'var(--sf-ink)' }}
               />
+              <button
+                onClick={() => {
+                  const currentDate = new Date(boardDate);
+                  currentDate.setDate(currentDate.getDate() + 1);
+                  setBoardDate(currentDate.toISOString().split('T')[0]);
+                }}
+                className="px-3 py-2 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
+                style={{ color: 'var(--sf-ink)' }}
+                title="Next Day"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'} />
+                </svg>
+              </button>
               <button
                 onClick={() => {
                   const today = new Date().toISOString().split('T')[0];
