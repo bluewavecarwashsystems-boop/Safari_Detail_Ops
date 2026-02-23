@@ -134,7 +134,7 @@ export default function JobDetail() {
     licensePlate: '',
   });
   const [serviceTypeForm, setServiceTypeForm] = useState('');
-  const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
+  const [services, setServices] = useState<string[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [savingVehicle, setSavingVehicle] = useState(false);
 
@@ -786,8 +786,8 @@ export default function JobDetail() {
       const response = await fetch('/api/services');
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.data?.services) {
-          setServices(data.data.services);
+        if (data.success && data.data?.serviceTypes) {
+          setServices(data.data.serviceTypes);
         }
       }
     } catch (err) {
@@ -1085,10 +1085,10 @@ export default function JobDetail() {
                     onChange={(e) => setServiceTypeForm(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                   >
-                    <option value="">{job.serviceType}</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.name}>
-                        {service.name}
+                    <option value={job.serviceType}>{job.serviceType}</option>
+                    {services.filter(s => s !== job.serviceType).map((service) => (
+                      <option key={service} value={service}>
+                        {service}
                       </option>
                     ))}
                   </select>

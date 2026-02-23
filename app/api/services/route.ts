@@ -4,12 +4,12 @@
  * Get all service types from Square Catalog for checklist template selection.
  * Returns unique service names extracted from Square catalog items.
  * 
- * Auth: Manager only
+ * Auth: All authenticated users
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/auth/requireAuth';
-import { UserRole, type ApiResponse } from '@/lib/types';
+import { requireAuth } from '@/lib/auth/requireAuth';
+import { type ApiResponse } from '@/lib/types';
 import * as catalogApi from '@/lib/square/catalog-api';
 
 export interface ServiceTypeResponse {
@@ -20,8 +20,7 @@ export interface ServiceTypeResponse {
  * GET /api/services
  * Returns unique service type names from Square catalog
  */
-export const GET = requireRole(
-  [UserRole.MANAGER],
+export const GET = requireAuth(
   async (request: NextRequest, session): Promise<NextResponse> => {
     try {
       // Fetch all services from Square
@@ -69,4 +68,3 @@ export const GET = requireRole(
       return NextResponse.json(response, { status: 500 });
     }
   }
-);
