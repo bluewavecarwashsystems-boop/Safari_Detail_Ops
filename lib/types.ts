@@ -495,6 +495,7 @@ export interface CreateManagerBookingRequest {
   service: {
     serviceName: string;
     serviceVariationId?: string;
+    serviceVariationVersion?: number;
     durationMinutes: number;
     amountCents?: number;
   };

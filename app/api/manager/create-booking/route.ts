@@ -118,14 +118,27 @@ export const POST = requireAuth(async (
     });
 
     // Step 2: Create booking in Square
-    // Note: For MVP, we use a default service variation ID
-    // In production, you'd have a catalog lookup or predefined service IDs
-    const serviceVariationId = body.service.serviceVariationId || 'default-service-variation-id';
-    const serviceVariationVersion = 1;
+    // Validate service variation ID from request
+    if (!body.service.serviceVariationId) {
+      const response: ApiResponse = {
+        success: false,
+        error: {
+          code: 'INVALID_REQUEST',
+          message: 'Service variation ID is required',
+        },
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(response, { status: 400 });
+    }
+
+    const serviceVariationId = body.service.serviceVariationId;
+    const serviceVariationVersion = body.service.serviceVariationVersion || 1;
 
     console.log('[MANAGER BOOKING] Creating Square booking', {
       customerId: customer.id,
       startAt: body.appointmentTime.startAt,
+      serviceVariationId,
+      serviceVariationVersion,
     });
 
     const squareBooking = await createBooking({

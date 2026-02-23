@@ -270,3 +270,112 @@ export function getCacheStats(): { size: number; entries: string[] } {
     entries: Array.from(catalogCache.keys()),
   };
 }
+
+/**
+ * Service item for phone bookings
+ */
+export interface CatalogService {
+  id: string; // Variation ID
+  itemId: string; // Item ID
+  name: string;
+  description?: string;
+  durationMinutes?: number;
+  priceMoney?: {
+    amount: number;
+    currency: string;
+  };
+  version: number;
+}
+
+/**
+ * List all service items from Square Catalog
+ * Filters for service-type items suitable for appointments
+ */
+export async function listServices(): Promise<CatalogService[]> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    const url = `${baseUrl}/v2/catalog/list?types=ITEM`;
+    
+    console.log('[SQUARE CATALOG API] Fetching services for booking');
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[SQUARE CATALOG API] Failed to fetch catalog', {
+        status: response.status,
+        error: errorText,
+      });
+      
+      throw new Error(`Failed to fetch catalog: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors && data.errors.length > 0) {
+      const errorMsg = data.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+
+    // Extract services from catalog items
+    const services: CatalogService[] = [];
+    
+    if (data.objects) {
+      for (const item of data.objects) {
+        if (item.type === 'ITEM' && item.item_data) {
+          const itemData = item.item_data;
+          
+          // Include all items with variations (services are catalog items)
+          if (itemData.variations && itemData.variations.length > 0) {
+            for (const variation of itemData.variations) {
+              if (variation.type === 'ITEM_VARIATION' && variation.item_variation_data) {
+                const varData = variation.item_variation_data;
+                
+                services.push({
+                  id: variation.id,
+                  itemId: item.id,
+                  name: `${itemData.name || 'Service'}${varData.name && varData.name !== 'Regular' ? ` - ${varData.name}` : ''}`,
+                  description: itemData.description,
+                  durationMinutes: varData.service_duration ? Math.floor(varData.service_duration / 60000) : undefined,
+                  priceMoney: varData.price_money ? {
+                    amount: varData.price_money.amount || 0,
+                    currency: varData.price_money.currency || 'USD',
+                  } : undefined,
+                  version: variation.version || 1,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log('[SQUARE CATALOG API] Found services', {
+      count: services.length,
+    });
+    
+    return services;
+  } catch (error: any) {
+    console.error('[SQUARE CATALOG API] Error fetching services', {
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}

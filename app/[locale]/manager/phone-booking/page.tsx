@@ -1,9 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
+
+interface Service {
+  id: string;
+  itemId: string;
+  name: string;
+  description?: string;
+  durationMinutes?: number;
+  priceMoney?: {
+    amount: number;
+    currency: string;
+  };
+  version: number;
+}
 
 export default function PhoneBookingPage() {
   const t = useTranslations('manager.phoneBooking');
@@ -11,6 +24,10 @@ export default function PhoneBookingPage() {
   const params = useParams();
   const router = useRouter();
   const locale = params.locale as Locale;
+
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -21,8 +38,8 @@ export default function PhoneBookingPage() {
     vehicleYear: '',
     vehicleColor: '',
     vehicleNotes: '',
-    serviceName: 'Full Detail',
-    serviceDuration: '90',
+    serviceName: '',
+    serviceDuration: '',
     serviceAmount: '',
     appointmentDate: '',
     appointmentTime: '',
@@ -33,6 +50,58 @@ export default function PhoneBookingPage() {
   const [creating, setCreating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+
+  // Fetch services from Square on component mount
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        setLoadingServices(true);
+        const response = await fetch('/api/square/services');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch services');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data?.services) {
+          setServices(data.data.services);
+          
+          // Auto-select first service if available
+          if (data.data.services.length > 0) {
+            const firstService = data.data.services[0];
+            setSelectedServiceId(firstService.id);
+            setFormData(prev => ({
+              ...prev,
+              serviceName: firstService.name,
+              serviceDuration: firstService.durationMinutes?.toString() || '60',
+              serviceAmount: firstService.priceMoney ? (firstService.priceMoney.amount / 100).toString() : '',
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch services:', error);
+        alert('Failed to load services from Square. Please refresh the page.');
+      } finally {
+        setLoadingServices(false);
+      }
+    }
+
+    fetchServices();
+  }, []);
+
+  const handleServiceChange = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      setSelectedServiceId(serviceId);
+      setFormData(prev => ({
+        ...prev,
+        serviceName: service.name,
+        serviceDuration: service.durationMinutes?.toString() || prev.serviceDuration,
+        serviceAmount: service.priceMoney ? (service.priceMoney.amount / 100).toString() : prev.serviceAmount,
+      }));
+    }
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -70,6 +139,12 @@ export default function PhoneBookingPage() {
     setCreating(true);
 
     try {
+      // Get selected service details
+      const selectedService = services.find(s => s.id === selectedServiceId);
+      if (!selectedService) {
+        throw new Error('Please select a service');
+      }
+
       // Combine date and time into ISO timestamp
       const startAt = new Date(`${formData.appointmentDate}T${formData.appointmentTime}`).toISOString();
 
@@ -88,6 +163,8 @@ export default function PhoneBookingPage() {
         },
         service: {
           serviceName: formData.serviceName,
+          serviceVariationId: selectedService.id,
+          serviceVariationVersion: selectedService.version,
           durationMinutes: parseInt(formData.serviceDuration),
           amountCents: formData.serviceAmount ? parseInt(formData.serviceAmount) * 100 : undefined,
         },
@@ -317,16 +394,24 @@ export default function PhoneBookingPage() {
                   {t('serviceName')} *
                 </label>
                 <select
-                  value={formData.serviceName}
-                  onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
+                  value={selectedServiceId}
+                  onChange={(e) => handleServiceChange(e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.serviceName ? 'border-red-500' : 'border-gray-300'}`}
-                  disabled={creating}
+                  disabled={creating || loadingServices}
                 >
-                  <option value="Full Detail">Full Detail</option>
-                  <option value="Express Detail">Express Detail</option>
-                  <option value="Interior Only">Interior Only</option>
-                  <option value="Exterior Only">Exterior Only</option>
-                  <option value="Basic Wash">Basic Wash</option>
+                  {loadingServices ? (
+                    <option value="">Loading services...</option>
+                  ) : services.length === 0 ? (
+                    <option value="">No services available</option>
+                  ) : (
+                    services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                        {service.priceMoney && ` - $${(service.priceMoney.amount / 100).toFixed(2)}`}
+                        {service.durationMinutes && ` (${service.durationMinutes} min)`}
+                      </option>
+                    ))
+                  )}
                 </select>
                 {errors.serviceName && (
                   <p className="mt-1 text-sm text-red-500">{errors.serviceName}</p>
