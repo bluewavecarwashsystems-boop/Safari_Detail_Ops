@@ -11,7 +11,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test:webhook": "ts-node test/webhook-test.ts",
     "test:integration": "ts-node test/integration-test.ts",
-    "seed-admin": "ts-node scripts/seed-admin-user.ts"
+    "seed-admin": "ts-node scripts/seed-admin-user.ts",
+    "check-booking-profile": "ts-node scripts/check-booking-profile.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.679.0",

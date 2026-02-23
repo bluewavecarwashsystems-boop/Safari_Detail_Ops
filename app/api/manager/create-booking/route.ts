@@ -82,6 +82,12 @@ export const POST = requireAuth(async (
     const config = getConfig();
     const locationId = config.square.franklinLocationId;
 
+    console.log('[MANAGER BOOKING] Configuration:', {
+      locationId,
+      environment: config.square.environment,
+      hasAccessToken: !!config.square.accessToken,
+    });
+
     if (!locationId) {
       const response: ApiResponse = {
         success: false,
