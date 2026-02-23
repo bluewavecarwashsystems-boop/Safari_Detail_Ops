@@ -302,15 +302,15 @@ export async function createBooking(params: {
     
     const url = `${baseUrl}/v2/bookings`;
     
-    // Build appointment segment - only include team_member_id if provided
+    // Build appointment segment - only include team_member_id if provided and not empty
     const appointmentSegment: any = {
       service_variation_id: params.serviceVariationId,
       service_variation_version: params.serviceVariationVersion,
       duration_minutes: params.durationMinutes || 60,
     };
     
-    // Only add team_member_id if explicitly provided
-    if (params.teamMemberId) {
+    // Only add team_member_id if explicitly provided and not empty
+    if (params.teamMemberId && params.teamMemberId.trim() !== '') {
       appointmentSegment.team_member_id = params.teamMemberId;
     }
     

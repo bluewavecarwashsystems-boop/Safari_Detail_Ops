@@ -139,6 +139,7 @@ export const POST = requireAuth(async (
       startAt: body.appointmentTime.startAt,
       serviceVariationId,
       serviceVariationVersion,
+      teamMemberId: config.square.teamMemberId || 'not set',
     });
 
     const squareBooking = await createBooking({
@@ -148,7 +149,9 @@ export const POST = requireAuth(async (
       serviceVariationVersion: serviceVariationVersion,
       startAt: body.appointmentTime.startAt,
       durationMinutes: body.service.durationMinutes,
-      teamMemberId: config.square.teamMemberId || undefined,
+      teamMemberId: config.square.teamMemberId && config.square.teamMemberId.trim() !== '' 
+        ? config.square.teamMemberId 
+        : undefined,
       customerNote: body.notes,
       sellerNote: body.vehicle ? 
         `Vehicle: ${body.vehicle.year || ''} ${body.vehicle.make || ''} ${body.vehicle.model || ''}`.trim() : 
