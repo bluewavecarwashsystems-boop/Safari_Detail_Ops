@@ -119,7 +119,7 @@ export default function CalendarPage() {
               >
                 {locale === 'ar' ? '→' : '←'}
               </Link>
-              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
               <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('calendar')}</h1>
             </div>
             <Link 

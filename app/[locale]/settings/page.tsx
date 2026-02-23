@@ -110,7 +110,7 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
               <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
             <button

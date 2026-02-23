@@ -75,7 +75,7 @@ function LoginForm() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-block mb-4">
-            <Image src="/safari-logo.svg" alt="Safari Car Wash" width={120} height={120} className="object-contain" />
+            <Image src="/safari-logo.png" alt="Safari Car Wash" width={120} height={120} className="object-contain" />
           </div>
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
           <p style={{ color: 'var(--sf-muted)' }}>{t('subtitle')}</p>

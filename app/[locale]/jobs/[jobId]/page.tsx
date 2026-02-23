@@ -935,7 +935,7 @@ export default function JobDetail() {
               >
                 {locale === 'ar' ? '→' : '←'} {tCommon('back')}
               </button>
-              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
               <h1 className="text-xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
             {lastPolledAt && (

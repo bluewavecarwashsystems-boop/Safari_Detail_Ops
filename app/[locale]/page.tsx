@@ -223,7 +223,7 @@ export default function TodayBoard() {
         <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
               <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
             <div className="flex gap-3">

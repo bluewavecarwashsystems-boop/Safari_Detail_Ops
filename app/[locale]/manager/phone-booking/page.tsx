@@ -265,7 +265,7 @@ export default function PhoneBookingPage() {
     <div className="min-h-screen px-4 py-8" style={{ background: 'var(--sf-bg)' }}>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6 flex items-center gap-4">
-          <Image src="/safari-logo.svg" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
+          <Image src="/safari-logo.png" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
           <h1 className="text-3xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
         </div>
 
