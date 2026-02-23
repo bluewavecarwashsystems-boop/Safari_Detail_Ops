@@ -47,11 +47,6 @@ export default function TodayBoard() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [updatingJobs, setUpdatingJobs] = useState<Set<string>>(new Set());
-  const [boardDate, setBoardDate] = useState<string>(() => {
-    // Initialize with today's date in YYYY-MM-DD format
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
 
   const columns = [
     { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), icon: '📅' },
@@ -120,7 +115,7 @@ export default function TodayBoard() {
     async function fetchJobs() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/jobs?boardDate=${boardDate}`);
+        const response = await fetch('/api/jobs');
         
         if (!response.ok) {
           throw new Error(`Failed to fetch jobs: ${response.status}`);
@@ -140,13 +135,6 @@ export default function TodayBoard() {
             workStatus: job.status,
           }));
           setJobs(formattedJobs);
-          
-          // Log filtering info
-          console.log('[TODAY BOARD] Jobs loaded', {
-            boardDate,
-            count: formattedJobs.length,
-            timezone: data.data.timezone,
-          });
         } else {
           console.warn('API returned no jobs, using mock data');
           setJobs(mockJobs);
@@ -161,7 +149,7 @@ export default function TodayBoard() {
     }
 
     fetchJobs();
-  }, [boardDate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -197,32 +185,9 @@ export default function TodayBoard() {
 
       <main className="container mx-auto px-4 py-6">
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold text-gray-800">{t('boardTitle')}</h2>
-            <div className="flex items-center gap-2">
-              <label htmlFor="boardDate" className="text-sm text-gray-600">
-                {t('selectDate') || 'Date:'}
-              </label>
-              <input
-                type="date"
-                id="boardDate"
-                value={boardDate}
-                onChange={(e) => setBoardDate(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-              <button
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setBoardDate(today);
-                }}
-                className="px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-              >
-                {t('today') || 'Today'}
-              </button>
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-800">{t('boardTitle')}</h2>
           <p className="text-sm text-gray-600">
-            {new Date(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
+            {new Date().toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
