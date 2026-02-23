@@ -200,6 +200,36 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Manager Tools Section (Manager only) */}
+          {user?.role === 'MANAGER' && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Manager Tools</h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Manage templates and settings for your team
+              </p>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => router.push(`/${currentLocale}/settings/checklists`)}
+                  className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-md hover:bg-sky-50 hover:border-sky-300 transition"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-sky-100 rounded-md flex items-center justify-center">
+                    <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-gray-900">Checklist Templates</div>
+                    <div className="text-sm text-gray-500">Edit TECH and QC checklists per service</div>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Account Actions Section */}
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('account.title')}</h2>

@@ -156,6 +156,60 @@ export interface ChecklistItem {
 }
 
 /**
+ * Checklist Template: Type enum
+ */
+export enum ChecklistType {
+  TECH = 'TECH',
+  QC = 'QC',
+}
+
+/**
+ * Checklist Template: Template item for a service
+ */
+export interface ChecklistTemplateItem {
+  id: string;
+  label: string;
+  sortOrder: number;
+  isRequired: boolean;
+  isActive: boolean;
+}
+
+/**
+ * Checklist Template: Full template for a service + type
+ */
+export interface ChecklistTemplate {
+  templateId: string; // Format: {serviceType}#{type} e.g. "Full Detail#TECH"
+  serviceType: string; // e.g. "Full Detail"
+  type: ChecklistType; // TECH or QC
+  version: number;
+  isActive: boolean;
+  items: ChecklistTemplateItem[];
+  createdAt: string;
+  updatedAt: string;
+  updatedBy?: UserAudit;
+}
+
+/**
+ * Checklist Template: Job-level checklist snapshot
+ */
+export interface JobChecklistSnapshot {
+  jobId: string;
+  checklistId: string; // Unique ID for this snapshot
+  type: ChecklistType;
+  templateId: string; // Which template was used
+  templateVersion: number;
+  items: {
+    id: string;
+    label: string;
+    sortOrder: number;
+    isCompleted: boolean;
+    completedBy?: UserAudit;
+    completedAt?: string;
+  }[];
+  createdAt: string;
+}
+
+/**
  * Phase 3: Photo metadata
  */
 export interface PhotoMeta {
@@ -515,4 +569,87 @@ export interface CreateManagerBookingResponse {
   jobId: string;
   bookingId: string;
   job: Job;
+}
+
+/**
+ * Checklist Templates: API Request/Response Types
+ */
+
+/**
+ * GET /api/services/{serviceType}/templates - Get templates for a service
+ */
+export interface GetTemplatesResponse {
+  templates: {
+    TECH?: ChecklistTemplate;
+    QC?: ChecklistTemplate;
+  };
+}
+
+/**
+ * POST /api/templates/items - Add item to template
+ */
+export interface AddTemplateItemRequest {
+  serviceType: string;
+  type: ChecklistType;
+  label: string;
+  isRequired?: boolean;
+}
+
+export interface AddTemplateItemResponse {
+  template: ChecklistTemplate;
+}
+
+/**
+ * PUT /api/templates/items/{itemId} - Update template item
+ */
+export interface UpdateTemplateItemRequest {
+  serviceType: string;
+  type: ChecklistType;
+  itemId: string;
+  label?: string;
+  isRequired?: boolean;
+}
+
+export interface UpdateTemplateItemResponse {
+  template: ChecklistTemplate;
+}
+
+/**
+ * DELETE /api/templates/items/{itemId} - Soft delete template item
+ */
+export interface DeleteTemplateItemRequest {
+  serviceType: string;
+  type: ChecklistType;
+  itemId: string;
+}
+
+export interface DeleteTemplateItemResponse {
+  template: ChecklistTemplate;
+}
+
+/**
+ * PUT /api/templates/reorder - Reorder template items
+ */
+export interface ReorderTemplateItemsRequest {
+  serviceType: string;
+  type: ChecklistType;
+  itemIds: string[]; // Ordered array of item IDs
+}
+
+export interface ReorderTemplateItemsResponse {
+  template: ChecklistTemplate;
+}
+
+/**
+ * POST /api/jobs/{jobId}/initialize-checklists - Initialize checklists from templates
+ */
+export interface InitializeChecklistsRequest {
+  serviceType: string;
+}
+
+export interface InitializeChecklistsResponse {
+  checklists: {
+    tech: JobChecklistSnapshot;
+    qc: JobChecklistSnapshot;
+  };
 }

@@ -14,6 +14,7 @@ export interface Config {
     dynamodb: {
       jobsTable: string;
       usersTable: string;
+      checklistTemplatesTable: string;
     };
     s3: {
       photosBucket: string;
@@ -82,6 +83,7 @@ export function getConfig(): Config {
       dynamodb: {
         jobsTable: getResourceName(process.env.DYNAMODB_JOBS_TABLE || 'jobs'),
         usersTable: getResourceName(process.env.DYNAMODB_USERS_TABLE || 'users'),
+        checklistTemplatesTable: getResourceName(process.env.DYNAMODB_CHECKLIST_TEMPLATES_TABLE || 'checklist-templates'),
       },
       s3: {
         photosBucket: getResourceName(process.env.S3_PHOTOS_BUCKET || 'photos'),
