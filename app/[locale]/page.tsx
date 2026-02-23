@@ -220,57 +220,60 @@ export default function TodayBoard() {
       )}
 
       <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
-        <div className="container mx-auto px-4 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Image src="/safari-logo.png" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain sm:w-[60px] sm:h-[60px]" />
+              <h1 className="text-lg sm:text-2xl font-bold whitespace-nowrap" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-1.5 sm:gap-3">
               {userRole === 'MANAGER' && (
                 <Link 
                   href={`/${locale}/manager/phone-booking`}
-                  className="px-6 py-3 bg-[#F47C20] text-white rounded-xl font-medium hover:bg-[#DB6E1C] sf-button-transition flex items-center gap-2"
+                  className="px-3 py-2 sm:px-6 sm:py-3 bg-[#F47C20] text-white rounded-lg sm:rounded-xl font-medium hover:bg-[#DB6E1C] sf-button-transition flex items-center gap-1 sm:gap-2"
                   style={{ boxShadow: 'var(--sf-shadow)' }}
+                  title={tNav('phoneBooking')}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  {tNav('phoneBooking')}
+                  <span className="hidden sm:inline">{tNav('phoneBooking')}</span>
                 </Link>
               )}
               <Link 
                 href={`/${locale}/calendar`}
-                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-2"
+                className="px-3 py-2 sm:px-6 sm:py-3 bg-white border border-[#E7E2D8] rounded-lg sm:rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-1 sm:gap-2"
                 style={{ color: 'var(--sf-ink)' }}
+                title={tNav('calendar')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {tNav('calendar')}
+                <span className="hidden sm:inline">{tNav('calendar')}</span>
               </Link>
               <Link 
                 href={`/${locale}/settings`}
-                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-2"
+                className="px-3 py-2 sm:px-6 sm:py-3 bg-white border border-[#E7E2D8] rounded-lg sm:rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-1 sm:gap-2"
                 style={{ color: 'var(--sf-ink)' }}
+                title={tNav('settings')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {tNav('settings')}
+                <span className="hidden sm:inline">{tNav('settings')}</span>
               </Link>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold" style={{ color: 'var(--sf-ink)' }}>{getBoardTitle()}</h2>
-            <div className="flex items-center gap-3">
-              <label htmlFor="boardDate" className="text-sm font-medium" style={{ color: 'var(--sf-brown)' }}>
+      <main className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--sf-ink)' }}>{getBoardTitle()}</h2>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <label htmlFor="boardDate" className="text-xs sm:text-sm font-medium whitespace-nowrap" style={{ color: 'var(--sf-brown)' }}>
                 Board Date:
               </label>
               <button
@@ -279,7 +282,7 @@ export default function TodayBoard() {
                   currentDate.setDate(currentDate.getDate() - 1);
                   setBoardDate(currentDate.toISOString().split('T')[0]);
                 }}
-                className="px-3 py-2 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
+                className="px-2 py-2 sm:px-3 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
                 style={{ color: 'var(--sf-ink)' }}
                 title="Previous Day"
               >
@@ -292,7 +295,7 @@ export default function TodayBoard() {
                 id="boardDate"
                 value={boardDate}
                 onChange={(e) => setBoardDate(e.target.value)}
-                className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#F47C20] focus:border-[#F47C20] shadow-sm bg-white"
+                className="px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#F47C20] focus:border-[#F47C20] shadow-sm bg-white"
                 style={{ borderColor: 'var(--sf-border)', color: 'var(--sf-ink)' }}
               />
               <button
@@ -301,7 +304,7 @@ export default function TodayBoard() {
                   currentDate.setDate(currentDate.getDate() + 1);
                   setBoardDate(currentDate.toISOString().split('T')[0]);
                 }}
-                className="px-3 py-2 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
+                className="px-2 py-2 sm:px-3 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
                 style={{ color: 'var(--sf-ink)' }}
                 title="Next Day"
               >

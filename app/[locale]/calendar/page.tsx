@@ -109,47 +109,48 @@ export default function CalendarPage() {
     <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
-        <div className="container mx-auto px-4 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Link 
                 href={`/${locale}`}
-                className="text-2xl hover:opacity-80 transition"
+                className="text-xl sm:text-2xl hover:opacity-80 transition"
                 style={{ color: 'var(--sf-ink)' }}
               >
                 {locale === 'ar' ? '→' : '←'}
               </Link>
-              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('calendar')}</h1>
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={40} height={40} className="object-contain sm:w-[50px] sm:h-[50px]" />
+              <h1 className="text-lg sm:text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('calendar')}</h1>
             </div>
             <Link 
               href={`/${locale}/settings`}
-              className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-2"
+              className="px-3 py-2 sm:px-6 sm:py-3 bg-white border border-[#E7E2D8] rounded-lg sm:rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-1 sm:gap-2"
               style={{ color: 'var(--sf-ink)' }}
+              title={t('settings')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              {t('settings')}
+              <span className="hidden sm:inline">{t('settings')}</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {/* Month Navigation */}
-        <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <div className="flex items-center justify-between">
             <button
               onClick={previousMonth}
-              className="px-5 py-2 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-xl transition font-medium sf-button-transition"
+              className="px-3 py-2 sm:px-5 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-lg sm:rounded-xl transition font-medium sf-button-transition"
               style={{ color: 'var(--sf-ink)' }}
             >
               {locale === 'ar' ? '→' : '←'}
             </button>
             <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>
+              <h2 className="text-lg sm:text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>
                 {monthNames[month]} {year}
               </h2>
               {lastUpdatedAt && (
@@ -160,7 +161,7 @@ export default function CalendarPage() {
             </div>
             <button
               onClick={nextMonth}
-              className="px-5 py-2 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-xl transition font-medium sf-button-transition"
+              className="px-3 py-2 sm:px-5 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-lg sm:rounded-xl transition font-medium sf-button-transition"
               style={{ color: 'var(--sf-ink)' }}
             >
               {locale === 'ar' ? '←' : '→'}
@@ -174,19 +175,19 @@ export default function CalendarPage() {
             <p className="mt-2" style={{ color: 'var(--sf-muted)' }}>{tCommon('loading')}</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {/* Day headers */}
               {dayNames.map((day, index) => (
-                <div key={index} className="text-center font-semibold p-2" style={{ color: 'var(--sf-brown)' }}>
+                <div key={index} className="text-center font-semibold p-1 sm:p-2 text-xs sm:text-base" style={{ color: 'var(--sf-brown)' }}>
                   {day}
                 </div>
               ))}
 
               {/* Empty cells before first day */}
               {Array.from({ length: startingDayOfWeek }).map((_, index) => (
-                <div key={`empty-${index}`} className="p-2 min-h-[100px]"></div>
+                <div key={`empty-${index}`} className="p-1 sm:p-2 min-h-[60px] sm:min-h-[100px]"></div>
               ))}
 
               {/* Calendar days */}
@@ -200,25 +201,25 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
-                    className={`p-2 min-h-[100px] border rounded-lg ${
+                    className={`p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] border rounded ${
                       isToday ? 'bg-sky-50 border-sky-500' : 'border-gray-200 hover:bg-gray-50'
                     } transition`}
                   >
-                    <div className={`font-medium mb-1 ${isToday ? 'text-sky-600' : 'text-gray-700'}`}>
+                    <div className={`font-medium mb-0.5 sm:mb-1 text-xs sm:text-base ${isToday ? 'text-sky-600' : 'text-gray-700'}`}>
                       {day}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5 sm:space-y-1">
                       {dayJobs.slice(0, 3).map((job) => (
                         <Link
                           key={job.jobId}
                           href={`/${locale}/jobs/${job.jobId}`}
-                          className="block text-xs bg-primary-100 text-primary-800 rounded px-2 py-1 hover:bg-primary-200 transition truncate"
+                          className="block text-[10px] sm:text-xs bg-primary-100 text-primary-800 rounded px-1 sm:px-2 py-0.5 sm:py-1 hover:bg-primary-200 transition truncate"
                         >
                           {job.customerName}
                         </Link>
                       ))}
                       {dayJobs.length > 3 && (
-                        <div className="text-xs text-gray-500 px-2">
+                        <div className="text-[10px] sm:text-xs text-gray-500 px-1 sm:px-2">
                           +{dayJobs.length - 3} more
                         </div>
                       )}
