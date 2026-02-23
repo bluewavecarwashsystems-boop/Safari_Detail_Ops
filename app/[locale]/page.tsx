@@ -123,6 +123,23 @@ export default function TodayBoard() {
     return currentIndex < workflow.length - 1 ? workflow[currentIndex + 1] : null;
   };
 
+  const isToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return boardDate === today;
+  };
+
+  const getBoardTitle = () => {
+    if (isToday()) {
+      return t('boardTitle'); // "Today's Board"
+    }
+    // For other dates, show "Board for [Date]"
+    return `Board for ${new Date(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    })}`;
+  };
+
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -223,7 +240,7 @@ export default function TodayBoard() {
       <main className="container mx-auto px-4 py-6">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold text-gray-800">{t('boardTitle')}</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{getBoardTitle()}</h2>
             <div className="flex items-center gap-3">
               <label htmlFor="boardDate" className="text-sm font-medium text-gray-700">
                 📅 Board Date:
