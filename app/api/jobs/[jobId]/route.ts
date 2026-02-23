@@ -370,6 +370,63 @@ export const PATCH = requireAuth(async (
       }
     }
 
+    // Auto-initialize checklists when transitioning to CHECKED_IN
+    if (body.workStatus === WorkStatus.CHECKED_IN && currentJob.status !== WorkStatus.CHECKED_IN) {
+      console.log(`[ChecklistAutoInit] Job ${jobId} transitioning to CHECKED_IN, checking if checklists need initialization...`);
+      
+      // Check if checklists are empty or missing
+      const needsInitialization = !currentJob.checklist || 
+        (!currentJob.checklist.tech?.length && !currentJob.checklist.qc?.length);
+      
+      if (needsInitialization) {
+        console.log(`[ChecklistAutoInit] Initializing checklists for job ${jobId} with service type: ${currentJob.serviceType}`);
+        
+        try {
+          // Import checklist service
+          const checklistTemplateService = await import('@/lib/services/checklist-template-service');
+          const { v4: uuidv4 } = await import('uuid');
+          
+          // Get templates
+          const techTemplateItems = await checklistTemplateService.getActiveTemplateItems(
+            currentJob.serviceType,
+            'TECH'
+          );
+          const qcTemplateItems = await checklistTemplateService.getActiveTemplateItems(
+            currentJob.serviceType,
+            'QC'
+          );
+          
+          // Convert to checklist items
+          const techChecklist = techTemplateItems.map((item) => ({
+            id: uuidv4(),
+            label: item.label,
+            checked: false,
+          }));
+          const qcChecklist = qcTemplateItems.map((item) => ({
+            id: uuidv4(),
+            label: item.label,
+            checked: false,
+          }));
+          
+          // Add checklists to the update body
+          body.checklist = {
+            tech: techChecklist,
+            qc: qcChecklist,
+          };
+          
+          console.log(`[ChecklistAutoInit] Initialized checklists for job ${jobId}:`, {
+            techItems: techChecklist.length,
+            qcItems: qcChecklist.length,
+          });
+        } catch (error: any) {
+          console.error(`[ChecklistAutoInit] Failed to initialize checklists for job ${jobId}:`, error);
+          // Don't fail the status update, just log the error
+        }
+      } else {
+        console.log(`[ChecklistAutoInit] Job ${jobId} already has checklists, skipping initialization`);
+      }
+    }
+
     // Update job with audit trail
     const updatedJob = await updateJobWithAudit(jobId, body, {
       userId: session.sub,
