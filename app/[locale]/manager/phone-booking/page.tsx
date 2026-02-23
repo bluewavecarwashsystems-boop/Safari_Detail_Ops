@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
@@ -263,7 +264,8 @@ export default function PhoneBookingPage() {
   return (
     <div className="min-h-screen px-4 py-8" style={{ background: 'var(--sf-bg)' }}>
       <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center gap-4">
+          <Image src="/safari-logo.svg" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
           <h1 className="text-3xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
         </div>
 

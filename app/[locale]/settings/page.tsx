@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { UserRole } from '@/lib/types';
@@ -108,7 +109,10 @@ export default function SettingsPage() {
       <div className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+            <div className="flex items-center gap-4">
+              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+            </div>
             <button
               onClick={() => router.back()}
               className="flex items-center gap-2 hover:opacity-80 transition sf-button-transition"

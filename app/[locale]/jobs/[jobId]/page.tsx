@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useTranslations } from '@/lib/i18n/provider';
 import { usePolling } from '@/lib/hooks/usePolling';
 import { WorkStatus, PaymentStatus, ChecklistItem } from '@/lib/types';
@@ -893,7 +894,11 @@ export default function JobDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--sf-bg)' }}>
         <div className="text-center max-w-md">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <div className="text-red-500 text-5xl mb-4">
+            <svg className="w-20 h-20 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>{t('failedToLoad')}</h2>
           <p className="mb-4" style={{ color: 'var(--sf-muted)' }}>{error || t('notFound')}</p>
           <button
@@ -930,6 +935,7 @@ export default function JobDetail() {
               >
                 {locale === 'ar' ? '→' : '←'} {tCommon('back')}
               </button>
+              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
               <h1 className="text-xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
             {lastPolledAt && (
@@ -944,7 +950,7 @@ export default function JobDetail() {
       <main className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Customer Info */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>👤 {t('customer.title')}</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>{t('customer.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('customer.name')}</label>
@@ -963,7 +969,7 @@ export default function JobDetail() {
 
         {/* Appointment Time */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>📅 Scheduled Appointment</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>Scheduled Appointment</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>Date</label>
@@ -993,13 +999,13 @@ export default function JobDetail() {
         {/* Vehicle Info */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--sf-ink)' }}>🚗 {t('vehicle.title')}</h2>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--sf-ink)' }}>{t('vehicle.title')}</h2>
             {!editingVehicle && (
               <button
                 onClick={handleEditVehicle}
                 className="px-4 py-2 bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition text-sm"
               >
-                ✏️ Edit
+                Edit
               </button>
             )}
           </div>
@@ -1218,7 +1224,7 @@ export default function JobDetail() {
                   disabled={updating}
                   className="px-6 py-3 bg-[#16A34A] text-white rounded-xl font-medium hover:bg-[#15803D] sf-button-transition disabled:opacity-50"
                 >
-                  ✨ {t('actions.completeWork')}
+                  {t('actions.completeWork')}
                 </button>
               </>
             )}
@@ -1227,11 +1233,11 @@ export default function JobDetail() {
 
         {/* Checklist */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>✓ {t('checklist.title')}</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>{t('checklist.title')}</h2>
           
           {/* Tech Checklist */}
           <div className="mb-6">
-            <h3 className="text-md font-medium mb-3" style={{ color: 'var(--sf-brown)' }}>🔧 Tech Checklist</h3>
+            <h3 className="text-md font-medium mb-3" style={{ color: 'var(--sf-brown)' }}>Tech Checklist</h3>
             <div className="space-y-3">
               {(job.checklist?.tech || []).map((item) => (
                 <label
@@ -1563,7 +1569,7 @@ export default function JobDetail() {
       {/* Phase 5: No-show Section (Manager only) */}
       {currentUserRole === 'MANAGER' && (
         <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">🚫 {t('noShow.title')}</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('noShow.title')}</h2>
           
           {(!job.noShow || job.noShow.status === 'NONE') && (
             <div>

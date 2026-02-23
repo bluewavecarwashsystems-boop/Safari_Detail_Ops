@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import { WorkStatus, PaymentStatus } from '@/lib/types';
@@ -65,11 +66,11 @@ export default function TodayBoard() {
   });
 
   const columns = [
-    { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), icon: '📅', color: '#64748B' },
-    { status: WorkStatus.CHECKED_IN, title: t('status.checkedIn'), icon: '✅', color: '#2563EB' },
-    { status: WorkStatus.IN_PROGRESS, title: t('status.inProgress'), icon: '🔧', color: '#F47C20' },
-    { status: WorkStatus.QC_READY, title: t('status.qcReady'), icon: '🔍', color: '#7C3AED' },
-    { status: WorkStatus.WORK_COMPLETED, title: t('status.workCompleted'), icon: '✨', color: '#16A34A' },
+    { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), color: '#64748B' },
+    { status: WorkStatus.CHECKED_IN, title: t('status.checkedIn'), color: '#2563EB' },
+    { status: WorkStatus.IN_PROGRESS, title: t('status.inProgress'), color: '#F47C20' },
+    { status: WorkStatus.QC_READY, title: t('status.qcReady'), color: '#7C3AED' },
+    { status: WorkStatus.WORK_COMPLETED, title: t('status.workCompleted'), color: '#16A34A' },
   ];
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -221,30 +222,43 @@ export default function TodayBoard() {
       <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
         <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>🚗 {t('title')}</h1>
+            <div className="flex items-center gap-4">
+              <Image src="/safari-logo.svg" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+            </div>
             <div className="flex gap-3">
               {userRole === 'MANAGER' && (
                 <Link 
                   href={`/${locale}/manager/phone-booking`}
-                  className="px-6 py-3 bg-[#F47C20] text-white rounded-xl font-medium hover:bg-[#DB6E1C] sf-button-transition"
+                  className="px-6 py-3 bg-[#F47C20] text-white rounded-xl font-medium hover:bg-[#DB6E1C] sf-button-transition flex items-center gap-2"
                   style={{ boxShadow: 'var(--sf-shadow)' }}
                 >
-                  📞 {tNav('phoneBooking')}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  {tNav('phoneBooking')}
                 </Link>
               )}
               <Link 
                 href={`/${locale}/calendar`}
-                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition"
+                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-2"
                 style={{ color: 'var(--sf-ink)' }}
               >
-                📆 {tNav('calendar')}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {tNav('calendar')}
               </Link>
               <Link 
                 href={`/${locale}/settings`}
-                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition"
+                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition flex items-center gap-2"
                 style={{ color: 'var(--sf-ink)' }}
               >
-                ⚙️ {tNav('settings')}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {tNav('settings')}
               </Link>
             </div>
           </div>
@@ -257,7 +271,7 @@ export default function TodayBoard() {
             <h2 className="text-xl font-semibold" style={{ color: 'var(--sf-ink)' }}>{getBoardTitle()}</h2>
             <div className="flex items-center gap-3">
               <label htmlFor="boardDate" className="text-sm font-medium" style={{ color: 'var(--sf-brown)' }}>
-                📅 Board Date:
+                Board Date:
               </label>
               <input
                 type="date"
@@ -274,7 +288,7 @@ export default function TodayBoard() {
                 }}
                 className="px-4 py-2 text-sm font-medium bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition shadow-sm"
               >
-                📆 Today
+                Today
               </button>
             </div>
           </div>
@@ -355,12 +369,12 @@ export default function TodayBoard() {
                                   <PaymentBadge status={job.paymentStatus} />
                                   {job.hasOpenIssue && (
                                     <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200">
-                                      ⚠ Issue Open
+                                      Issue Open
                                     </span>
                                   )}
                                   {job.noShow?.status === 'NO_SHOW' && (
                                     <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200">
-                                      🚫 {t('job.noShow.badge' as any) || 'No-show'}
+                                      {t('job.noShow.badge' as any) || 'No-show'}
                                     </span>
                                   )}
                                 </div>
