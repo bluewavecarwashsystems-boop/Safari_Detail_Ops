@@ -847,6 +847,35 @@ export default function JobDetail() {
           </div>
         </section>
 
+        {/* Appointment Time */}
+        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">📅 Scheduled Appointment</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-gray-600">Date</label>
+              <div className="font-medium text-gray-900">
+                {job.appointmentTime || job.scheduledStart
+                  ? new Date(job.appointmentTime || job.scheduledStart!).toLocaleDateString(
+                      locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US',
+                      { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+                    )
+                  : 'Not scheduled'}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Time</label>
+              <div className="font-medium text-gray-900">
+                {job.appointmentTime || job.scheduledStart
+                  ? new Date(job.appointmentTime || job.scheduledStart!).toLocaleTimeString(
+                      locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US',
+                      { hour: 'numeric', minute: '2-digit' }
+                    )
+                  : 'Not scheduled'}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Vehicle Info */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">🚗 {t('vehicle.title')}</h2>
