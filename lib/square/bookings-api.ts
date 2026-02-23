@@ -302,19 +302,24 @@ export async function createBooking(params: {
     
     const url = `${baseUrl}/v2/bookings`;
     
+    // Build appointment segment - only include team_member_id if provided
+    const appointmentSegment: any = {
+      service_variation_id: params.serviceVariationId,
+      service_variation_version: params.serviceVariationVersion,
+      duration_minutes: params.durationMinutes || 60,
+    };
+    
+    // Only add team_member_id if explicitly provided
+    if (params.teamMemberId) {
+      appointmentSegment.team_member_id = params.teamMemberId;
+    }
+    
     const bookingData = {
       booking: {
         location_id: params.locationId,
         customer_id: params.customerId,
         start_at: params.startAt,
-        appointment_segments: [
-          {
-            service_variation_id: params.serviceVariationId,
-            service_variation_version: params.serviceVariationVersion,
-            duration_minutes: params.durationMinutes || 60,
-            team_member_id: params.teamMemberId || 'ANY',
-          },
-        ],
+        appointment_segments: [appointmentSegment],
         customer_note: params.customerNote,
         seller_note: params.sellerNote,
       },
