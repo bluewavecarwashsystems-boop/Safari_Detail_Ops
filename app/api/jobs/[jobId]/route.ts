@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse, UpdateJobRequest } from '@/lib/types';
-import { WorkStatus, UserRole, PaymentStatus } from '@/lib/types';
+import { WorkStatus, UserRole, PaymentStatus, ChecklistType } from '@/lib/types';
 import { getJobWithPhotos } from '@/lib/services/job-service';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { updateJobWithAudit } from '@/lib/services/job-service';
@@ -389,11 +389,11 @@ export const PATCH = requireAuth(async (
           // Get templates
           const techTemplateItems = await checklistTemplateService.getActiveTemplateItems(
             currentJob.serviceType,
-            'TECH'
+            ChecklistType.TECH
           );
           const qcTemplateItems = await checklistTemplateService.getActiveTemplateItems(
             currentJob.serviceType,
-            'QC'
+            ChecklistType.QC
           );
           
           // Convert to checklist items
