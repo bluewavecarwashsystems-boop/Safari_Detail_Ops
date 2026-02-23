@@ -366,7 +366,7 @@ export default function ChecklistTemplatesPage() {
                 onChange={(e) => setCustomServiceType(e.target.value)}
                 disabled={!useCustomServiceType}
                 placeholder="Enter custom service type..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100 text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -436,7 +436,7 @@ export default function ChecklistTemplatesPage() {
                         if (e.key === 'Enter') handleAddItem();
                       }}
                       placeholder={`Add new ${activeTab} checklist item...`}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500 text-gray-900 placeholder:text-gray-400"
                     />
                     <button
                       onClick={handleAddItem}
@@ -493,7 +493,7 @@ export default function ChecklistTemplatesPage() {
                               if (e.key === 'Enter') handleUpdateItem(item.id, editingLabel);
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="flex-1 px-2 py-1 border border-sky-500 rounded focus:ring-sky-500 focus:border-sky-500"
+                            className="flex-1 px-2 py-1 border border-sky-500 rounded focus:ring-sky-500 focus:border-sky-500 text-gray-900 placeholder:text-gray-400"
                             autoFocus
                           />
                         ) : (
