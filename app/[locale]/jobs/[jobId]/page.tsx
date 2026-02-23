@@ -880,10 +880,10 @@ export default function JobDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--sf-bg)' }}>
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-          <p className="text-gray-600">{t('loadingDetails')}</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F47C20] mb-4"></div>
+          <p style={{ color: 'var(--sf-muted)' }}>{t('loadingDetails')}</p>
         </div>
       </div>
     );
@@ -891,14 +891,14 @@ export default function JobDetail() {
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--sf-bg)' }}>
         <div className="text-center max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">{t('failedToLoad')}</h2>
-          <p className="text-gray-600 mb-4">{error || t('notFound')}</p>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>{t('failedToLoad')}</h2>
+          <p className="mb-4" style={{ color: 'var(--sf-muted)' }}>{error || t('notFound')}</p>
           <button
             onClick={() => router.back()}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            className="px-6 py-3 bg-[#F47C20] text-white rounded-xl hover:bg-[#DB6E1C] sf-button-transition"
           >
             ← {t('goBack')}
           </button>
@@ -908,7 +908,7 @@ export default function JobDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
@@ -919,20 +919,21 @@ export default function JobDetail() {
       )}
 
       {/* Header */}
-      <header className="bg-primary-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
+        <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="px-4 py-2 bg-primary-700 rounded-lg hover:bg-primary-800 transition"
+                className="px-5 py-2 bg-white border border-[#E7E2D8] rounded-xl hover:bg-[#FAF6EF] sf-button-transition"
+                style={{ color: 'var(--sf-ink)' }}
               >
                 {locale === 'ar' ? '→' : '←'} {tCommon('back')}
               </button>
-              <h1 className="text-xl font-bold">{t('title')}</h1>
+              <h1 className="text-xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
             {lastPolledAt && (
-              <div className="text-xs text-white/80">
+              <div className="text-xs" style={{ color: 'var(--sf-muted)' }}>
                 Updated {formatLastUpdated(lastPolledAt)}
               </div>
             )}
@@ -942,31 +943,31 @@ export default function JobDetail() {
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Customer Info */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">👤 {t('customer.title')}</h2>
+        <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>👤 {t('customer.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-600">{t('customer.name')}</label>
-              <div className="font-medium text-gray-900">{job.customerName}</div>
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('customer.name')}</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>{job.customerName}</div>
             </div>
             <div>
-              <label className="text-sm text-gray-600">{t('customer.phone')}</label>
-              <div className="font-medium text-gray-900">{job.customerPhone || t('customer.notProvided')}</div>
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('customer.phone')}</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>{job.customerPhone || t('customer.notProvided')}</div>
             </div>
             <div className="md:col-span-2">
-              <label className="text-sm text-gray-600">{t('customer.email')}</label>
-              <div className="font-medium text-gray-900">{job.customerEmail || t('customer.notProvided')}</div>
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('customer.email')}</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>{job.customerEmail || t('customer.notProvided')}</div>
             </div>
           </div>
         </section>
 
         {/* Appointment Time */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">📅 Scheduled Appointment</h2>
+        <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>📅 Scheduled Appointment</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-600">Date</label>
-              <div className="font-medium text-gray-900">
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>Date</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>
                 {job.appointmentTime || job.scheduledStart
                   ? new Date(job.appointmentTime || job.scheduledStart!).toLocaleDateString(
                       locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US',
@@ -976,8 +977,8 @@ export default function JobDetail() {
               </div>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Time</label>
-              <div className="font-medium text-gray-900">
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>Time</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>
                 {job.appointmentTime || job.scheduledStart
                   ? new Date(job.appointmentTime || job.scheduledStart!).toLocaleTimeString(
                       locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US',
@@ -990,13 +991,13 @@ export default function JobDetail() {
         </section>
 
         {/* Vehicle Info */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">🚗 {t('vehicle.title')}</h2>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--sf-ink)' }}>🚗 {t('vehicle.title')}</h2>
             {!editingVehicle && (
               <button
                 onClick={handleEditVehicle}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                className="px-4 py-2 bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition text-sm"
               >
                 ✏️ Edit
               </button>
@@ -1147,11 +1148,11 @@ export default function JobDetail() {
         </section>
 
         {/* Status & Actions */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">📊 {t('status.title')}</h2>
+        <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>📊 {t('status.title')}</h2>
           <div className="mb-4">
-            <label className="text-sm text-gray-600">{t('status.current')}</label>
-            <div className="text-xl font-bold text-primary-600">{job.workStatus}</div>
+            <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('status.current')}</label>
+            <div className="text-xl font-bold" style={{ color: 'var(--sf-orange)' }}>{job.workStatus}</div>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -1159,7 +1160,7 @@ export default function JobDetail() {
               <button
                 onClick={() => handleStatusChange(WorkStatus.CHECKED_IN)}
                 disabled={updating}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
+                className="px-6 py-3 bg-[#1F8A5B] text-white rounded-xl font-medium hover:bg-[#196F4A] sf-button-transition disabled:opacity-50"
               >
                 ✅ {t('actions.checkIn')}
               </button>
@@ -1170,14 +1171,14 @@ export default function JobDetail() {
                 <button
                   onClick={() => handleStatusChange(WorkStatus.SCHEDULED)}
                   disabled={updating}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#64748B] text-white rounded-xl font-medium hover:bg-[#475569] sf-button-transition disabled:opacity-50"
                 >
                   ← Back to Scheduled
                 </button>
                 <button
                   onClick={() => handleStatusChange(WorkStatus.IN_PROGRESS)}
                   disabled={updating}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#1D4ED8] sf-button-transition disabled:opacity-50"
                 >
                   🔧 {t('actions.startWork')}
                 </button>
@@ -1189,14 +1190,14 @@ export default function JobDetail() {
                 <button
                   onClick={() => handleStatusChange(WorkStatus.CHECKED_IN)}
                   disabled={updating}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#64748B] text-white rounded-xl font-medium hover:bg-[#475569] sf-button-transition disabled:opacity-50"
                 >
                   ← Back to Checked In
                 </button>
                 <button
                   onClick={() => handleStatusChange(WorkStatus.QC_READY)}
                   disabled={updating}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#7C3AED] text-white rounded-xl font-medium hover:bg-[#6D28D9] sf-button-transition disabled:opacity-50"
                 >
                   🔍 {t('actions.requestQC')}
                 </button>
@@ -1208,14 +1209,14 @@ export default function JobDetail() {
                 <button
                   onClick={() => handleStatusChange(WorkStatus.IN_PROGRESS)}
                   disabled={updating}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#64748B] text-white rounded-xl font-medium hover:bg-[#475569] sf-button-transition disabled:opacity-50"
                 >
                   ← Back to In Progress
                 </button>
                 <button
                   onClick={() => handleStatusChange(WorkStatus.WORK_COMPLETED)}
                   disabled={updating}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
+                  className="px-6 py-3 bg-[#16A34A] text-white rounded-xl font-medium hover:bg-[#15803D] sf-button-transition disabled:opacity-50"
                 >
                   ✨ {t('actions.completeWork')}
                 </button>
@@ -1225,17 +1226,17 @@ export default function JobDetail() {
         </section>
 
         {/* Checklist */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">✓ {t('checklist.title')}</h2>
+        <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>✓ {t('checklist.title')}</h2>
           
           {/* Tech Checklist */}
           <div className="mb-6">
-            <h3 className="text-md font-medium text-gray-700 mb-3">🔧 Tech Checklist</h3>
+            <h3 className="text-md font-medium mb-3" style={{ color: 'var(--sf-brown)' }}>🔧 Tech Checklist</h3>
             <div className="space-y-3">
               {(job.checklist?.tech || []).map((item) => (
                 <label
                   key={item.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+                  className="flex items-center gap-3 p-3 bg-[#FAF6EF] rounded-lg cursor-pointer hover:bg-[#F0EBE3] sf-button-transition"
                 >
                   <input
                     type="checkbox"
@@ -1409,27 +1410,28 @@ export default function JobDetail() {
         )}
 
         {/* Payment */}
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">💳 {t('payment.title')}</h2>
+        <section className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>💳 {t('payment.title')}</h2>
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
-              <div className="text-sm text-gray-600">{t('payment.amount')}</div>
+              <div className="text-sm" style={{ color: 'var(--sf-muted)' }}>{t('payment.amount')}</div>
               {editingAmount && currentUserRole === 'MANAGER' ? (
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-2xl font-bold text-gray-900">$</span>
+                  <span className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>$</span>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={amountInput}
                     onChange={(e) => setAmountInput(e.target.value)}
-                    className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none w-32"
+                    className="text-2xl font-bold border-b-2 border-[#F47C20] focus:outline-none w-32"
+                    style={{ color: 'var(--sf-ink)' }}
                     autoFocus
                   />
                   <button
                     onClick={handleAmountUpdate}
                     disabled={updating}
-                    className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                    className="px-3 py-1 bg-[#1F8A5B] text-white text-sm rounded hover:bg-[#196F4A] disabled:opacity-50 sf-button-transition"
                   >
                     ✓
                   </button>
@@ -1438,14 +1440,15 @@ export default function JobDetail() {
                       setEditingAmount(false);
                       setAmountInput('');
                     }}
-                    className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                    className="px-3 py-1 bg-gray-300 text-sm rounded hover:bg-gray-400"
+                    style={{ color: 'var(--sf-brown)' }}
                   >
                     ✕
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>
                     ${((job.payment?.amountCents || 0) / 100).toFixed(2)}
                   </div>
                   {currentUserRole === 'MANAGER' && (
@@ -1454,7 +1457,8 @@ export default function JobDetail() {
                         setAmountInput(((job.payment?.amountCents || 0) / 100).toFixed(2));
                         setEditingAmount(true);
                       }}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
+                      className="hover:opacity-80 text-sm sf-button-transition"
+                      style={{ color: 'var(--sf-orange)' }}
                     >
                       ✏️ Edit
                     </button>
@@ -1468,19 +1472,19 @@ export default function JobDetail() {
                 <button
                   onClick={handlePaymentToggle}
                   disabled={updating}
-                  className={`px-6 py-3 rounded-lg font-medium transition ${
+                  className={`px-6 py-3 rounded-xl font-medium sf-button-transition ${
                     job.payment?.status === PaymentStatus.PAID
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                      ? 'bg-[#1F8A5B] text-white hover:bg-[#196F4A]'
+                      : 'bg-[#F59E0B] text-white hover:bg-[#D97706]'
                   } disabled:opacity-50`}
                 >
                   {job.payment?.status === PaymentStatus.PAID ? '✓ PAID' : 'UNPAID'}
                 </button>
               ) : (
-                <span className={`px-4 py-2 rounded-lg font-medium ${
+                <span className={`px-4 py-2 rounded-full font-medium border ${
                   job.payment?.status === PaymentStatus.PAID
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0]'
+                    : 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]'
                 }`}>
                   {job.payment?.status || PaymentStatus.UNPAID}
                 </span>

@@ -69,13 +69,14 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--sf-bg)' }}>
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-block bg-white rounded-full p-4 mb-4">
+          <div className="inline-block bg-white rounded-full p-4 mb-4 border-4 border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
             <svg
-              className="w-12 h-12 text-sky-500"
+              className="w-12 h-12"
+              style={{ color: 'var(--sf-orange)' }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -88,23 +89,23 @@ function LoginForm() {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t('title')}</h1>
-          <p className="text-sky-100">{t('subtitle')}</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+          <p style={{ color: 'var(--sf-muted)' }}>{t('subtitle')}</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white rounded-2xl p-8" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: 'var(--sf-brown)' }}>
                 {t('email')}
               </label>
               <input
@@ -114,7 +115,8 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors"
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#F47C20] focus:border-transparent sf-button-transition"
+                style={{ borderColor: 'var(--sf-border)', color: 'var(--sf-ink)' }}
                 placeholder={t('emailPlaceholder')}
                 disabled={loading}
                 dir={locale === 'ar' ? 'ltr' : 'ltr'}
@@ -123,7 +125,7 @@ function LoginForm() {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: 'var(--sf-brown)' }}>
                 {t('password')}
               </label>
               <input
@@ -133,7 +135,8 @@ function LoginForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors"
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#F47C20] focus:border-transparent sf-button-transition"
+                style={{ borderColor: 'var(--sf-border)', color: 'var(--sf-ink)' }}
                 placeholder={t('passwordPlaceholder')}
                 disabled={loading}
                 dir="ltr"
@@ -144,7 +147,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-sky-500 hover:bg-sky-600 text-white font-medium py-3 px-4 rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-[#F47C20] hover:bg-[#DB6E1C] text-white font-medium py-3 px-4 rounded-xl sf-button-transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -162,7 +165,7 @@ function LoginForm() {
 
           {/* Footer Note */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
               {t('contactManager')}
             </p>
           </div>
@@ -175,10 +178,10 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
-          <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--sf-bg)' }}>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#F47C20] border-t-transparent mb-4"></div>
+          <p style={{ color: 'var(--sf-muted)' }}>Loading...</p>
         </div>
       </div>
     }>
