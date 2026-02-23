@@ -25,25 +25,24 @@ import type {
   ReorderTemplateItemsResponse,
 } from '@/lib/types';
 
-const COMMON_SERVICE_TYPES = [
-  'Full Detail',
-  'Express Detail',
-  'Interior Detail',
-  'Exterior Detail',
-  'Basic Wash',
-  'Premium Wash',
-];
+interface ServiceTypeResponse {
+  serviceTypes: string[];
+}
 
 type TabType = 'TECH' | 'QC';
 
 export default function ChecklistTemplatesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Service types from Square
+  const [availableServiceTypes, setAvailableServiceTypes] = useState<string[]>([]);
+  
   // Service selection
-  const [serviceType, setServiceType] = useState('Full Detail');
+  const [serviceType, setServiceType] = useState('');
   const [customServiceType, setCustomServiceType] = useState('');
   const [useCustomServiceType, setUseCustomServiceType] = useState(false);
 
@@ -58,9 +57,44 @@ export default function ChecklistTemplatesPage() {
   const [newItemLabel, setNewItemLabel] = useState('');
   const [addingItem, setAddingItem] = useState(false);
 
+  // Load service types from Square on mount
   useEffect(() => {
-    loadTemplates();
+    loadServiceTypes();
+  }, []);
+
+  // Load templates when service type changes
+  useEffect(() => {
+    if (serviceType || (useCustomServiceType && customServiceType)) {
+      loadTemplates();
+    }
   }, [serviceType, customServiceType, useCustomServiceType]);
+
+  const loadServiceTypes = async () => {
+    setLoadingServices(true);
+    try {
+      const response = await fetch('/api/services');
+      const data: ApiResponse<ServiceTypeResponse> = await response.json();
+
+      if (response.ok && data.success && data.data) {
+        const serviceTypes = data.data.serviceTypes;
+        setAvailableServiceTypes(serviceTypes);
+        
+        // Set first service as default if available
+        if (serviceTypes.length > 0 && !serviceType) {
+          setServiceType(serviceTypes[0]);
+        }
+      } else {
+        console.error('Failed to load service types:', data.error?.message);
+        // Fallback to empty array
+        setAvailableServiceTypes([]);
+      }
+    } catch (err) {
+      console.error('Load service types error:', err);
+      setAvailableServiceTypes([]);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
 
   const getEffectiveServiceType = () => {
     return useCustomServiceType && customServiceType.trim()
@@ -264,26 +298,21 @@ export default function ChecklistTemplatesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Checklist Templates</h1>
-            <button
-              onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back
-            </button>
-          </div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Checklist Templates</h1>
+          <p className="mt-2 text-gray-600">
+            Manage TECH and QC checklist templates for each service type. Changes will apply to future jobs only.
+          </p>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Error/Success Messages */}
+        {loadingServices && (
+          <div className="mb-6 text-center py-4">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-sky-500"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading services from Square...</p>
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
             {error}
@@ -310,12 +339,12 @@ export default function ChecklistTemplatesPage() {
                   setServiceType(e.target.value);
                   setUseCustomServiceType(false);
                 }}
-                disabled={useCustomServiceType}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
               >
-                {COMMON_SERVICE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                <option value="">-- Select a service type --</option>
+                {availableServiceTypes.map((service) => (
+                  <option key={service} value={service}>
+                    {service}
                   </option>
                 ))}
               </select>
@@ -329,7 +358,7 @@ export default function ChecklistTemplatesPage() {
                   onChange={(e) => setUseCustomServiceType(e.target.checked)}
                   className="w-4 h-4 text-sky-500 focus:ring-sky-500"
                 />
-                <span className="text-sm font-medium text-gray-700">Use custom service type</span>
+                <span className="text-sm font-medium text-gray-700">Use custom service type (not in Square)</span>
               </label>
               <input
                 type="text"
@@ -341,9 +370,11 @@ export default function ChecklistTemplatesPage() {
               />
             </div>
 
-            <div className="text-sm text-gray-600">
-              <strong>Current Service:</strong> {getEffectiveServiceType()}
-            </div>
+            {getEffectiveServiceType() && (
+              <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
+                <strong>Current Service:</strong> {getEffectiveServiceType()}
+              </div>
+            )}
           </div>
         </div>
 
@@ -560,6 +591,7 @@ export default function ChecklistTemplatesPage() {
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-blue-900 mb-2">📋 Instructions</h3>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li><strong>Service types are loaded from your Square catalog</strong></li>
             <li>Templates are automatically created when you add the first item</li>
             <li>Changes to templates do NOT affect existing jobs</li>
             <li>New jobs will snapshot the template at check-in time</li>
