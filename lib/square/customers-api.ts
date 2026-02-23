@@ -20,6 +20,41 @@ export interface SquareCustomer {
 }
 
 /**
+ * Normalize phone number to E164 format for Square API
+ * 
+ * Converts various phone formats to E164 (e.g., +15551234567)
+ * Assumes US phone numbers if no country code provided
+ * 
+ * @param phone - Phone number in any format
+ * @returns Phone number in E164 format
+ */
+export function normalizePhoneNumber(phone: string): string {
+  if (!phone) return phone;
+  
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+  
+  // Already has country code (11 digits for US)
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  
+  // 10 digits - assume US, add +1
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  
+  // Already in E164 format
+  if (phone.startsWith('+')) {
+    return phone;
+  }
+  
+  // Fallback - return original but log warning
+  console.warn('[PHONE NORMALIZE] Unexpected phone format', { phone, digits });
+  return phone.startsWith('+') ? phone : `+1${digits}`;
+}
+
+/**
  * Fetch customer details from Square Customers API
  * 
  * @param customerId - Square customer ID
@@ -179,9 +214,15 @@ export async function searchCustomers(query: {
     };
 
     if (query.phoneNumber) {
+      // Normalize phone to E164 format
+      const normalizedPhone = normalizePhoneNumber(query.phoneNumber);
       searchQuery.query.filter.phone_number = {
-        exact: query.phoneNumber,
+        exact: normalizedPhone,
       };
+      console.log('[SQUARE API] Normalized phone for search', { 
+        original: query.phoneNumber, 
+        normalized: normalizedPhone 
+      });
     }
 
     if (query.emailAddress) {
@@ -190,7 +231,10 @@ export async function searchCustomers(query: {
       };
     }
     
-    console.log('[SQUARE API] Searching customers', query);
+    console.log('[SQUARE API] Searching customers', { 
+      hasPhone: !!query.phoneNumber,
+      hasEmail: !!query.emailAddress
+    });
     
     const response = await fetch(url, {
       method: 'POST',
@@ -262,7 +306,15 @@ export async function createCustomer(params: {
     const customerData: any = {};
     if (params.givenName) customerData.given_name = params.givenName;
     if (params.familyName) customerData.family_name = params.familyName;
-    if (params.phoneNumber) customerData.phone_number = params.phoneNumber;
+    if (params.phoneNumber) {
+      // Normalize phone to E164 format
+      const normalizedPhone = normalizePhoneNumber(params.phoneNumber);
+      customerData.phone_number = normalizedPhone;
+      console.log('[SQUARE API] Normalized phone for create', { 
+        original: params.phoneNumber, 
+        normalized: normalizedPhone 
+      });
+    }
     if (params.emailAddress) customerData.email_address = params.emailAddress;
     if (params.note) customerData.note = params.note;
     
@@ -324,12 +376,19 @@ export async function findOrCreateCustomer(params: {
   phone: string;
   email?: string;
 }): Promise<SquareCustomer> {
+  console.log('[SQUARE API] Finding or creating customer', {
+    name: params.name,
+    phone: params.phone,
+    hasEmail: !!params.email,
+  });
+  
   // First, try to find by phone
   let customers = await searchCustomers({ phoneNumber: params.phone });
   
   if (customers.length > 0) {
     console.log('[SQUARE API] Found existing customer by phone', {
       customerId: customers[0].id,
+      customerName: formatCustomerName(customers[0]),
     });
     return customers[0];
   }
@@ -341,12 +400,18 @@ export async function findOrCreateCustomer(params: {
     if (customers.length > 0) {
       console.log('[SQUARE API] Found existing customer by email', {
         customerId: customers[0].id,
+        customerName: formatCustomerName(customers[0]),
       });
       return customers[0];
     }
   }
   
   // Customer not found, create new one
+  console.log('[SQUARE API] Customer not found, creating new customer', {
+    name: params.name,
+    phone: params.phone,
+  });
+  
   const nameParts = params.name.trim().split(' ');
   const givenName = nameParts[0] || params.name;
   const familyName = nameParts.slice(1).join(' ') || undefined;

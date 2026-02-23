@@ -296,10 +296,12 @@ export default function PhoneBookingPage() {
                   onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                   className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
                   disabled={creating}
+                  placeholder="555-123-4567 or +15551234567"
                 />
                 {errors.customerPhone && (
                   <p className="mt-1 text-sm text-red-500">{errors.customerPhone}</p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">Enter 10-digit US number (will be auto-formatted)</p>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
