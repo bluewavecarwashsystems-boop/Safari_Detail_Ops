@@ -17,7 +17,8 @@ import { isTimestampOnBoardDate } from './timezone';
  * 2. Jobs without appointmentTime but with createdAt on the board date are included
  * 3. Jobs in active states (CHECKED_IN, IN_PROGRESS, QC_READY) for today are always included
  *    (to avoid disappearing jobs mid-workflow)
- * 4. Jobs in WORK_COMPLETED are excluded (they belong to history, not today's board)
+ * 4. WORK_COMPLETED jobs are included if their appointmentTime is on the board date
+ *    (so you can see today's completed work)
  * 
  * @param jobs - Array of jobs to filter
  * @param boardDate - Date to filter for (ISO string YYYY-MM-DD, defaults to today)
@@ -40,9 +41,14 @@ export function filterJobsByBoardDate(
   return jobs.filter(job => {
     const status = job.status || job.workStatus;
     
-    // Exclude completed jobs - they don't belong on today's board
+    // For WORK_COMPLETED jobs, show them if their appointment was on the board date
+    // This allows viewing today's completed work
     if (status === WS.WORK_COMPLETED) {
-      return false;
+      const timestamp = job.appointmentTime || job.createdAt;
+      if (!timestamp) {
+        return false; // No timestamp - can't determine if it belongs to this date
+      }
+      return isTimestampOnBoardDate(timestamp, boardDate);
     }
     
     // If job is in an active state, keep it on the board if it's from today or earlier
