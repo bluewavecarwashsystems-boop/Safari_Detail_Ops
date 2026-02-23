@@ -314,12 +314,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     try {
       if (action === 'create') {
-        // Check if job already exists for this booking
-        console.log('[WEBHOOK] Checking for existing job', {
+        // Check if job already exists by jobId (fast direct lookup)
+        // Since we use bookingId as jobId, this catches manager-created bookings instantly
+        console.log('[WEBHOOK] Checking for existing job by ID (fast lookup)', {
           bookingId: parsedBooking.bookingId,
+          jobIdToCheck: parsedBooking.bookingId,
         });
         
-        const existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        let existingJob = await dynamodb.getJob(parsedBooking.bookingId);
+        
+        // Fallback: if not found by jobId, scan by bookingId field (for old jobs with random UUIDs)
+        if (!existingJob) {
+          console.log('[WEBHOOK] Not found by jobId, trying scan by bookingId field (slow)');
+          existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        }
         
         if (existingJob) {
           console.log('[JOB EXISTS]', {
@@ -327,6 +335,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             bookingId: parsedBooking.bookingId,
             customerName: existingJob.customerName,
             createdBy: existingJob.createdBy,
+            createdAt: existingJob.createdAt,
             action: 'updating existing job - webhook will NOT create duplicate',
           });
           
@@ -335,6 +344,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         } else {
           console.log('[JOB CREATING]', {
             bookingId: parsedBooking.bookingId,
+            jobIdToUse: parsedBooking.bookingId,
             customerName: parsedBooking.customerName,
             source: 'webhook',
             action: 'creating new job from webhook',
@@ -344,8 +354,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           jobAction = 'created';
         }
       } else if (action === 'update') {
-        // Find existing job by booking ID
-        const existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        // Find existing job by direct lookup first, then fallback to scan
+        let existingJob = await dynamodb.getJob(parsedBooking.bookingId);
+        
+        if (!existingJob) {
+          existingJob = await getJobByBookingId(parsedBooking.bookingId);
+        }
         
         if (existingJob) {
           console.log('[JOB UPDATING]', {

@@ -15,9 +15,18 @@ import { sendCompletionSms } from './sms-service';
 
 /**
  * Create a job from a Square booking (Phase 3: with customer caching)
+ * 
+ * Uses booking ID as job ID for consistency and idempotency
  */
 export async function createJobFromBooking(booking: ParsedBooking): Promise<Job> {
-  const jobId = uuidv4();
+  // Use booking ID as job ID for idempotency (matches manager phone booking behavior)
+  const jobId = booking.bookingId;
+  
+  console.log('[JOB SERVICE] Creating job from booking', {
+    jobId,
+    bookingId: booking.bookingId,
+    customerName: booking.customerName,
+  });
   
   // Phase 3: Fetch and cache customer details from Square if available
   let customerCached: CustomerCached | undefined;
