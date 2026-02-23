@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
-import { WorkStatus } from '@/lib/types';
+import { WorkStatus, PaymentStatus } from '@/lib/types';
 import type { Locale } from '@/i18n';
+import { PaymentBadge } from './components/PaymentBadge';
 
 interface JobCard {
   jobId: string;
@@ -15,6 +16,7 @@ interface JobCard {
   scheduledStart: string;
   workStatus: WorkStatus;
   hasOpenIssue: boolean;
+  paymentStatus: PaymentStatus;
   noShow?: {
     status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
     reason?: string;
@@ -30,6 +32,7 @@ const mockJobs: JobCard[] = [
     scheduledStart: '2026-02-05T09:00:00Z',
     workStatus: WorkStatus.SCHEDULED,
     hasOpenIssue: false,
+    paymentStatus: PaymentStatus.UNPAID,
   },
   {
     jobId: '2',
@@ -39,6 +42,7 @@ const mockJobs: JobCard[] = [
     scheduledStart: '2026-02-05T10:00:00Z',
     workStatus: WorkStatus.CHECKED_IN,
     hasOpenIssue: false,
+    paymentStatus: PaymentStatus.PAID,
   },
 ];
 
@@ -183,6 +187,7 @@ export default function TodayBoard() {
             scheduledStart: job.appointmentTime || job.createdAt,
             workStatus: job.status,
             hasOpenIssue: job.postCompletionIssue?.isOpen || false,
+            paymentStatus: job.payment?.status || PaymentStatus.UNPAID,
             noShow: job.noShow,
           }));
           setJobs(formattedJobs);
@@ -315,12 +320,14 @@ export default function TodayBoard() {
                       columnJobs.map((job) => {
                         const nextStatus = getNextStatus(job.workStatus);
                         const isUpdating = updatingJobs.has(job.jobId);
+                        const needsPaymentAttention = job.workStatus === WorkStatus.WORK_COMPLETED && job.paymentStatus === PaymentStatus.UNPAID;
                         
                         return (
                           <div
                             key={job.jobId}
                             className={`bg-gray-50 rounded-lg p-3 border ${
                               job.noShow?.status === 'NO_SHOW' ? 'border-orange-400 shadow-sm' : 
+                              needsPaymentAttention ? 'border-yellow-400 border-2 shadow-lg animate-pulse' :
                               'border-gray-200'
                             }`}
                           >
@@ -331,6 +338,7 @@ export default function TodayBoard() {
                               <div className="flex items-center justify-between">
                                 <div className="font-medium text-gray-900">{job.customerName}</div>
                                 <div className="flex gap-1">
+                                  <PaymentBadge status={job.paymentStatus} />
                                   {job.hasOpenIssue && (
                                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
                                       ⚠ Issue Open
