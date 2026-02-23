@@ -379,6 +379,11 @@ export async function updateJobWithAudit(
     };
   }
 
+  // Update service type
+  if (updates.serviceType !== undefined) {
+    updateData.serviceType = updates.serviceType;
+  }
+
   // Handle payment status updates
   if (updates.payment) {
     const now = new Date().toISOString();

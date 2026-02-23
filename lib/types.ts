@@ -449,6 +449,7 @@ export interface UpdateJobRequest {
   };
   notes?: string;
   vehicleInfo?: Job['vehicleInfo'];
+  serviceType?: string;
   openPostCompletionIssue?: {
     type: PostCompletionIssue['type'];
     notes?: string;

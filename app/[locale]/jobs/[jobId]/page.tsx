@@ -124,6 +124,20 @@ export default function JobDetail() {
   const [noShowReason, setNoShowReason] = useState<'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER'>('NO_ARRIVAL');
   const [noShowNotes, setNoShowNotes] = useState('');
 
+  // Vehicle editing state
+  const [editingVehicle, setEditingVehicle] = useState(false);
+  const [vehicleForm, setVehicleForm] = useState({
+    make: '',
+    model: '',
+    year: '',
+    color: '',
+    licensePlate: '',
+  });
+  const [serviceTypeForm, setServiceTypeForm] = useState('');
+  const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [savingVehicle, setSavingVehicle] = useState(false);
+
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {
     if (!date) return '';
@@ -765,6 +779,105 @@ export default function JobDetail() {
     }
   };
 
+  // Vehicle editing handlers
+  const fetchServices = async () => {
+    try {
+      setLoadingServices(true);
+      const response = await fetch('/api/services');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.services) {
+          setServices(data.data.services);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch services:', err);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const handleEditVehicle = () => {
+    if (!job) return;
+    
+    // Populate form with current values
+    setVehicleForm({
+      make: job.vehicleInfo.make || '',
+      model: job.vehicleInfo.model || '',
+      year: job.vehicleInfo.year?.toString() || '',
+      color: job.vehicleInfo.color || '',
+      licensePlate: job.vehicleInfo.licensePlate || '',
+    });
+    setServiceTypeForm(job.serviceType || '');
+    
+    // Load services
+    fetchServices();
+    
+    setEditingVehicle(true);
+  };
+
+  const handleSaveVehicle = async () => {
+    if (!job || savingVehicle) return;
+
+    setSavingVehicle(true);
+    try {
+      const requestBody: any = {
+        vehicleInfo: {
+          make: vehicleForm.make || undefined,
+          model: vehicleForm.model || undefined,
+          year: vehicleForm.year ? parseInt(vehicleForm.year) : undefined,
+          color: vehicleForm.color || undefined,
+          licensePlate: vehicleForm.licensePlate || undefined,
+        },
+      };
+
+      // Only include serviceType if it was changed
+      if (serviceTypeForm && serviceTypeForm !== job.serviceType) {
+        requestBody.serviceType = serviceTypeForm;
+      }
+
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Failed to update vehicle info');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.job) {
+        setJob(prev => prev ? { 
+          ...prev, 
+          vehicleInfo: data.data.job.vehicleInfo,
+          serviceType: data.data.job.serviceType,
+        } : null);
+        showToast('Vehicle info updated successfully', 'success');
+        setEditingVehicle(false);
+      }
+    } catch (err) {
+      console.error('Failed to update vehicle:', err);
+      showToast((err as Error).message, 'error');
+    } finally {
+      setSavingVehicle(false);
+    }
+  };
+
+  const handleCancelEditVehicle = () => {
+    setEditingVehicle(false);
+    setVehicleForm({
+      make: '',
+      model: '',
+      year: '',
+      color: '',
+      licensePlate: '',
+    });
+    setServiceTypeForm('');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -878,29 +991,159 @@ export default function JobDetail() {
 
         {/* Vehicle Info */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">🚗 {t('vehicle.title')}</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-600">{t('vehicle.makeModel')}</label>
-              <div className="font-medium text-gray-900">
-                {job.vehicleInfo.year || job.vehicleInfo.make || job.vehicleInfo.model
-                  ? `${job.vehicleInfo.year || ''} ${job.vehicleInfo.make || ''} ${job.vehicleInfo.model || ''}`.trim()
-                  : t('vehicle.pending')}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">🚗 {t('vehicle.title')}</h2>
+            {!editingVehicle && (
+              <button
+                onClick={handleEditVehicle}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+              >
+                ✏️ Edit
+              </button>
+            )}
+          </div>
+          
+          {editingVehicle ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Make
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleForm.make}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, make: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder="e.g., Toyota"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Model
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleForm.model}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, model: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder="e.g., Camry"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Year
+                  </label>
+                  <input
+                    type="number"
+                    value={vehicleForm.year}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, year: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder="e.g., 2020"
+                    min="1900"
+                    max="2100"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    License Plate
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleForm.licensePlate}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, licensePlate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder="e.g., ABC-1234"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Color
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleForm.color}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, color: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder="e.g., Silver"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Service
+                </label>
+                {loadingServices ? (
+                  <div className="text-sm text-gray-500">Loading services...</div>
+                ) : services.length > 0 ? (
+                  <select
+                    value={serviceTypeForm}
+                    onChange={(e) => setServiceTypeForm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  >
+                    <option value="">{job.serviceType}</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.name}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={serviceTypeForm}
+                    onChange={(e) => setServiceTypeForm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    placeholder={job.serviceType}
+                  />
+                )}
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSaveVehicle}
+                  disabled={savingVehicle}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                >
+                  {savingVehicle ? 'Saving...' : '✓ Save'}
+                </button>
+                <button
+                  onClick={handleCancelEditVehicle}
+                  disabled={savingVehicle}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition disabled:opacity-50"
+                >
+                  ✕ Cancel
+                </button>
               </div>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">{t('vehicle.licensePlate')}</label>
-              <div className="font-medium text-gray-900">{job.vehicleInfo.licensePlate || t('vehicle.pending')}</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-600">{t('vehicle.makeModel')}</label>
+                <div className="font-medium text-gray-900">
+                  {job.vehicleInfo.year || job.vehicleInfo.make || job.vehicleInfo.model
+                    ? `${job.vehicleInfo.year || ''} ${job.vehicleInfo.make || ''} ${job.vehicleInfo.model || ''}`.trim()
+                    : t('vehicle.pending')}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">{t('vehicle.licensePlate')}</label>
+                <div className="font-medium text-gray-900">{job.vehicleInfo.licensePlate || t('vehicle.pending')}</div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">{t('vehicle.color')}</label>
+                <div className="font-medium text-gray-900">{job.vehicleInfo.color || t('vehicle.pending')}</div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">{t('vehicle.service')}</label>
+                <div className="font-medium text-sm text-gray-900">{job.serviceType}</div>
+              </div>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">{t('vehicle.color')}</label>
-              <div className="font-medium text-gray-900">{job.vehicleInfo.color || t('vehicle.pending')}</div>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">{t('vehicle.service')}</label>
-              <div className="font-medium text-sm text-gray-900">{job.serviceType}</div>
-            </div>
-          </div>
+          )}
         </section>
 
         {/* Status & Actions */}
