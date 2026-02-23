@@ -24,6 +24,7 @@ export interface Config {
     webhookSignatureKey: string;
     environment: 'sandbox' | 'production';
     franklinLocationId: string | null;
+    teamMemberId: string | null;
   };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
@@ -91,6 +92,7 @@ export function getConfig(): Config {
       webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || '',
       environment: (process.env.SQUARE_ENV === 'production' ? 'production' : 'sandbox'),
       franklinLocationId: process.env.FRANKLIN_SQUARE_LOCATION_ID || null,
+      teamMemberId: process.env.SQUARE_TEAM_MEMBER_ID || null,
     },
     logging: {
       level: (process.env.LOG_LEVEL as any) || 'info',

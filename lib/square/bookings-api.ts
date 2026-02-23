@@ -285,6 +285,7 @@ export async function createBooking(params: {
   serviceVariationVersion: number;
   startAt: string;
   durationMinutes?: number;
+  teamMemberId?: string;
   customerNote?: string;
   sellerNote?: string;
 }): Promise<SquareBooking> {
@@ -311,6 +312,7 @@ export async function createBooking(params: {
             service_variation_id: params.serviceVariationId,
             service_variation_version: params.serviceVariationVersion,
             duration_minutes: params.durationMinutes || 60,
+            team_member_id: params.teamMemberId || 'ANY',
           },
         ],
         customer_note: params.customerNote,

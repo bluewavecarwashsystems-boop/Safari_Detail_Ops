@@ -129,6 +129,7 @@ export const POST = requireAuth(async (
       serviceVariationVersion: serviceVariationVersion,
       startAt: body.appointmentTime.startAt,
       durationMinutes: body.service.durationMinutes,
+      teamMemberId: config.square.teamMemberId || undefined,
       customerNote: body.notes,
       sellerNote: body.vehicle ? 
         `Vehicle: ${body.vehicle.year || ''} ${body.vehicle.make || ''} ${body.vehicle.model || ''}`.trim() : 
