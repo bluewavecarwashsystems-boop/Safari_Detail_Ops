@@ -315,13 +315,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       if (action === 'create') {
         // Check if job already exists for this booking
+        console.log('[WEBHOOK] Checking for existing job', {
+          bookingId: parsedBooking.bookingId,
+        });
+        
         const existingJob = await getJobByBookingId(parsedBooking.bookingId);
         
         if (existingJob) {
           console.log('[JOB EXISTS]', {
             jobId: existingJob.jobId,
             bookingId: parsedBooking.bookingId,
-            action: 'updating existing job',
+            customerName: existingJob.customerName,
+            createdBy: existingJob.createdBy,
+            action: 'updating existing job - webhook will NOT create duplicate',
           });
           
           job = await updateJobFromBooking(existingJob.jobId, parsedBooking);
@@ -329,6 +335,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         } else {
           console.log('[JOB CREATING]', {
             bookingId: parsedBooking.bookingId,
+            customerName: parsedBooking.customerName,
+            source: 'webhook',
+            action: 'creating new job from webhook',
           });
           
           job = await createJobFromBooking(parsedBooking);

@@ -165,11 +165,18 @@ export const POST = requireAuth(async (
     // Step 3: Create job in DynamoDB immediately (don't wait for webhook)
     const jobId = squareBooking.id; // Use booking ID as job ID for consistency
 
+    console.log('[MANAGER BOOKING] Checking for existing job', {
+      jobId,
+      bookingId: squareBooking.id,
+    });
+
     // Check if job already exists (idempotency)
     const existingJob = await dynamodb.getJob(jobId);
     if (existingJob) {
       console.log('[MANAGER BOOKING] Job already exists, returning existing', {
         jobId,
+        existingJobCreatedAt: existingJob.createdAt,
+        existingJobCreatedBy: existingJob.createdBy,
       });
 
       const response: ApiResponse<CreateManagerBookingResponse> = {
@@ -187,6 +194,16 @@ export const POST = requireAuth(async (
 
     // Create new job
     const now = new Date().toISOString();
+    
+    console.log('[MANAGER BOOKING] Creating new job in DynamoDB', {
+      jobId,
+      customerId: customer.id,
+      customerName: body.customer.name,
+      customerPhone: body.customer.phone,
+      serviceType: body.service.serviceName,
+      appointmentTime: body.appointmentTime.startAt,
+    });
+    
     const job = await dynamodb.createJob({
       jobId: jobId,
       customerId: customer.id,
