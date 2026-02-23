@@ -65,11 +65,11 @@ export default function TodayBoard() {
   });
 
   const columns = [
-    { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), icon: '📅' },
-    { status: WorkStatus.CHECKED_IN, title: t('status.checkedIn'), icon: '✅' },
-    { status: WorkStatus.IN_PROGRESS, title: t('status.inProgress'), icon: '🔧' },
-    { status: WorkStatus.QC_READY, title: t('status.qcReady'), icon: '🔍' },
-    { status: WorkStatus.WORK_COMPLETED, title: t('status.workCompleted'), icon: '✨' },
+    { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), icon: '📅', color: '#64748B' },
+    { status: WorkStatus.CHECKED_IN, title: t('status.checkedIn'), icon: '✅', color: '#2563EB' },
+    { status: WorkStatus.IN_PROGRESS, title: t('status.inProgress'), icon: '🔧', color: '#F47C20' },
+    { status: WorkStatus.QC_READY, title: t('status.qcReady'), icon: '🔍', color: '#7C3AED' },
+    { status: WorkStatus.WORK_COMPLETED, title: t('status.workCompleted'), icon: '✨', color: '#16A34A' },
   ];
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -209,7 +209,7 @@ export default function TodayBoard() {
   }, [boardDate]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
           toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
@@ -218,28 +218,31 @@ export default function TodayBoard() {
         </div>
       )}
 
-      <header className="bg-primary-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
+        <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">🚗 {t('title')}</h1>
-            <div className="flex gap-4">
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>🚗 {t('title')}</h1>
+            <div className="flex gap-3">
               {userRole === 'MANAGER' && (
                 <Link 
                   href={`/${locale}/manager/phone-booking`}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                  className="px-6 py-3 bg-[#F47C20] text-white rounded-xl font-medium hover:bg-[#DB6E1C] sf-button-transition"
+                  style={{ boxShadow: 'var(--sf-shadow)' }}
                 >
                   📞 {tNav('phoneBooking')}
                 </Link>
               )}
               <Link 
                 href={`/${locale}/calendar`}
-                className="px-4 py-2 bg-white text-primary-600 rounded-lg font-medium hover:bg-gray-100 transition"
+                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition"
+                style={{ color: 'var(--sf-ink)' }}
               >
                 📆 {tNav('calendar')}
               </Link>
               <Link 
                 href={`/${locale}/settings`}
-                className="px-4 py-2 bg-primary-700 rounded-lg font-medium hover:bg-primary-800 transition"
+                className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition"
+                style={{ color: 'var(--sf-ink)' }}
               >
                 ⚙️ {tNav('settings')}
               </Link>
@@ -248,12 +251,12 @@ export default function TodayBoard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="mb-4">
+      <main className="max-w-[1600px] mx-auto px-6 py-6">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold text-gray-800">{getBoardTitle()}</h2>
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--sf-ink)' }}>{getBoardTitle()}</h2>
             <div className="flex items-center gap-3">
-              <label htmlFor="boardDate" className="text-sm font-medium text-gray-700">
+              <label htmlFor="boardDate" className="text-sm font-medium" style={{ color: 'var(--sf-brown)' }}>
                 📅 Board Date:
               </label>
               <input
@@ -261,20 +264,21 @@ export default function TodayBoard() {
                 id="boardDate"
                 value={boardDate}
                 onChange={(e) => setBoardDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
+                className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#F47C20] focus:border-[#F47C20] shadow-sm bg-white"
+                style={{ borderColor: 'var(--sf-border)', color: 'var(--sf-ink)' }}
               />
               <button
                 onClick={() => {
                   const today = new Date().toISOString().split('T')[0];
                   setBoardDate(today);
                 }}
-                className="px-4 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-sm"
+                className="px-4 py-2 text-sm font-medium bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition shadow-sm"
               >
                 📆 Today
               </button>
             </div>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
             {parseLocalDate(boardDate).toLocaleDateString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -283,7 +287,7 @@ export default function TodayBoard() {
             })}
           </p>
           {error && (
-            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800">
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-800">
               ⚠️ {t('apiError', { error })}
             </div>
           )}
@@ -291,8 +295,8 @@ export default function TodayBoard() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <p className="mt-2 text-gray-600">{t('loadingJobs')}</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#F47C20]"></div>
+            <p className="mt-2" style={{ color: 'var(--sf-muted)' }}>{t('loadingJobs')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -300,20 +304,26 @@ export default function TodayBoard() {
               const columnJobs = jobs.filter(job => job.workStatus === column.status);
               
               return (
-                <div key={column.status} className="bg-white rounded-lg shadow-md p-4">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                      <span>{column.icon}</span>
+                <div key={column.status} className="bg-transparent">
+                  <div className="sticky top-0 bg-white border-b p-4 mb-4 rounded-t-2xl" style={{ borderColor: 'var(--sf-border)', boxShadow: 'var(--sf-shadow)' }}>
+                    <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--sf-ink)' }}>
+                      <span 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: column.color }}
+                      ></span>
                       <span>{column.title}</span>
-                      <span className={`${locale === 'ar' ? 'mr-auto' : 'ml-auto'} text-sm bg-gray-200 px-2 py-1 rounded-full`}>
+                      <span 
+                        className="ml-auto px-3 py-1 text-xs rounded-full font-medium bg-[#FAF6EF]"
+                        style={{ color: 'var(--sf-brown)' }}
+                      >
                         {columnJobs.length}
                       </span>
                     </h3>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 px-1">
                     {columnJobs.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-sm">
+                      <div className="text-center py-8 text-sm" style={{ color: 'var(--sf-muted)' }}>
                         {t('noJobs')}
                       </div>
                     ) : (
@@ -325,35 +335,39 @@ export default function TodayBoard() {
                         return (
                           <div
                             key={job.jobId}
-                            className={`bg-gray-50 rounded-lg p-3 border ${
-                              job.noShow?.status === 'NO_SHOW' ? 'border-orange-400 shadow-sm' : 
+                            className={`bg-white rounded-2xl p-4 border sf-card-hover ${
+                              job.noShow?.status === 'NO_SHOW' ? 'border-orange-400' : 
                               needsPaymentAttention ? 'border-yellow-400 border-2 shadow-lg animate-pulse' :
-                              'border-gray-200'
+                              'border-[#E7E2D8]'
                             }`}
+                            style={{ 
+                              boxShadow: 'var(--sf-shadow)',
+                              borderLeft: `4px solid ${column.color}`
+                            }}
                           >
                             <Link
                               href={`/${locale}/jobs/${job.jobId}`}
-                              className="block hover:bg-gray-100 rounded transition"
+                              className="block hover:opacity-90 transition"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-gray-900">{job.customerName}</div>
-                                <div className="flex gap-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="font-semibold text-sm" style={{ color: 'var(--sf-ink)' }}>{job.customerName}</div>
+                                <div className="flex gap-1 flex-wrap justify-end">
                                   <PaymentBadge status={job.paymentStatus} />
                                   {job.hasOpenIssue && (
-                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                                    <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200">
                                       ⚠ Issue Open
                                     </span>
                                   )}
                                   {job.noShow?.status === 'NO_SHOW' && (
-                                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                                    <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200">
                                       🚫 {t('job.noShow.badge' as any) || 'No-show'}
                                     </span>
                                   )}
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-600 mt-1">{job.vehicleInfo}</div>
-                              <div className="text-xs text-gray-500 mt-2">{job.serviceType}</div>
-                              <div className="text-xs text-primary-600 mt-1">
+                              <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
+                              <div className="text-sm font-medium mb-1" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
+                              <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>
                                 {new Date(job.scheduledStart).toLocaleTimeString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', {
                                   hour: 'numeric',
                                   minute: '2-digit',
@@ -365,10 +379,10 @@ export default function TodayBoard() {
                               <button
                                 onClick={() => updateJobStatus(job.jobId, nextStatus)}
                                 disabled={isUpdating}
-                                className={`mt-2 w-full px-3 py-1 text-sm rounded transition ${
+                                className={`mt-3 w-full h-9 px-3 text-sm font-medium rounded-lg sf-button-transition ${
                                   isUpdating
                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                                    : 'bg-[#F47C20] text-white hover:bg-[#DB6E1C]'
                                 }`}
                               >
                                 {isUpdating ? 'Updating...' : `Move to ${columns.find(c => c.status === nextStatus)?.title}`}

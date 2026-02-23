@@ -105,23 +105,25 @@ export default function CalendarPage() {
   const today = new Date().toDateString();
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
       {/* Header */}
-      <header className="bg-primary-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
+        <div className="container mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link 
                 href={`/${locale}`}
                 className="text-2xl hover:opacity-80 transition"
+                style={{ color: 'var(--sf-ink)' }}
               >
                 {locale === 'ar' ? '→' : '←'}
               </Link>
-              <h1 className="text-2xl font-bold">📆 {t('calendar')}</h1>
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>📆 {t('calendar')}</h1>
             </div>
             <Link 
               href={`/${locale}/settings`}
-              className="px-4 py-2 bg-primary-700 rounded-lg font-medium hover:bg-primary-800 transition"
+              className="px-6 py-3 bg-white border border-[#E7E2D8] rounded-xl font-medium hover:bg-[#FAF6EF] sf-button-transition"
+              style={{ color: 'var(--sf-ink)' }}
             >
               ⚙️ {t('settings')}
             </Link>
@@ -131,27 +133,29 @@ export default function CalendarPage() {
 
       <main className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Month Navigation */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <div className="flex items-center justify-between">
             <button
               onClick={previousMonth}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium"
+              className="px-5 py-2 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-xl transition font-medium sf-button-transition"
+              style={{ color: 'var(--sf-ink)' }}
             >
               {locale === 'ar' ? '→' : '←'}
             </button>
             <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>
                 {monthNames[month]} {year}
               </h2>
               {lastUpdatedAt && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: 'var(--sf-muted)' }}>
                   Updated {formatLastUpdated(lastUpdatedAt)}
                 </p>
               )}
             </div>
             <button
               onClick={nextMonth}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium"
+              className="px-5 py-2 bg-white border border-[#E7E2D8] hover:bg-[#FAF6EF] rounded-xl transition font-medium sf-button-transition"
+              style={{ color: 'var(--sf-ink)' }}
             >
               {locale === 'ar' ? '←' : '→'}
             </button>
@@ -160,16 +164,16 @@ export default function CalendarPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <p className="mt-2 text-gray-600">{tCommon('loading')}</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#F47C20]"></div>
+            <p className="mt-2" style={{ color: 'var(--sf-muted)' }}>{tCommon('loading')}</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2">
               {/* Day headers */}
               {dayNames.map((day, index) => (
-                <div key={index} className="text-center font-semibold text-gray-700 p-2">
+                <div key={index} className="text-center font-semibold p-2" style={{ color: 'var(--sf-brown)' }}>
                   {day}
                 </div>
               ))}

@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 :root {
+  /* Safari Design Tokens */
+  /* Core Surfaces */
+  --sf-bg: #FAF6EF;          /* Safari Sand background */
+  --sf-surface: #FFFFFF;     /* Card surface */
+  --sf-border: #E7E2D8;      /* Soft sand border */
+  --sf-ink: #0F172A;         /* Primary text */
+  --sf-muted: #64748B;       /* Secondary text */
+
+  /* Brand Colors */
+  --sf-orange: #F47C20;      /* Safari Orange - Primary Action */
+  --sf-green: #1F8A5B;       /* Safari Green - Success */
+  --sf-brown: #5A3E2B;       /* Safari Brown - Accent */
+  
+  /* State Colors */
+  --sf-info: #2563EB;
+  --sf-warning: #F59E0B;
+  --sf-danger: #DC2626;
+  --sf-success: #16A34A;
+
+  /* Shadow */
+  --sf-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+
+  /* Legacy (for backwards compatibility) */
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
@@ -17,13 +40,8 @@
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: var(--sf-bg);
+  color: var(--sf-ink);
 }
 
 /* RTL Support for Arabic */
@@ -36,6 +54,20 @@ button, a {
   min-height: 44px;
   min-width: 44px;
   touch-action: manipulation;
+}
+
+/* Micro-interactions */
+.sf-card-hover {
+  transition: all 150ms ease;
+}
+
+.sf-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.sf-button-transition {
+  transition: all 150ms ease;
 }
 
 /* Loading spinner */
