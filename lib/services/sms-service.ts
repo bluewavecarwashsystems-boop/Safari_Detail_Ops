@@ -103,7 +103,7 @@ export async function sendCompletionSms(jobId: string): Promise<{
   const customerName = job.customerName || '';
   const greeting = customerName ? `${customerName.split(' ')[0]}, ` : '';
   
-  const messageBody = `${greeting}Safari Detail Ops: Your vehicle is complete and ready. Questions? Call (615) 431-2770.`;
+  const messageBody = `${greeting}your vehicle is complete and ready for pickup.\nThank you for choosing Safari Car Wash.\nFor any questions, please call 615-794-2410.`;
 
   try {
     // Send SMS via Twilio
