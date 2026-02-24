@@ -150,13 +150,21 @@ export default function PhoneBookingPage() {
     });
   };
 
-  const calculateTotalPrice = (): number => {
+  const calculateSubtotal = (): number => {
     const servicePrice = parseFloat(formData.serviceAmount) || 0;
     const addonsPrice = Array.from(selectedAddonIds).reduce((sum, addonId) => {
       const addon = addons.find(a => a.id === addonId);
       return sum + ((addon?.priceMoney?.amount || 0) / 100);
     }, 0);
     return servicePrice + addonsPrice;
+  };
+
+  const calculateTax = (): number => {
+    return calculateSubtotal() * 0.0975;
+  };
+
+  const calculateTotalPrice = (): number => {
+    return calculateSubtotal() + calculateTax();
   };
 
   const validateForm = () => {
@@ -232,7 +240,7 @@ export default function PhoneBookingPage() {
           serviceVariationId: selectedService.id,
           serviceVariationVersion: selectedService.version,
           durationMinutes: parseInt(formData.serviceDuration),
-          amountCents: formData.serviceAmount ? parseInt(formData.serviceAmount) * 100 : undefined,
+          amountCents: Math.round(calculateTotalPrice() * 100), // Total with tax in cents
         },
         appointmentTime: {
           startAt,
@@ -593,8 +601,20 @@ export default function PhoneBookingPage() {
                   </span>
                 </div>
               )}
+              <div className="flex justify-between text-sm pt-2">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium text-gray-900">
+                  ${calculateSubtotal().toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Tax (9.75%):</span>
+                <span className="font-medium text-gray-900">
+                  ${calculateTax().toFixed(2)}
+                </span>
+              </div>
               <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between">
-                <span className="font-semibold text-gray-900">Estimated Total:</span>
+                <span className="font-semibold text-gray-900">Total Amount:</span>
                 <span className="font-bold text-lg" style={{ color: 'var(--sf-orange)' }}>
                   ${calculateTotalPrice().toFixed(2)}
                 </span>

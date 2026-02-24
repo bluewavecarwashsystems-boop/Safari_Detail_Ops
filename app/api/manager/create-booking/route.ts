@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse, CreateManagerBookingRequest, CreateManagerBookingResponse } from '@/lib/types';
-import { WorkStatus, UserRole } from '@/lib/types';
+import { WorkStatus, UserRole, PaymentStatus } from '@/lib/types';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { findOrCreateCustomer } from '@/lib/square/customers-api';
 import { createBooking } from '@/lib/square/bookings-api';
@@ -346,6 +346,10 @@ export const POST = requireAuth(async (
       orderId: orderId, // Store order ID if add-ons were created
       appointmentTime: body.appointmentTime.startAt,
       notes: body.notes,
+      payment: body.service.amountCents ? {
+        status: PaymentStatus.UNPAID,
+        amountCents: body.service.amountCents,
+      } : undefined,
       createdAt: now,
       updatedAt: now,
       createdBy: `manager-phone:${session.sub}`,

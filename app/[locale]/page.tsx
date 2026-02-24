@@ -18,6 +18,10 @@ interface JobCard {
   workStatus: WorkStatus;
   hasOpenIssue: boolean;
   paymentStatus: PaymentStatus;
+  payment?: {
+    status: PaymentStatus;
+    amountCents?: number;
+  };
   noShow?: {
     status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
     reason?: string;
@@ -189,6 +193,7 @@ export default function TodayBoard() {
             workStatus: job.status,
             hasOpenIssue: job.postCompletionIssue?.isOpen || false,
             paymentStatus: job.payment?.status || PaymentStatus.UNPAID,
+            payment: job.payment,
             noShow: job.noShow,
           }));
           setJobs(formattedJobs);
@@ -410,6 +415,11 @@ export default function TodayBoard() {
                                   )}
                                 </div>
                               </div>
+                              {job.payment?.amountCents && (
+                                <div className="text-sm font-semibold mb-2" style={{ color: 'var(--sf-orange)' }}>
+                                  ${(job.payment.amountCents / 100).toFixed(2)}
+                                </div>
+                              )}
                               <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
                               <div className="text-sm font-medium mb-1" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
                               <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>

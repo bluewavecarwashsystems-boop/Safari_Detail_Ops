@@ -556,7 +556,7 @@ export interface CreateManagerBookingRequest {
     serviceVariationId?: string;
     serviceVariationVersion?: number;
     durationMinutes: number;
-    amountCents?: number;
+    amountCents?: number; // Total amount including tax in cents
   };
   appointmentTime: {
     startAt: string; // ISO timestamp
