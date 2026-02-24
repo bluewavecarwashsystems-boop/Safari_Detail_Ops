@@ -97,6 +97,9 @@ export default function TodayBoard() {
     { status: WorkStatus.WORK_COMPLETED, title: t('status.workCompleted'), color: '#16A34A' },
   ];
 
+  // Separate section for cancelled jobs (displayed at the bottom)
+  const cancelledColumn = { status: WorkStatus.CANCELLED, title: 'Cancelled', color: '#9CA3AF' };
+
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -370,117 +373,191 @@ export default function TodayBoard() {
             <p className="mt-2" style={{ color: 'var(--sf-muted)' }}>{t('loadingJobs')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {columns.map((column) => {
-              const columnJobs = jobs.filter(job => job.workStatus === column.status);
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {columns.map((column) => {
+                const columnJobs = jobs.filter(job => job.workStatus === column.status);
+                
+                return (
+                  <div key={column.status} className="bg-transparent">
+                    <div className="sticky top-0 bg-white border-b p-4 mb-4 rounded-t-2xl" style={{ borderColor: 'var(--sf-border)', boxShadow: 'var(--sf-shadow)' }}>
+                      <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--sf-ink)' }}>
+                        <span 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: column.color }}
+                        ></span>
+                        <span>{column.title}</span>
+                        <span 
+                          className="ml-auto px-3 py-1 text-xs rounded-full font-medium bg-[#FAF6EF]"
+                          style={{ color: 'var(--sf-brown)' }}
+                        >
+                          {columnJobs.length}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="space-y-3 px-1">
+                      {columnJobs.length === 0 ? (
+                        <div className="text-center py-8 text-sm" style={{ color: 'var(--sf-muted)' }}>
+                          {t('noJobs')}
+                        </div>
+                      ) : (
+                        columnJobs.map((job) => {
+                          const nextStatus = getNextStatus(job.workStatus);
+                          const isUpdating = updatingJobs.has(job.jobId);
+                          const needsPaymentAttention = job.workStatus === WorkStatus.WORK_COMPLETED && job.paymentStatus === PaymentStatus.UNPAID;
+                          
+                          return (
+                            <div
+                              key={job.jobId}
+                              className={`bg-white rounded-2xl p-4 border sf-card-hover ${
+                                job.noShow?.status === 'NO_SHOW' ? 'border-orange-400' : 
+                                needsPaymentAttention ? 'border-yellow-400 border-2 shadow-lg animate-pulse' :
+                                'border-[#E7E2D8]'
+                              }`}
+                              style={{ 
+                                boxShadow: 'var(--sf-shadow)',
+                                borderLeft: `4px solid ${column.color}`
+                              }}
+                            >
+                              <Link
+                                href={`/${locale}/jobs/${job.jobId}`}
+                                className="block hover:opacity-90 transition"
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="font-semibold text-sm" style={{ color: 'var(--sf-ink)' }}>{job.customerName}</div>
+                                  <div className="flex gap-1 flex-wrap justify-end">
+                                    <PaymentBadge status={job.paymentStatus} />
+                                    {job.hasOpenIssue && (
+                                      <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200">
+                                        Issue Open
+                                      </span>
+                                    )}
+                                    {job.noShow?.status === 'NO_SHOW' && (
+                                      <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200">
+                                        {t('job.noShow.badge' as any) || 'No-show'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                {job.payment?.amountCents && (
+                                  <div className="text-sm font-semibold mb-2" style={{ color: 'var(--sf-orange)' }}>
+                                    ${(job.payment.amountCents / 100).toFixed(2)}
+                                  </div>
+                                )}
+                                <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
+                                <div className="text-sm font-medium mb-1" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
+                                {(() => {
+                                  const addons = parseAddonsFromNotes(job.notes);
+                                  return addons.length > 0 && (
+                                    <div className="text-xs mb-1" style={{ color: 'var(--sf-muted)' }}>
+                                      <span className="font-medium">Add-ons:</span> {addons.join(', ')}
+                                    </div>
+                                  );
+                                })()}
+                                <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>
+                                  {new Date(job.scheduledStart).toLocaleTimeString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </Link>
+                              
+                              {nextStatus && (
+                                <button
+                                  onClick={() => updateJobStatus(job.jobId, nextStatus)}
+                                  disabled={isUpdating}
+                                  className={`mt-3 w-full h-9 px-3 text-sm font-medium rounded-lg sf-button-transition ${
+                                    isUpdating
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                      : 'bg-[#F47C20] text-white hover:bg-[#DB6E1C]'
+                                  }`}
+                                >
+                                  {isUpdating ? 'Updating...' : `Move to ${columns.find(c => c.status === nextStatus)?.title}`}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Cancelled Jobs Section */}
+            {(() => {
+              const cancelledJobs = jobs.filter(job => job.workStatus === WorkStatus.CANCELLED);
+              if (cancelledJobs.length === 0) return null;
               
               return (
-                <div key={column.status} className="bg-transparent">
-                  <div className="sticky top-0 bg-white border-b p-4 mb-4 rounded-t-2xl" style={{ borderColor: 'var(--sf-border)', boxShadow: 'var(--sf-shadow)' }}>
-                    <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--sf-ink)' }}>
+                <div className="mt-8">
+                  <div className="bg-white border-b p-4 mb-4 rounded-t-2xl" style={{ borderColor: 'var(--sf-border)', boxShadow: 'var(--sf-shadow)' }}>
+                    <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--sf-muted)' }}>
                       <span 
                         className="w-2 h-2 rounded-full" 
-                        style={{ backgroundColor: column.color }}
+                        style={{ backgroundColor: cancelledColumn.color }}
                       ></span>
-                      <span>{column.title}</span>
+                      <span>{cancelledColumn.title}</span>
                       <span 
-                        className="ml-auto px-3 py-1 text-xs rounded-full font-medium bg-[#FAF6EF]"
-                        style={{ color: 'var(--sf-brown)' }}
+                        className="ml-auto px-3 py-1 text-xs rounded-full font-medium bg-gray-100"
+                        style={{ color: 'var(--sf-muted)' }}
                       >
-                        {columnJobs.length}
+                        {cancelledJobs.length}
                       </span>
                     </h3>
                   </div>
 
-                  <div className="space-y-3 px-1">
-                    {columnJobs.length === 0 ? (
-                      <div className="text-center py-8 text-sm" style={{ color: 'var(--sf-muted)' }}>
-                        {t('noJobs')}
-                      </div>
-                    ) : (
-                      columnJobs.map((job) => {
-                        const nextStatus = getNextStatus(job.workStatus);
-                        const isUpdating = updatingJobs.has(job.jobId);
-                        const needsPaymentAttention = job.workStatus === WorkStatus.WORK_COMPLETED && job.paymentStatus === PaymentStatus.UNPAID;
-                        
-                        return (
-                          <div
-                            key={job.jobId}
-                            className={`bg-white rounded-2xl p-4 border sf-card-hover ${
-                              job.noShow?.status === 'NO_SHOW' ? 'border-orange-400' : 
-                              needsPaymentAttention ? 'border-yellow-400 border-2 shadow-lg animate-pulse' :
-                              'border-[#E7E2D8]'
-                            }`}
-                            style={{ 
-                              boxShadow: 'var(--sf-shadow)',
-                              borderLeft: `4px solid ${column.color}`
-                            }}
-                          >
-                            <Link
-                              href={`/${locale}/jobs/${job.jobId}`}
-                              className="block hover:opacity-90 transition"
-                            >
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="font-semibold text-sm" style={{ color: 'var(--sf-ink)' }}>{job.customerName}</div>
-                                <div className="flex gap-1 flex-wrap justify-end">
-                                  <PaymentBadge status={job.paymentStatus} />
-                                  {job.hasOpenIssue && (
-                                    <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200">
-                                      Issue Open
-                                    </span>
-                                  )}
-                                  {job.noShow?.status === 'NO_SHOW' && (
-                                    <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200">
-                                      {t('job.noShow.badge' as any) || 'No-show'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {job.payment?.amountCents && (
-                                <div className="text-sm font-semibold mb-2" style={{ color: 'var(--sf-orange)' }}>
-                                  ${(job.payment.amountCents / 100).toFixed(2)}
-                                </div>
-                              )}
-                              <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
-                              <div className="text-sm font-medium mb-1" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
-                              {(() => {
-                                const addons = parseAddonsFromNotes(job.notes);
-                                return addons.length > 0 && (
-                                  <div className="text-xs mb-1" style={{ color: 'var(--sf-muted)' }}>
-                                    <span className="font-medium">Add-ons:</span> {addons.join(', ')}
-                                  </div>
-                                );
-                              })()}
-                              <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>
-                                {new Date(job.scheduledStart).toLocaleTimeString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', {
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                })}
-                              </div>
-                            </Link>
-                            
-                            {nextStatus && (
-                              <button
-                                onClick={() => updateJobStatus(job.jobId, nextStatus)}
-                                disabled={isUpdating}
-                                className={`mt-3 w-full h-9 px-3 text-sm font-medium rounded-lg sf-button-transition ${
-                                  isUpdating
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-[#F47C20] text-white hover:bg-[#DB6E1C]'
-                                }`}
-                              >
-                                {isUpdating ? 'Updating...' : `Move to ${columns.find(c => c.status === nextStatus)?.title}`}
-                              </button>
-                            )}
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 px-1">
+                    {cancelledJobs.map((job) => (
+                      <div
+                        key={job.jobId}
+                        className="bg-white rounded-2xl p-4 border border-gray-300 opacity-60 relative"
+                        style={{ 
+                          boxShadow: 'var(--sf-shadow)',
+                          borderLeft: `4px solid ${cancelledColumn.color}`,
+                          filter: 'grayscale(0.5)'
+                        }}
+                      >
+                        {/* CANCELLED Badge */}
+                        <div className="absolute top-2 right-2 bg-[#F47C20] text-white px-3 py-1 rounded-full text-xs font-bold">
+                          CANCELLED
+                        </div>
+
+                        <Link
+                          href={`/${locale}/jobs/${job.jobId}`}
+                          className="block hover:opacity-90 transition"
+                        >
+                          <div className="flex items-start justify-between mb-2 pr-24">
+                            <div className="font-semibold text-sm" style={{ color: 'var(--sf-ink)' }}>{job.customerName}</div>
                           </div>
-                        );
-                      })
-                    )}
+                          {job.payment?.amountCents && (
+                            <div className="text-sm font-semibold mb-2 line-through" style={{ color: 'var(--sf-muted)' }}>
+                              ${(job.payment.amountCents / 100).toFixed(2)}
+                            </div>
+                          )}
+                          <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
+                          <div className="text-sm font-medium mb-1 line-through" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>
+                            {new Date(job.scheduledStart).toLocaleTimeString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                        </Link>
+                        
+                        {/* No action buttons for cancelled jobs */}
+                        <div className="mt-3 text-xs text-center" style={{ color: 'var(--sf-muted)' }}>
+                          Booking cancelled in Square
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
-            })}
-          </div>
+            })()}
+          </>
         )}
       </main>
     </div>

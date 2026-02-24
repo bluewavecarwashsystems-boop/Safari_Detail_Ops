@@ -197,10 +197,30 @@ async function processBooking(
       console.log('[RECONCILE] Booking cancelled', {
         bookingId,
         jobId: existingJob.jobId,
+        currentStatus: existingJob.status,
       });
       
-      // We don't delete the job, just log it
-      // The job still has staff work data that should be preserved
+      // Update job to CANCELLED status if not already cancelled
+      if (existingJob.status !== WorkStatus.CANCELLED) {
+        if (!dryRun) {
+          await dynamodb.updateJob(existingJob.jobId, {
+            status: WorkStatus.CANCELLED,
+            cancelledAt: new Date().toISOString(),
+            cancelledSource: 'square',
+            cancellationReason: `Square booking status: ${booking.status}`,
+            updatedBy: 'reconciliation',
+          });
+          console.log('[RECONCILE] Job marked as CANCELLED', {
+            jobId: existingJob.jobId,
+            bookingId,
+          });
+        } else {
+          console.log('[RECONCILE] [DRY RUN] Would mark job as CANCELLED', {
+            jobId: existingJob.jobId,
+            bookingId,
+          });
+        }
+      }
       result.cancelled++;
     } else {
       // Cancelled booking with no job - skip

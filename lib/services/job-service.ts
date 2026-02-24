@@ -169,6 +169,9 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
   // Calculate payment amount from service + add-ons + tax
   const amountCents = await calculateBookingAmount(booking.serviceVariationId, booking.notes);
   
+  const mappedStatus = mapBookingStatusToJobStatus(booking.status);
+  const isCancelled = mappedStatus === WorkStatus.CANCELLED;
+  
   const job: Job = {
     jobId,
     customerId: booking.customerId || '',
@@ -177,7 +180,7 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
     customerPhone: customerCached?.phone || booking.customerPhone,
     vehicleInfo: {}, // Will be filled in by staff later
     serviceType: booking.serviceType || 'Detail Service',
-    status: mapBookingStatusToJobStatus(booking.status),
+    status: mappedStatus,
     bookingId: booking.bookingId,
     appointmentTime: booking.appointmentTime,
     photos: [],
@@ -190,6 +193,12 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
       status: PaymentStatus.UNPAID,
       amountCents,
     } : undefined,
+    // Add cancellation metadata if booking is cancelled
+    ...(isCancelled && {
+      cancelledAt: new Date().toISOString(),
+      cancelledSource: 'square' as const,
+      cancellationReason: `Square booking status: ${booking.status}`,
+    }),
   };
 
   return dynamodb.createJob(job);
@@ -231,8 +240,12 @@ export async function updateJobFromBooking(
     }
   }
   
+  const mappedStatus = mapBookingStatusToJobStatus(booking.status);
+  const isCancelled = mappedStatus === WorkStatus.CANCELLED;
+  const wasAlreadyCancelled = currentJob?.status === WorkStatus.CANCELLED;
+  
   const updates: Partial<Job> = {
-    status: mapBookingStatusToJobStatus(booking.status),
+    status: mappedStatus,
     appointmentTime: booking.appointmentTime,
     customerName: displayName,
     customerEmail: customerCached?.email || booking.customerEmail,
@@ -241,6 +254,12 @@ export async function updateJobFromBooking(
     updatedBy: 'square-webhook',
     customerCached, // Phase 3: Update cached customer data
     payment: paymentUpdate,
+    // Add cancellation metadata if newly cancelled (idempotent)
+    ...(isCancelled && !wasAlreadyCancelled && {
+      cancelledAt: new Date().toISOString(),
+      cancelledSource: 'square' as const,
+      cancellationReason: `Square booking status: ${booking.status}`,
+    }),
   };
   
   // Remove undefined values to prevent DynamoDB UpdateExpression errors
@@ -261,9 +280,7 @@ function mapBookingStatusToJobStatus(bookingStatus: string): WorkStatus {
       return WorkStatus.SCHEDULED;
     case 'CANCELLED':
     case 'DECLINED':
-      // Note: We don't have a CANCELLED status in WorkStatus, 
-      // so we'll keep them as SCHEDULED and handle cancellations separately
-      return WorkStatus.SCHEDULED;
+      return WorkStatus.CANCELLED;
     default:
       return WorkStatus.SCHEDULED;
   }

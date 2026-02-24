@@ -32,6 +32,11 @@ export function StickyActionBar({
 
   // Define possible next statuses based on current status
   const getNextStatuses = (): { status: WorkStatus; label: string; icon: string }[] => {
+    // No actions available for cancelled jobs
+    if (currentStatus === WorkStatus.CANCELLED) {
+      return [];
+    }
+    
     switch (currentStatus) {
       case WorkStatus.SCHEDULED:
         return [

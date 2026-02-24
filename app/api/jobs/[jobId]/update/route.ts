@@ -37,6 +37,22 @@ export async function PATCH(
     const updates = body;
     const updatedBy = body.updatedBy || 'staff';
 
+    // Check if job is cancelled before allowing updates
+    const { getJob } = await import('@/lib/aws/dynamodb');
+    const currentJob = await getJob(jobId);
+    
+    if (currentJob && currentJob.status === 'CANCELLED' as WorkStatus) {
+      const response: ApiResponse = {
+        success: false,
+        error: {
+          code: 'JOB_CANCELLED',
+          message: 'Cancelled jobs cannot be modified. The booking was cancelled in Square.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(response, { status: 409 });
+    }
+
     // Handle different types of updates
     let updatedJob;
 

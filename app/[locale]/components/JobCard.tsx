@@ -47,6 +47,7 @@ export function JobCard({
     [WorkStatus.NO_SHOW_PENDING_CHARGE]: 'bg-yellow-100 text-yellow-700 border-yellow-300',
     [WorkStatus.NO_SHOW_CHARGED]: 'bg-red-100 text-red-700 border-red-300',
     [WorkStatus.NO_SHOW_FAILED]: 'bg-red-100 text-red-700 border-red-300',
+    [WorkStatus.CANCELLED]: 'bg-gray-100 text-gray-700 border-gray-300',
   };
 
   const statusLabels: Record<WorkStatus, string> = {
@@ -58,6 +59,7 @@ export function JobCard({
     [WorkStatus.NO_SHOW_PENDING_CHARGE]: 'No Show (Pending)',
     [WorkStatus.NO_SHOW_CHARGED]: 'No Show (Charged)',
     [WorkStatus.NO_SHOW_FAILED]: 'No Show (Failed)',
+    [WorkStatus.CANCELLED]: 'Cancelled',
   };
 
   const formatTime = (isoString: string) => {

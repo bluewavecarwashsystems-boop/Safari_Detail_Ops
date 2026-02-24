@@ -175,6 +175,19 @@ export const PATCH = requireAuth(async (
       return NextResponse.json(response, { status: 404 });
     }
 
+    // RULE: CANCELLED jobs cannot be modified (except for viewing)
+    if (currentJob.status === WorkStatus.CANCELLED) {
+      const response: ApiResponse = {
+        success: false,
+        error: {
+          code: 'JOB_CANCELLED',
+          message: 'Cancelled jobs cannot be modified. The booking was cancelled in Square.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(response, { status: 409 });
+    }
+
     // RULE: WORK_COMPLETED is irreversible - cannot move backward
     if (body.workStatus && currentJob.status === WorkStatus.WORK_COMPLETED && body.workStatus !== WorkStatus.WORK_COMPLETED) {
       const response: ApiResponse = {

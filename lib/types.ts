@@ -44,6 +44,7 @@ export enum WorkStatus {
   NO_SHOW_PENDING_CHARGE = 'NO_SHOW_PENDING_CHARGE',
   NO_SHOW_CHARGED = 'NO_SHOW_CHARGED',
   NO_SHOW_FAILED = 'NO_SHOW_FAILED',
+  CANCELLED = 'CANCELLED',
 }
 
 /**
@@ -311,6 +312,10 @@ export interface Job {
   // SMS notifications: Completion SMS tracking
   completionSmsSentAt?: string;
   completionSmsSid?: string;
+  // Cancellation tracking
+  cancelledAt?: string;
+  cancelledSource?: 'square' | 'manual';
+  cancellationReason?: string;
 }
 
 /**
