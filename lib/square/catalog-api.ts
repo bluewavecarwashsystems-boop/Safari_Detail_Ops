@@ -453,9 +453,10 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
           const itemData = item.item_data;
           
           // Log location info for debugging
+          // NOTE: Location fields are at TOP LEVEL of item object, not in item_data
           const hasLocationInfo = 
-            itemData.present_at_all_locations !== undefined ||
-            itemData.present_at_location_ids !== undefined;
+            item.present_at_all_locations !== undefined ||
+            item.present_at_location_ids !== undefined;
           
           if (hasLocationInfo) {
             itemsWithLocationInfo++;
@@ -465,11 +466,11 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
           if (isProduction && locationId) {
             console.log('[SQUARE CATALOG API] Item location debug', {
               itemName: itemData.name,
-              present_at_all_locations: itemData.present_at_all_locations,
-              present_at_location_ids: itemData.present_at_location_ids,
+              present_at_all_locations: item.present_at_all_locations,
+              present_at_location_ids: item.present_at_location_ids,
               targetLocationId: locationId,
-              willBeIncluded: itemData.present_at_all_locations === true ||
-                (itemData.present_at_location_ids && itemData.present_at_location_ids.includes(locationId)),
+              willBeIncluded: item.present_at_all_locations === true ||
+                (item.present_at_location_ids && item.present_at_location_ids.includes(locationId)),
             });
           }
           
@@ -481,10 +482,11 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
             isPresentAtLocation = true;
           } else {
             // Production with location: strict filtering
+            // IMPORTANT: Check top-level item fields, not item_data fields
             isPresentAtLocation = 
-              itemData.present_at_all_locations === true ||
-              (itemData.present_at_location_ids && 
-               itemData.present_at_location_ids.includes(locationId));
+              item.present_at_all_locations === true ||
+              (item.present_at_location_ids && 
+               item.present_at_location_ids.includes(locationId));
           }
           
           // Include all items with variations (services are catalog items)
@@ -512,6 +514,7 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
                 allServices.push(serviceObj);
                 
                 // Additional filtering at variation level
+                // NOTE: Location fields are at TOP LEVEL of variation object, not in item_variation_data
                 let varPresentAtLocation: boolean;
                 
                 if (!isProduction || !locationId) {
@@ -520,11 +523,11 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
                 } else {
                   // Production with location: strict filtering
                   varPresentAtLocation =
-                    varData.present_at_all_locations === true ||
-                    (varData.present_at_location_ids && 
-                     varData.present_at_location_ids.includes(locationId)) ||
+                    variation.present_at_all_locations === true ||
+                    (variation.present_at_location_ids && 
+                     variation.present_at_location_ids.includes(locationId)) ||
                     // If variation doesn't have location info, inherit from item
-                    (!varData.present_at_location_ids && !varData.present_at_all_locations && isPresentAtLocation);
+                    (!variation.present_at_location_ids && !variation.present_at_all_locations && isPresentAtLocation);
                 }
                 
                 if (varPresentAtLocation) {
