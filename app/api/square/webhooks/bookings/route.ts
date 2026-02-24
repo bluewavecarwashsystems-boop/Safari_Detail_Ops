@@ -217,6 +217,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Enrich booking with COMPLETE booking details from Square API
     // This is critical for getting the full customer_note with add-ons
     try {
+      // Add a small delay to ensure Square has fully saved the booking
+      // Webhooks may fire before all fields are persisted
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const fullBooking = await retrieveBooking(parsedBooking.bookingId);
       
       if (fullBooking) {
@@ -229,7 +233,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             notesPreview: fullBooking.customer_note.substring(0, 100),
             hasAddons: fullBooking.customer_note.includes('ADD-ONS'),
           });
+        } else {
+          console.warn('[BOOKING NOTES EMPTY]', {
+            bookingId: parsedBooking.bookingId,
+            note: 'Square API returned booking but customer_note is empty',
+          });
         }
+      } else {
+        console.warn('[BOOKING NOT FOUND]', {
+          bookingId: parsedBooking.bookingId,
+          note: 'retrieveBooking returned null',
+        });
       }
     } catch (bookingError: any) {
       console.warn('[BOOKING FETCH FAILED]', {

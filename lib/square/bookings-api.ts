@@ -259,6 +259,9 @@ export async function retrieveBooking(bookingId: string): Promise<SquareBooking 
     console.log('[SQUARE BOOKINGS API] Booking retrieved', {
       bookingId,
       status: booking.status,
+      hasCustomerNote: !!booking.customer_note,
+      customerNoteLength: booking.customer_note?.length || 0,
+      customerNotePreview: booking.customer_note?.substring(0, 200) || '(empty)',
     });
     
     return booking;
