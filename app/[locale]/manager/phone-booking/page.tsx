@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
+import { ManagerLayout } from '@/app/components/ManagerLayout';
 
 /**
  * PHONE BOOKING WITH ADD-ONS SUPPORT
@@ -316,6 +317,10 @@ export default function PhoneBookingPage() {
     }
   };
 
+  const handleBackToHome = () => {
+    router.push(`/${locale}/`);
+  };
+
   if (showSuccess) {
     return (
       <div className="min-h-screen px-4 py-8" style={{ background: 'var(--sf-bg)' }}>
@@ -328,7 +333,7 @@ export default function PhoneBookingPage() {
             </div>
             <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--sf-ink)' }}>{t('successTitle')}</h2>
             <p className="mb-6" style={{ color: 'var(--sf-muted)' }}>{t('successMessage')}</p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={handleViewJob}
                 className="px-6 py-2 bg-[#F47C20] text-white rounded-xl hover:bg-[#DB6E1C] sf-button-transition"
@@ -342,6 +347,15 @@ export default function PhoneBookingPage() {
               >
                 {t('createAnother')}
               </button>
+              <button
+                onClick={handleBackToHome}
+                className="px-6 py-2 text-white rounded-xl sf-button-transition"
+                style={{ backgroundColor: 'var(--sf-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DB6E1C'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F47C20'}
+              >
+                {t('backToHome')}
+              </button>
             </div>
           </div>
         </div>
@@ -350,12 +364,8 @@ export default function PhoneBookingPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8" style={{ background: 'var(--sf-bg)' }}>
+    <ManagerLayout title={t('title')}>
       <div className="max-w-3xl mx-auto">
-        <div className="mb-6 flex items-center gap-4">
-          <Image src="/safari-logo.png" alt="Safari Car Wash" width={60} height={60} className="object-contain" />
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
-        </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           {/* Customer Information */}
@@ -694,6 +704,6 @@ export default function PhoneBookingPage() {
           </div>
         </form>
       </div>
-    </div>
+    </ManagerLayout>
   );
 }

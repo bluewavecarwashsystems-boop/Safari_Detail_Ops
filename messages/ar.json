@@ -162,6 +162,7 @@
       "successMessage": "تم إنشاء الحجز الهاتفي بنجاح",
       "viewJob": "عرض العمل",
       "createAnother": "إنشاء آخر",
+      "backToHome": "العودة إلى اليوم",
       "errorTitle": "فشل الحجز",
       "requiredField": "هذا الحقل مطلوب"
     }  }

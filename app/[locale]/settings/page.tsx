@@ -11,6 +11,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { UserRole } from '@/lib/types';
 import { locales, localeNames, localeFlags, type Locale } from '@/i18n';
+import { ManagerLayout } from '@/app/components/ManagerLayout';
 
 interface User {
   userId: string;
@@ -104,35 +105,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--sf-bg)' }}>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain" />
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
-            </div>
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 hover:opacity-80 transition sf-button-transition"
-              style={{ color: 'var(--sf-muted)' }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d={currentLocale === 'ar' ? 'M14 5l7 7m0 0l-7 7m7-7H3' : 'M10 19l-7-7m0 0l7-7m-7 7h18'} 
-                />
-              </svg>
-              {tCommon('back')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <ManagerLayout title={t('title')}>
+      <div className="max-w-4xl mx-auto">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
             {error}
@@ -269,6 +243,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </ManagerLayout>
   );
 }

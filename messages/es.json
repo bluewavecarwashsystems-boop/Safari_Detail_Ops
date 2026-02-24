@@ -163,6 +163,7 @@
       "successMessage": "Reserva telefónica creada exitosamente",
       "viewJob": "Ver Trabajo",
       "createAnother": "Crear Otra",
+      "backToHome": "Volver a Hoy",
       "errorTitle": "Error en Reserva",
       "requiredField": "Este campo es requerido"
     }

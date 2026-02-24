@@ -163,6 +163,7 @@
       "successMessage": "Phone booking created successfully",
       "viewJob": "View Job",
       "createAnother": "Create Another",
+      "backToHome": "Back to Today",
       "errorTitle": "Booking Failed",
       "requiredField": "This field is required"
     }
