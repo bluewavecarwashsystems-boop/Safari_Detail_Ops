@@ -446,23 +446,31 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
 
     // Extract and filter services from catalog items
     const services: CatalogService[] = [];
+    const allServices: CatalogService[] = [];
     let totalServicesBeforeFilter = 0;
+    let itemsWithLocationInfo = 0;
     
     if (data.objects) {
       for (const item of data.objects) {
         if (item.type === 'ITEM' && item.item_data) {
           const itemData = item.item_data;
           
+          // Log location info for debugging
+          const hasLocationInfo = 
+            itemData.present_at_all_locations !== undefined ||
+            itemData.present_at_location_ids !== undefined;
+          
+          if (hasLocationInfo) {
+            itemsWithLocationInfo++;
+          }
+          
           // Check if item is present at the phone booking location
+          // If no location info exists, assume it's available (sandbox fallback)
           const isPresentAtLocation = 
             itemData.present_at_all_locations === true ||
             (itemData.present_at_location_ids && 
-             itemData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID));
-          
-          // Skip items not present at our location
-          if (!isPresentAtLocation) {
-            continue;
-          }
+             itemData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID)) ||
+            (!itemData.present_at_all_locations && !itemData.present_at_location_ids);
           
           // Include all items with variations (services are catalog items)
           if (itemData.variations && itemData.variations.length > 0) {
@@ -472,27 +480,32 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
                 
                 totalServicesBeforeFilter++;
                 
+                const serviceObj = {
+                  id: variation.id,
+                  itemId: item.id,
+                  name: `${itemData.name || 'Service'}${varData.name && varData.name !== 'Regular' ? ` - ${varData.name}` : ''}`,
+                  description: itemData.description,
+                  durationMinutes: varData.service_duration ? Math.floor(varData.service_duration / 60000) : undefined,
+                  priceMoney: varData.price_money ? {
+                    amount: varData.price_money.amount || 0,
+                    currency: varData.price_money.currency || 'USD',
+                  } : undefined,
+                  version: variation.version || 1,
+                };
+                
+                // Store all services for fallback
+                allServices.push(serviceObj);
+                
                 // Additional filtering at variation level
                 const varPresentAtLocation =
                   varData.present_at_all_locations === true ||
                   (varData.present_at_location_ids && 
                    varData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID)) ||
                   // If variation doesn't have location info, inherit from item
-                  (!varData.present_at_location_ids && isPresentAtLocation);
+                  (!varData.present_at_all_locations && !varData.present_at_location_ids && isPresentAtLocation);
                 
                 if (varPresentAtLocation) {
-                  services.push({
-                    id: variation.id,
-                    itemId: item.id,
-                    name: `${itemData.name || 'Service'}${varData.name && varData.name !== 'Regular' ? ` - ${varData.name}` : ''}`,
-                    description: itemData.description,
-                    durationMinutes: varData.service_duration ? Math.floor(varData.service_duration / 60000) : undefined,
-                    priceMoney: varData.price_money ? {
-                      amount: varData.price_money.amount || 0,
-                      currency: varData.price_money.currency || 'USD',
-                    } : undefined,
-                    version: variation.version || 1,
-                  });
+                  services.push(serviceObj);
                 }
               }
             }
@@ -504,8 +517,19 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
     console.log('[SQUARE CATALOG API] Phone booking services filtered', {
       locationId: PHONE_BOOKING_LOCATION_ID,
       totalBeforeFilter: totalServicesBeforeFilter,
+      itemsWithLocationInfo,
       returnedAfterFilter: services.length,
+      environment: config.square.environment,
     });
+    
+    // SANDBOX FALLBACK: If no services have location info (common in sandbox), return all services
+    if (services.length === 0 && allServices.length > 0 && itemsWithLocationInfo === 0) {
+      console.warn('[SQUARE CATALOG API] No location data found in catalog - returning all services (sandbox fallback)', {
+        totalServices: allServices.length,
+        note: 'In production, ensure services are assigned to location L9ZMZD9TTTTZJ',
+      });
+      return allServices;
+    }
     
     return services;
   } catch (error: any) {
