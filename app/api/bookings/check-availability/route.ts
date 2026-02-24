@@ -67,15 +67,11 @@ export const POST = requireRole([UserRole.MANAGER], async (
       : 'https://connect.squareup.com';
 
     // Build segment filter for availability search
+    // Note: Only service_variation_id and duration_minutes are accepted
     const segmentFilter: any = {
       service_variation_id: body.serviceVariationId,
-      service_variation_version: body.serviceVariationVersion,
+      duration_minutes: body.durationMinutes,
     };
-
-    // Only include team_member_id if provided
-    if (body.teamMemberId && body.teamMemberId.trim() !== '') {
-      segmentFilter.team_member_id = body.teamMemberId;
-    }
 
     const availabilityBody = {
       query: {
