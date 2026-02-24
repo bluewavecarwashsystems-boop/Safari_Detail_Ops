@@ -266,12 +266,12 @@ export default function TodayBoard() {
 
       <header className="bg-white shadow-sm border-b-[3px] border-[#F47C20]" style={{ boxShadow: 'var(--sf-shadow)' }}>
         <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain sm:w-[60px] sm:h-[60px]" />
-              <h1 className="text-lg sm:text-2xl font-bold whitespace-nowrap" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink">
+              <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain sm:w-[60px] sm:h-[60px] flex-shrink-0" />
+              <h1 className="text-base sm:text-2xl font-bold truncate" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
-            <div className="flex gap-1.5 sm:gap-3 items-center">
+            <div className="flex gap-1.5 sm:gap-3 items-center flex-shrink-0">
               <NotificationBell onNewNotification={handleNewNotification} />
               {userRole === 'MANAGER' && (
                 <Link 
