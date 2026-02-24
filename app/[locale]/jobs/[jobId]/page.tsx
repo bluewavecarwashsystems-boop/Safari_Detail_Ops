@@ -12,6 +12,7 @@ import PhotoUploader from './PhotoUploader';
 interface Job {
   jobId: string;
   bookingId?: string;
+  orderId?: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -139,6 +140,14 @@ export default function JobDetail() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [savingVehicle, setSavingVehicle] = useState(false);
 
+  // Add-ons state
+  const [addons, setAddons] = useState<Array<{
+    id: string;
+    name: string;
+    priceMoney?: { amount: number; currency: string };
+  }>>([]);
+  const [loadingAddons, setLoadingAddons] = useState(false);
+
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {
     if (!date) return '';
@@ -187,6 +196,8 @@ export default function JobDetail() {
         
         setJob({
           jobId: apiJob.jobId,
+          bookingId: apiJob.bookingId,
+          orderId: apiJob.orderId,
           customerName: apiJob.customerCached?.name || apiJob.customerName || 'Unknown Customer',
           customerPhone: apiJob.customerCached?.phone || apiJob.customerPhone,
           customerEmail: apiJob.customerCached?.email || apiJob.customerEmail,
@@ -223,6 +234,49 @@ export default function JobDetail() {
   useEffect(() => {
     fetchJob();
   }, [jobId]);
+
+  // Fetch add-ons when job is loaded and has orderId
+  useEffect(() => {
+    const fetchAddons = async () => {
+      if (!job?.orderId) {
+        setAddons([]);
+        return;
+      }
+      
+      setLoadingAddons(true);
+      
+      try {
+        console.log('[JOB DETAILS] Fetching add-ons from order', {
+          jobId: job.jobId,
+          orderId: job.orderId,
+        });
+        
+        const response = await fetch(`/api/orders/${job.orderId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch order: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data?.addons) {
+          setAddons(data.data.addons);
+          console.log('[JOB DETAILS] Add-ons loaded', {
+            count: data.data.addons.length,
+          });
+        } else {
+          setAddons([]);
+        }
+      } catch (error) {
+        console.error('[JOB DETAILS] Failed to fetch add-ons', error);
+        setAddons([]);
+      } finally {
+        setLoadingAddons(false);
+      }
+    };
+    
+    fetchAddons();
+  }, [job?.orderId]);
 
   // Phase 4: Polling for real-time updates
   const pollingFetcher = useCallback(async (): Promise<Job> => {
@@ -1149,6 +1203,29 @@ export default function JobDetail() {
                 <label className="text-sm text-gray-600">{t('vehicle.service')}</label>
                 <div className="font-medium text-sm text-gray-900">{job.serviceType}</div>
               </div>
+              {(loadingAddons || addons.length > 0) && (
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-600">Add-ons</label>
+                  {loadingAddons ? (
+                    <div className="text-sm text-gray-500">Loading add-ons...</div>
+                  ) : addons.length > 0 ? (
+                    <div className="space-y-1">
+                      {addons.map((addon) => (
+                        <div key={addon.id} className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-gray-900">{addon.name}</span>
+                          {addon.priceMoney && (
+                            <span className="text-gray-600">
+                              ${(addon.priceMoney.amount / 100).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">No add-ons</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </section>
