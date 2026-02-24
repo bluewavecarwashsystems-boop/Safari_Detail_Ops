@@ -8,6 +8,7 @@ import { usePolling } from '@/lib/hooks/usePolling';
 import { WorkStatus, PaymentStatus, ChecklistItem } from '@/lib/types';
 import type { Locale } from '@/i18n';
 import PhotoUploader from './PhotoUploader';
+import EditBookingModal from '@/app/components/EditBookingModal';
 
 interface Job {
   jobId: string;
@@ -154,6 +155,9 @@ export default function JobDetail() {
     name: string;
     priceMoney?: { amount: number; currency: string };
   }>>([]);
+
+  // Booking edit state
+  const [showEditBookingModal, setShowEditBookingModal] = useState(false);
 
   /**
    * Parse add-ons from booking notes
@@ -1115,7 +1119,17 @@ export default function JobDetail() {
 
         {/* Appointment Time */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>Scheduled Appointment</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--sf-ink)' }}>Scheduled Appointment</h2>
+            {currentUserRole === 'MANAGER' && job.bookingId && (
+              <button
+                onClick={() => setShowEditBookingModal(true)}
+                className="px-4 py-2 bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition text-sm"
+              >
+                Edit Booking
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>Date</label>
@@ -1137,6 +1151,12 @@ export default function JobDetail() {
                       { hour: 'numeric', minute: '2-digit' }
                     )
                   : 'Not scheduled'}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm" style={{ color: 'var(--sf-muted)' }}>Service Type</label>
+              <div className="font-medium" style={{ color: 'var(--sf-ink)' }}>
+                {job.serviceType || 'Not specified'}
               </div>
             </div>
           </div>
@@ -2258,6 +2278,20 @@ export default function JobDetail() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Edit Booking Modal */}
+      {job.bookingId && (
+        <EditBookingModal
+          bookingId={job.bookingId}
+          isOpen={showEditBookingModal}
+          onClose={() => setShowEditBookingModal(false)}
+          onSuccess={() => {
+            // Refresh job data after successful edit
+            refreshJob();
+            showToast('Booking updated successfully', 'success');
+          }}
+        />
       )}
     </div>
   );

@@ -468,3 +468,111 @@ export async function updateBooking(params: {
     throw error;
   }
 }
+
+/**
+ * Update booking details (service and/or start time)
+ * Full booking update including appointment segments
+ * 
+ * @param params - Booking update parameters
+ * @returns Updated booking
+ */
+export async function updateBookingDetails(params: {
+  bookingId: string;
+  version: number;
+  locationId: string;
+  serviceVariationId: string;
+  serviceVariationVersion: number;
+  startAt: string;
+  durationMinutes: number;
+  teamMemberId?: string;
+  customerNote?: string;
+  sellerNote?: string;
+}): Promise<SquareBooking> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    const url = `${baseUrl}/v2/bookings/${params.bookingId}`;
+    
+    // Build appointment segment with new service and time
+    const baseSegment: any = {
+      service_variation_id: params.serviceVariationId,
+      service_variation_version: params.serviceVariationVersion,
+      duration_minutes: params.durationMinutes,
+    };
+    
+    // Only add team_member_id if provided and not empty
+    if (params.teamMemberId && params.teamMemberId.trim() !== '') {
+      baseSegment.team_member_id = params.teamMemberId;
+    }
+    
+    const bookingData = {
+      booking: {
+        version: params.version,
+        location_id: params.locationId,
+        start_at: params.startAt,
+        appointment_segments: [baseSegment],
+        customer_note: params.customerNote,
+        seller_note: params.sellerNote,
+      },
+    };
+    
+    console.log('[SQUARE BOOKINGS API] Updating booking details', {
+      bookingId: params.bookingId,
+      version: params.version,
+      locationId: params.locationId,
+      serviceVariationId: params.serviceVariationId,
+      startAt: params.startAt,
+    });
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[SQUARE BOOKINGS API] Update booking details failed', {
+        status: response.status,
+        bookingId: params.bookingId,
+        error: errorText,
+      });
+      
+      throw new Error(`Failed to update booking details: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors && data.errors.length > 0) {
+      const errorMsg = data.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+    
+    console.log('[SQUARE BOOKINGS API] Booking details updated', {
+      bookingId: data.booking?.id,
+      newVersion: data.booking?.version,
+      newStartAt: data.booking?.start_at,
+    });
+    
+    return data.booking as SquareBooking;
+  } catch (error: any) {
+    console.error('[SQUARE BOOKINGS API] Update booking details error', {
+      bookingId: params.bookingId,
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}
