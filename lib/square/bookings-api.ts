@@ -288,11 +288,6 @@ export async function createBooking(params: {
   teamMemberId?: string;
   customerNote?: string;
   sellerNote?: string;
-  /**
-   * Add-on service variation IDs to include as appointment segments
-   * Each add-on will be added as a separate segment in the booking
-   */
-  addonVariationIds?: Array<{ id: string; version: number }>;
 }): Promise<SquareBooking> {
   const config = getConfig();
   
@@ -307,10 +302,7 @@ export async function createBooking(params: {
     
     const url = `${baseUrl}/v2/bookings`;
     
-    // Build appointment segments array starting with base service
-    const appointmentSegments: any[] = [];
-    
-    // Base service segment - only include team_member_id if provided and not empty
+    // Build base service segment - only include team_member_id if provided and not empty
     const baseSegment: any = {
       service_variation_id: params.serviceVariationId,
       service_variation_version: params.serviceVariationVersion,
@@ -322,32 +314,12 @@ export async function createBooking(params: {
       baseSegment.team_member_id = params.teamMemberId;
     }
     
-    appointmentSegments.push(baseSegment);
-    
-    // Add segments for each add-on (duration 0 so they don't extend appointment time)
-    if (params.addonVariationIds && params.addonVariationIds.length > 0) {
-      for (const addon of params.addonVariationIds) {
-        const addonSegment: any = {
-          service_variation_id: addon.id,
-          service_variation_version: addon.version,
-          duration_minutes: 0, // Add-ons don't add to appointment duration
-        };
-        
-        // Add same team member to add-on segments if specified
-        if (params.teamMemberId && params.teamMemberId.trim() !== '') {
-          addonSegment.team_member_id = params.teamMemberId;
-        }
-        
-        appointmentSegments.push(addonSegment);
-      }
-    }
-    
     const bookingData = {
       booking: {
         location_id: params.locationId,
         customer_id: params.customerId,
         start_at: params.startAt,
-        appointment_segments: appointmentSegments,
+        appointment_segments: [baseSegment],
         customer_note: params.customerNote,
         seller_note: params.sellerNote,
       },
@@ -357,8 +329,6 @@ export async function createBooking(params: {
       customerId: params.customerId,
       locationId: params.locationId,
       startAt: params.startAt,
-      segmentCount: appointmentSegments.length,
-      hasAddons: (params.addonVariationIds?.length || 0) > 0,
     });
     
     const response = await fetch(url, {

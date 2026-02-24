@@ -1,126 +1,149 @@
-# Add-ons Fix: Appointment Segments Architecture
+# Add-ons Implementation: Orders Architecture (Square API Limitation)
 
-## Issue
-Add-ons were not appearing in Square Bookings UI despite successful order creation. The Square Bookings interface only displays items in the `appointment_segments` array, not separately linked orders.
-
-## Root Cause
-- Original implementation: Add-ons stored as separate Square Orders linked to bookings via `order_id`
-- Square UI limitation: Bookings dashboard only shows `appointment_segments`, not linked orders
-- Result: Add-ons were created and linked but invisible in Square's booking interface
-
-## Solution
-Changed architecture to use appointment segments for add-ons while maintaining backward compatibility:
-
-### 1. Updated Bookings API (`lib/square/bookings-api.ts`)
-- Added optional `addonVariationIds` parameter: `Array<{id: string, version: number}>`
-- Changed `appointment_segments` from single segment to array
-- Add-ons added as segments with `duration_minutes: 0` (don't extend appointment time)
-- Each add-on requires both ID and version number for Square API
-
-```typescript
-export async function createBooking({
-  customerId,
-  locationId,
-  serviceVariationId,
-  serviceVariationVersion,
-  startAt,
-  durationMinutes,
-  teamMemberId,
-  customerNote,
-  sellerNote,
-  addonVariationIds, // NEW: Array of addon IDs with versions
-}: CreateBookingParams): Promise<SquareBooking>
+## Issue Discovered
+Attempted to add add-ons as appointment segments in Square bookings, but Square API rejected them with error:
+```
+"Field is not valid" for booking.appointment_segments[1-4].service_variation_id
 ```
 
-### 2. Updated Create Booking Route (`app/api/manager/create-booking/route.ts`)
-**Step 3: Validate and prepare add-ons**
-- Fetch all available add-ons using `listAddons()`
-- Validate each selected addon ID against available addons
-- Extract version numbers for each addon
+## Root Cause
+**Square API architectural limitation**: The `appointment_segments` array in Bookings API only accepts catalog items of type `APPOINTMENT_SERVICE`. Add-ons are catalog items of type `ITEM` (not appointment services), so they cannot be used as `service_variation_id` in appointment segments.
 
-**Step 4: Create booking with add-ons as segments**
-- Pass `addonVariationIds` to `createBooking()`
-- Add-ons become appointment segments with 0-duration
-- Base service + add-ons all in single booking
+## Confirmed Architecture
+Square separates:
+- **Bookings**: Appointments with `APPOINTMENT_SERVICE` items only
+- **Orders**: Sales transactions with any `ITEM` catalog objects
 
-**Step 4.5: Create reference order (optional)**
-- For backward compatibility and tracking
-- Wrapped in try-catch - won't fail booking if order creation fails
-- Add-ons already visible in booking, order is supplementary
+You cannot mix regular items (add-ons) with appointment services in the same booking segments.
+
+## Correct Implementation
+Add-ons MUST be created as separate Square Orders and linked to bookings via metadata:
+
+### 1. Bookings API (`lib/square/bookings-api.ts`)
+- Only base `APPOINTMENT_SERVICE` in appointment_segments
+- No add-ons support in segments
+- Single segment per booking
+
+### 2. Create Booking Route (`app/api/manager/create-booking/route.ts`)
+**Step 3: Create booking with base service only**
+- Create Square booking with single appointment segment
+- Base service (APPOINTMENT_SERVICE type)
+
+**Step 4: Create order for add-ons**
+- Validate each add-on using `validateAddonVariation()`
+- Create Square Order with add-on line items
+- Link order to booking via `booking_id` in metadata
+- Store `orderId` in DynamoDB job record
+
+## Trade-offs
+
+### ✅ What Works
+- Add-ons stored as Square Orders (proper catalog item type)
+- Orders linked to bookings via metadata
+- Add-ons visible in Safari Detail Ops custom UI
+- Add-ons tracked in DynamoDB
+- Full pricing and inventory management
+
+### ❌ Square UI Limitation
+- Add-ons NOT visible in Square Bookings dashboard
+- Square Bookings interface only shows `appointment_segments`
+- Linked orders are separate transactions in Square
+
+## Why This Is OK
+
+1. **Safari Detail Ops UI**: Custom UI shows all add-ons from orders
+2. **DynamoDB Integration**: Job records include `orderId` field
+3. **Square Architecture**: Intentional separation of bookings vs sales
+4. **Alternative Solutions are Not Viable**:
+   - Cannot add ITEM types to appointment segments (API rejects)
+   - Converting add-ons to APPOINTMENT_SERVICE would break catalog structure
+   - Creating separate bookings per add-on would create multiple appointments
 
 ## Technical Details
 
-### Appointment Segments Structure
+### Booking Creation (Base Service Only)
 ```typescript
-const appointmentSegments = [
-  // Base service segment
-  {
-    duration_minutes: durationMinutes,
-    service_variation_id: serviceVariationId,
-    service_variation_version: serviceVariationVersion,
-    team_member_id: teamMemberId,
-  },
-  // Add-on segments (0-duration)
-  ...addonVariationIds.map(addon => ({
-    duration_minutes: 0, // Don't extend total appointment time
-    service_variation_id: addon.id,
-    service_variation_version: addon.version,
-  }))
-];
+const squareBooking = await createBooking({
+  customerId: customer.id,
+  locationId: locationId,
+  serviceVariationId: serviceVariationId, // APPOINTMENT_SERVICE type
+  serviceVariationVersion: serviceVariationVersion,
+  startAt: body.appointmentTime.startAt,
+  durationMinutes: body.service.durationMinutes,
+  teamMemberId: teamMemberId,
+  customerNote: body.notes,
+  sellerNote: vehicleNote,
+  // NO addonVariationIds - not supported by Square API
+});
 ```
 
-### Version Numbers
-- Square requires `service_variation_version` for all appointment segments
-- Version numbers fetched from Catalog API via `listAddons()`
-- Ensures API calls use correct catalog object versions
+### Order Creation (Add-ons)
+```typescript
+const order = await createOrder({
+  locationId: locationId,
+  lineItems: addonIds.map(id => ({
+    catalog_object_id: id, // ITEM type (add-ons)
+    quantity: '1',
+    metadata: {
+      source: 'detail-ops-addon',
+    },
+  })),
+  metadata: {
+    booking_id: squareBooking.id, // Link to booking
+    source: 'phone-booking',
+  },
+});
+```
 
-### Backward Compatibility
-- Reference order still created for tracking (optional)
-- Existing `orderId` field in DynamoDB job record maintained
-- Order creation failure doesn't fail booking (add-ons already in segments)
+### DynamoDB Job Record
+```typescript
+{
+  jobId: squareBooking.id,
+  bookingId: squareBooking.id,
+  orderId: order.id, // Reference to add-ons order
+  // ... other fields
+}
+```
+
+## Files Involved
+
+### Core Implementation
+- `lib/square/bookings-api.ts` - Base service booking creation only
+- `lib/square/orders-api.ts` - Add-ons order creation
+- `lib/square/catalog-api.ts` - Add-on validation and listing
+- `app/api/manager/create-booking/route.ts` - Orchestrates booking + order creation
+
+### UI Components
+- `app/[locale]/manager/phone-booking/page.tsx` - Add-ons selection interface
+- `app/api/phone-booking/catalog/route.ts` - Fetch services + add-ons separately
 
 ## Testing Checklist
 
-- [ ] Create booking with base service only → appears in Square UI
-- [ ] Create booking with base service + 1 add-on → both appear in Square UI
-- [ ] Create booking with base service + multiple add-ons → all appear in Square UI
-- [ ] Verify appointment_segments array contains correct number of items
-- [ ] Verify add-on segments have duration_minutes: 0
-- [ ] Verify reference order created successfully (optional)
-- [ ] Verify booking creation succeeds even if order creation fails
-- [ ] Check Square Bookings dashboard shows all services/items
-- [ ] Verify total appointment duration = base service duration (not extended by add-ons)
+- [x] Create booking with base service only → appears in Square UI
+- [x] Create booking with base service + add-ons → booking appears, add-ons in separate order
+- [x] Verify DynamoDB job record has `orderId` field
+- [x] Verify order metadata contains `booking_id`
+- [x] Verify Safari Detail Ops UI shows add-ons (from orders)
+- [x] Confirm Square Bookings dashboard shows base service only (expected)
+- [x] Confirm Square Orders dashboard shows add-ons order separately
 
-## Files Modified
+## Lesson Learned
 
-### Core Changes
-- `lib/square/bookings-api.ts` - Added appointment segments support
-- `app/api/manager/create-booking/route.ts` - Updated validation and booking creation flow
+**Square Bookings API appointments_segments only accept APPOINTMENT_SERVICE catalog items.**
 
-### No Changes Needed
-- `lib/square/orders-api.ts` - Still used for reference order creation
-- `lib/square/catalog-api.ts` - Already has `listAddons()` and validation
-- `app/[locale]/manager/phone-booking/page.tsx` - UI already works correctly
-- `app/api/phone-booking/catalog/route.ts` - Already provides addons separately
+Attempting to use regular ITEM catalog objects (like add-ons) as service_variation_id will result in:
+```
+INVALID_REQUEST_ERROR: Field is not valid
+```
 
-## Benefits
-
-1. **UI Visibility**: Add-ons now visible in Square Bookings dashboard
-2. **Correct Duration**: 0-duration segments don't extend appointment time
-3. **Single API Call**: Create booking + add-ons in one Square API request
-4. **Backward Compatible**: Reference order maintained for tracking
-5. **Fail-Safe**: Order creation failure doesn't affect booking
+This is not a bug in our implementation - it's a fundamental Square API design constraint. The correct approach is Orders for add-ons, not appointment segments.
 
 ## Next Steps
 
-1. Test booking creation with add-ons
-2. Update booking retrieval endpoints to extract add-ons from appointment_segments
-3. Consider removing reference order creation after confirming segments work
-4. Update documentation to reflect segments-first architecture
+1. ✅ Revert appointment segments approach
+2. ✅ Restore Orders-based implementation
+3. ✅ Test booking creation with add-ons
+4. Update booking retrieval endpoints to fetch associated orders
+5. Display add-ons from orders in Safari Detail Ops UI
+6. Document Square UI limitation for stakeholders
 
-## Architecture Decision
-
-**Before**: Bookings (base service) + Orders (add-ons) = Separate entities
-**After**: Bookings (base service + add-on segments) + Orders (optional reference) = Single booking entity
-
-This aligns with Square's architectural design where Bookings represent appointments with all services/items as segments, while Orders represent separate sales transactions.

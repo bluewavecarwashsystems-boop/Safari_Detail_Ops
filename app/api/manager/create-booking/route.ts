@@ -13,7 +13,7 @@ import { WorkStatus, UserRole } from '@/lib/types';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { findOrCreateCustomer } from '@/lib/square/customers-api';
 import { createBooking } from '@/lib/square/bookings-api';
-import { listPhoneBookingServices, listAddons } from '@/lib/square/catalog-api';
+import { listPhoneBookingServices, validateAddonVariation } from '@/lib/square/catalog-api';
 import { createOrder } from '@/lib/square/orders-api';
 import type { OrderLineItem } from '@/lib/square/orders-api';
 import * as dynamodb from '@/lib/aws/dynamodb';
@@ -182,61 +182,16 @@ export const POST = requireAuth(async (
       locationId,
     });
 
-    // Step 3: Validate and prepare add-ons if provided
-    let addonVariations: Array<{ id: string; version: number }> = [];
-    
-    if (body.addonItemVariationIds && body.addonItemVariationIds.length > 0) {
-      console.log('[MANAGER BOOKING] Fetching add-on details', {
-        addonCount: body.addonItemVariationIds.length,
-        addonIds: body.addonItemVariationIds,
-      });
-      
-      // Fetch all add-ons to validate and get version numbers
-      const availableAddons = await listAddons();
-      
-      // Validate and extract version numbers for each selected add-on
-      for (const addonId of body.addonItemVariationIds) {
-        const addon = availableAddons.find(a => a.id === addonId);
-        
-        if (!addon) {
-          console.error('[MANAGER BOOKING] SECURITY: Invalid add-on variation ID', {
-            addonId,
-            locationId,
-          });
-          
-          const response: ApiResponse = {
-            success: false,
-            error: {
-              code: 'INVALID_ADDONS',
-              message: `Invalid add-on variation ID: ${addonId}`,
-            },
-            timestamp: new Date().toISOString(),
-          };
-          return NextResponse.json(response, { status: 400 });
-        }
-        
-        addonVariations.push({
-          id: addon.id,
-          version: addon.version,
-        });
-      }
-      
-      console.log('[MANAGER BOOKING] Add-ons validated', {
-        count: addonVariations.length,
-      });
-    }
-
-    // Step 4: Create booking in Square with add-ons as appointment segments
+    // Step 3: Create booking in Square (base service only)
     const serviceVariationVersion = body.service.serviceVariationVersion || 1;
 
-    console.log('[MANAGER BOOKING] Creating Square booking with add-ons as segments', {
+    console.log('[MANAGER BOOKING] Creating Square booking', {
       customerId: customer.id,
       startAt: body.appointmentTime.startAt,
       serviceVariationId,
       serviceVariationVersion,
       locationId,
       teamMemberId: config.square.teamMemberId || 'not set',
-      addonCount: addonVariations.length,
     });
 
     const squareBooking = await createBooking({
@@ -253,26 +208,45 @@ export const POST = requireAuth(async (
       sellerNote: body.vehicle ? 
         `Vehicle: ${body.vehicle.year || ''} ${body.vehicle.make || ''} ${body.vehicle.model || ''}`.trim() : 
         undefined,
-      addonVariationIds: addonVariations.length > 0 ? addonVariations : undefined,
     });
 
-    console.log('[MANAGER BOOKING] Square booking created with add-ons', {
+    console.log('[MANAGER BOOKING] Square booking created', {
       bookingId: squareBooking.id,
-      segmentCount: squareBooking.appointment_segments?.length || 0,
     });
 
-    // Step 4.5: Optionally create order for reference tracking (backward compatibility)
+    // Step 4: Create order for add-ons (if any)
     let orderId: string | undefined = undefined;
     
-    if (addonVariations.length > 0) {
-      console.log('[MANAGER BOOKING] Creating reference order for add-ons tracking', {
+    if (body.addonItemVariationIds && body.addonItemVariationIds.length > 0) {
+      console.log('[MANAGER BOOKING] Validating and creating order for add-ons', {
         bookingId: squareBooking.id,
-        addonCount: addonVariations.length,
+        addonCount: body.addonItemVariationIds.length,
       });
       
       try {
-        const lineItems: OrderLineItem[] = addonVariations.map((addon) => ({
-          catalog_object_id: addon.id,
+        // Validate each add-on before creating order
+        for (const addonId of body.addonItemVariationIds) {
+          const isValid = await validateAddonVariation(addonId);
+          if (!isValid) {
+            console.error('[MANAGER BOOKING] SECURITY: Invalid add-on variation ID', {
+              addonId,
+              bookingId: squareBooking.id,
+            });
+            
+            const response: ApiResponse = {
+              success: false,
+              error: {
+                code: 'INVALID_ADDONS',
+                message: `Invalid add-on variation ID: ${addonId}`,
+              },
+              timestamp: new Date().toISOString(),
+            };
+            return NextResponse.json(response, { status: 400 });
+          }
+        }
+
+        const lineItems: OrderLineItem[] = body.addonItemVariationIds.map((addonId) => ({
+          catalog_object_id: addonId,
           quantity: '1',
           metadata: {
             source: 'detail-ops-addon',
@@ -290,21 +264,25 @@ export const POST = requireAuth(async (
         
         orderId = order.id;
         
-        console.log('[MANAGER BOOKING] Reference order created', {
+        console.log('[MANAGER BOOKING] Square order created for add-ons', {
           orderId: order.id,
           bookingId: squareBooking.id,
+          lineItemCount: order.line_items?.length || 0,
         });
       } catch (orderError: any) {
-        console.error('[MANAGER BOOKING] Failed to create reference order', {
+        console.error('[MANAGER BOOKING] Failed to create order for add-ons', {
           error: orderError.message,
           bookingId: squareBooking.id,
         });
         
-        // Don't fail - add-ons are already in the booking as appointment segments
-        console.warn('[MANAGER BOOKING] Continuing without reference order (add-ons in booking segments)', {
+        // Don't fail the entire booking if order creation fails
+        // The booking is still valid, just without add-ons tracked
+        console.warn('[MANAGER BOOKING] Continuing without order (add-ons not tracked)', {
           bookingId: squareBooking.id,
         });
       }
+    } else {
+      console.log('[MANAGER BOOKING] No add-ons selected, skipping order creation');
     }
 
     // Step 5: Create job in DynamoDB immediately (don't wait for webhook)
