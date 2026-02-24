@@ -66,13 +66,9 @@ export const POST = requireRole([UserRole.MANAGER], async (
       ? 'https://connect.squareupsandbox.com'
       : 'https://connect.squareup.com';
 
-    // Build segment filter for availability search
-    // Note: Only service_variation_id and duration_minutes are accepted
-    const segmentFilter: any = {
-      service_variation_id: body.serviceVariationId,
-      duration_minutes: body.durationMinutes,
-    };
-
+    // Build availability search request
+    // Note: segment_filters only accepts service_variation_id
+    // Duration is inferred from the service variation
     const availabilityBody = {
       query: {
         filter: {
@@ -81,7 +77,11 @@ export const POST = requireRole([UserRole.MANAGER], async (
             start_at: body.startAt,
             end_at: body.startAt, // Check exact time
           },
-          segment_filters: [segmentFilter],
+          segment_filters: [
+            {
+              service_variation_id: body.serviceVariationId,
+            }
+          ],
         },
       },
     };
