@@ -128,6 +128,9 @@ export default function JobDetail() {
   const [noShowReason, setNoShowReason] = useState<'NO_ARRIVAL' | 'LATE_CANCEL' | 'UNREACHABLE' | 'OTHER'>('NO_ARRIVAL');
   const [noShowNotes, setNoShowNotes] = useState('');
 
+  // Image error tracking for expired presigned URLs
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
   // Vehicle editing state
   const [editingVehicle, setEditingVehicle] = useState(false);
   const [vehicleForm, setVehicleForm] = useState({
@@ -431,14 +434,27 @@ export default function JobDetail() {
           setJob(prev => prev ? {
             ...prev,
             photosMeta: apiJob.photosMeta || [],
+            receiptPhotos: apiJob.receiptPhotos || [],
             checklist: apiJob.checklist || prev.checklist,
           } : null);
+          // Clear image errors to allow retrying with new URLs
+          setImageErrors(new Set());
         }
       }
     } catch (err) {
       console.error('Failed to refresh job:', err);
     }
   };
+
+  // Handle image load error (e.g., expired presigned URLs)
+  const handleImageError = useCallback(async (imageId: string) => {
+    if (!imageErrors.has(imageId)) {
+      console.log('Image load failed, refreshing URLs:', imageId);
+      setImageErrors(prev => new Set(prev).add(imageId));
+      // Refresh job to get new presigned URLs
+      await refreshJob();
+    }
+  }, [imageErrors, jobId]);
 
   const handleStatusChange = async (newStatus: WorkStatus) => {
     if (!job || updating) return;
@@ -1542,6 +1558,7 @@ export default function JobDetail() {
                     src={photo.publicUrl}
                     alt={`Photo ${idx + 1}`}
                     className="w-full h-full object-cover"
+                    onError={() => handleImageError(`photo-${photo.photoId}`)}
                   />
                   {photo.category && (
                     <span className="absolute top-2 left-2 px-2 py-1 bg-black bg-opacity-50 text-white text-xs rounded">
@@ -1765,9 +1782,15 @@ export default function JobDetail() {
                       src={receipt.publicUrl}
                       alt="Receipt"
                       className="w-full h-full object-cover"
+                      onError={() => handleImageError(`receipt-${receipt.photoId}`)}
                     />
+                    {imageErrors.has(`receipt-${receipt.photoId}`) && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                        <span className="text-xs text-gray-500">Loading...</span>
+                      </div>
+                    )}
                   </div>
-                ))}
+                ))}          
               </div>
             </div>
           )}
@@ -1785,8 +1808,9 @@ export default function JobDetail() {
               src={selectedPhoto.publicUrl}
               alt="Full size photo"
               className="max-w-full max-h-screen rounded-lg"
+              onError={() => handleImageError(`photo-modal-${selectedPhoto.photoId}`)}
             />
-            <div className="mt-4 text-white text-center">
+            <div className="mt-4 text-white text-center" onClick={(e) => e.stopPropagation()}>
               <div className="text-sm">
                 Category: {selectedPhoto.category || 'N/A'}
               </div>
@@ -2141,8 +2165,9 @@ export default function JobDetail() {
               src={selectedReceipt.publicUrl}
               alt="Receipt"
               className="max-w-full max-h-screen rounded-lg"
+              onError={() => handleImageError(`receipt-modal-${selectedReceipt.photoId}`)}
             />
-            <div className="mt-4 text-white text-center">
+            <div className="mt-4 text-white text-center"  onClick={(e) => e.stopPropagation()}>
               <div className="text-sm">
                 Uploaded by: {selectedReceipt.uploadedBy.name}
               </div>
