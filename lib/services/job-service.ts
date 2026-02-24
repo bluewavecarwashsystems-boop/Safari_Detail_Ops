@@ -12,6 +12,107 @@ import { WorkStatus, PaymentStatus } from '../types';
 import type { ParsedBooking } from '../square/booking-parser';
 import { fetchCustomerWithRetry, isCacheStale, toCustomerCached } from '../square/customers-api';
 import { sendCompletionSms } from './sms-service';
+import { fetchCatalogObject, listAddons } from '../square/catalog-api';
+
+/**
+ * Tennessee sales tax rate
+ */
+const TAX_RATE = 0.0975;
+
+/**
+ * Calculate payment amount from booking with service and add-ons
+ * 
+ * @param serviceVariationId - Service variation ID from booking
+ * @param notes - Booking notes containing add-ons
+ * @returns Payment amount in cents, or undefined if calculation fails
+ */
+async function calculateBookingAmount(
+  serviceVariationId: string | undefined,
+  notes: string | undefined
+): Promise<number | undefined> {
+  try {
+    let subtotalCents = 0;
+
+    // 1. Get service price
+    if (serviceVariationId) {
+      const serviceObj = await fetchCatalogObject(serviceVariationId);
+      if (serviceObj?.item_variation_data?.price_money?.amount) {
+        subtotalCents += serviceObj.item_variation_data.price_money.amount;
+        console.log('[PAYMENT CALC] Service price', {
+          variationId: serviceVariationId,
+          priceCents: serviceObj.item_variation_data.price_money.amount,
+        });
+      }
+    }
+
+    // 2. Parse add-ons from notes and get prices
+    if (notes && notes.includes('ADD-ONS REQUESTED')) {
+      // Extract add-on names from notes
+      const addonsMatch = notes.match(/✅\s*ADD-ONS\s+REQUESTED:\s*([\s\S]*?)(?:\n\n⚠️|$)/i);
+      
+      if (addonsMatch && addonsMatch[1]) {
+        const addonLines = addonsMatch[1]
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.startsWith('•') || line.startsWith('-') || line.startsWith('*'))
+          .map(line => line.substring(1).trim()); // Remove bullet point
+
+        if (addonLines.length > 0) {
+          console.log('[PAYMENT CALC] Found add-ons in notes', {
+            count: addonLines.length,
+            names: addonLines,
+          });
+
+          // Fetch all available add-ons to match names to prices
+          const availableAddons = await listAddons();
+          const addonMap = new Map(
+            availableAddons.map(addon => [addon.name.toLowerCase(), addon.priceMoney?.amount || 0])
+          );
+
+          // Sum add-on prices
+          for (const addonName of addonLines) {
+            const price = addonMap.get(addonName.toLowerCase());
+            if (price) {
+              subtotalCents += price;
+              console.log('[PAYMENT CALC] Add-on price', {
+                name: addonName,
+                priceCents: price,
+              });
+            } else {
+              console.warn('[PAYMENT CALC] Add-on price not found', {
+                name: addonName,
+                note: 'Add-on may be inactive or renamed',
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (subtotalCents === 0) {
+      console.warn('[PAYMENT CALC] No prices found for booking');
+      return undefined;
+    }
+
+    // 3. Calculate tax and total
+    const taxCents = Math.round(subtotalCents * TAX_RATE);
+    const totalCents = subtotalCents + taxCents;
+
+    console.log('[PAYMENT CALC] Final calculation', {
+      subtotalCents,
+      taxCents,
+      totalCents,
+      taxRate: `${(TAX_RATE * 100).toFixed(2)}%`,
+    });
+
+    return totalCents;
+  } catch (error: any) {
+    console.error('[PAYMENT CALC] Calculation failed', {
+      error: error.message,
+    });
+    return undefined;
+  }
+}
 
 /**
  * Create a job from a Square booking (Phase 3: with customer caching)
@@ -42,6 +143,9 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
     booking.customerName || 
     (booking.customerId ? `Customer ${booking.customerId.substring(0, 8)}...` : 'Unknown Customer');
   
+  // Calculate payment amount from service + add-ons + tax
+  const amountCents = await calculateBookingAmount(booking.serviceType, booking.notes);
+  
   const job: Job = {
     jobId,
     customerId: booking.customerId || '',
@@ -59,6 +163,10 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     customerCached, // Phase 3: Cache customer data on job creation
+    payment: amountCents ? {
+      status: PaymentStatus.UNPAID,
+      amountCents,
+    } : undefined,
   };
 
   return dynamodb.createJob(job);
@@ -88,6 +196,18 @@ export async function updateJobFromBooking(
   
   const displayName = customerCached?.name || booking.customerName || currentJob?.customerName;
   
+  // Recalculate payment amount if not yet paid (in case add-ons or service changed)
+  let paymentUpdate: Partial<Job>['payment'] | undefined;
+  if (!currentJob?.payment || currentJob.payment.status === PaymentStatus.UNPAID) {
+    const amountCents = await calculateBookingAmount(booking.serviceType, booking.notes);
+    if (amountCents) {
+      paymentUpdate = {
+        status: PaymentStatus.UNPAID,
+        amountCents,
+      };
+    }
+  }
+  
   const updates: Partial<Job> = {
     status: mapBookingStatusToJobStatus(booking.status),
     appointmentTime: booking.appointmentTime,
@@ -97,6 +217,7 @@ export async function updateJobFromBooking(
     notes: booking.notes,
     updatedBy: 'square-webhook',
     customerCached, // Phase 3: Update cached customer data
+    payment: paymentUpdate,
   };
   
   // Remove undefined values to prevent DynamoDB UpdateExpression errors

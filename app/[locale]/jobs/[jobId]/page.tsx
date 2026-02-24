@@ -146,6 +146,14 @@ export default function JobDetail() {
     name: string;
   }>>([]);
   const [loadingAddons, setLoadingAddons] = useState(false);
+  
+  // Add-ons editing state
+  const [selectedAddonIds, setSelectedAddonIds] = useState<Set<string>>(new Set());
+  const [availableAddons, setAvailableAddons] = useState<Array<{
+    id: string;
+    name: string;
+    priceMoney?: { amount: number; currency: string };
+  }>>([]);
 
   /**
    * Parse add-ons from booking notes
@@ -893,6 +901,20 @@ export default function JobDetail() {
     }
   };
 
+  const fetchAvailableAddons = async () => {
+    try {
+      const response = await fetch('/api/addons');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.addons) {
+          setAvailableAddons(data.data.addons);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch add-ons:', err);
+    }
+  };
+
   const handleEditVehicle = () => {
     if (!job) return;
     
@@ -906,8 +928,21 @@ export default function JobDetail() {
     });
     setServiceTypeForm(job.serviceType || '');
     
-    // Load services
+    // Pre-select current add-ons by matching names
+    const currentAddonNames = new Set(addons.map(a => a.name.toLowerCase()));
+    const preselectedIds = new Set<string>();
+    
+    // Load services and add-ons
     fetchServices();
+    fetchAvailableAddons().then(() => {
+      // Match current add-ons to available add-ons by name
+      availableAddons.forEach(addon => {
+        if (currentAddonNames.has(addon.name.toLowerCase())) {
+          preselectedIds.add(addon.id);
+        }
+      });
+      setSelectedAddonIds(preselectedIds);
+    });
     
     setEditingVehicle(true);
   };
@@ -931,6 +966,18 @@ export default function JobDetail() {
       if (serviceTypeForm && serviceTypeForm !== job.serviceType) {
         requestBody.serviceType = serviceTypeForm;
       }
+      
+      // Include add-ons if changed
+      const selectedAddonNames = availableAddons
+        .filter(addon => selectedAddonIds.has(addon.id))
+        .map(addon => addon.name);
+      
+      requestBody.addonNames = selectedAddonNames;
+      
+      console.log('[VEHICLE EDIT] Saving with add-ons', {
+        selectedAddonIds: Array.from(selectedAddonIds),
+        selectedAddonNames,
+      });
 
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: 'PATCH',
@@ -950,6 +997,7 @@ export default function JobDetail() {
           ...prev, 
           vehicleInfo: data.data.job.vehicleInfo,
           serviceType: data.data.job.serviceType,
+          notes: data.data.job.notes,
         } : null);
         showToast('Vehicle info updated successfully', 'success');
         setEditingVehicle(false);
@@ -1202,6 +1250,47 @@ export default function JobDetail() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                     placeholder={job.serviceType}
                   />
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Add-ons (Optional)
+                </label>
+                {availableAddons.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {availableAddons.map((addon) => (
+                      <label
+                        key={addon.id}
+                        className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedAddonIds.has(addon.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedAddonIds);
+                            if (e.target.checked) {
+                              newSet.add(addon.id);
+                            } else {
+                              newSet.delete(addon.id);
+                            }
+                            setSelectedAddonIds(newSet);
+                          }}
+                          className="w-4 h-4 text-[#F47C20] border-gray-300 rounded focus:ring-[#F47C20]"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{addon.name}</div>
+                          {addon.priceMoney && (
+                            <div className="text-xs text-gray-500">
+                              +${(addon.priceMoney.amount / 100).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Loading add-ons...</div>
                 )}
               </div>
               

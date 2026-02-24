@@ -370,6 +370,36 @@ export const PATCH = requireAuth(async (
       }
     }
 
+    // Handle add-ons update
+    if (body.addonNames !== undefined) {
+      console.log('[JOB UPDATE] Updating add-ons', {
+        jobId,
+        addonNames: body.addonNames,
+      });
+      
+      // Parse existing notes to preserve non-addon content
+      let baseNotes = currentJob.notes || '';
+      
+      // Remove existing add-ons section if present
+      baseNotes = baseNotes.replace(/\n\n✅\s*ADD-ONS\s+REQUESTED:[\s\S]*?(?=\n\n|$)/gi, '');
+      baseNotes = baseNotes.trim();
+      
+      // Add new add-ons section if any selected
+      if (body.addonNames.length > 0) {
+        const addonsSection = `\n\n✅ ADD-ONS REQUESTED:\n${body.addonNames.map((name: string) => `• ${name}`).join('\n')}\n\n⚠️ Add-ons charged separately`;
+        baseNotes = (baseNotes + addonsSection).trim();
+      }
+      
+      // Update notes in the request body
+      body.notes = baseNotes;
+      
+      console.log('[JOB UPDATE] Updated notes with add-ons', {
+        jobId,
+        notesLength: baseNotes.length,
+        hasAddons: baseNotes.includes('ADD-ONS'),
+      });
+    }
+
     // Auto-initialize checklists when transitioning to CHECKED_IN
     if (body.workStatus === WorkStatus.CHECKED_IN && currentJob.status !== WorkStatus.CHECKED_IN) {
       console.log(`[ChecklistAutoInit] Job ${jobId} transitioning to CHECKED_IN, checking if checklists need initialization...`);

@@ -451,6 +451,7 @@ export interface UpdateJobRequest {
   notes?: string;
   vehicleInfo?: Job['vehicleInfo'];
   serviceType?: string;
+  addonNames?: string[]; // Add-on names to update (formatted into notes)
   openPostCompletionIssue?: {
     type: PostCompletionIssue['type'];
     notes?: string;

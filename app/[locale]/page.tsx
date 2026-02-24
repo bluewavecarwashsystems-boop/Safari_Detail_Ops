@@ -26,6 +26,26 @@ interface JobCard {
     status: 'NONE' | 'NO_SHOW' | 'RESOLVED';
     reason?: string;
   };
+  notes?: string;
+}
+
+/**
+ * Parse add-ons from booking notes
+ * Format: "✅ ADD-ONS REQUESTED:\n• Addon 1\n• Addon 2"
+ */
+function parseAddonsFromNotes(notes: string | undefined): string[] {
+  if (!notes) return [];
+  
+  const addonsMatch = notes.match(/[✅✓]\s*ADD[-\s]ONS\s+REQUESTED:\s*([\s\S]*?)(?:\n\n|⚠️|$)/i);
+  if (!addonsMatch) return [];
+  
+  const addonLines = addonsMatch[1]
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.startsWith('•') || line.startsWith('-') || line.startsWith('*'))
+    .map(line => line.substring(1).trim());
+  
+  return addonLines;
 }
 
 const mockJobs: JobCard[] = [
@@ -195,6 +215,7 @@ export default function TodayBoard() {
             paymentStatus: job.payment?.status || PaymentStatus.UNPAID,
             payment: job.payment,
             noShow: job.noShow,
+            notes: job.notes,
           }));
           setJobs(formattedJobs);
         } else {
@@ -422,6 +443,14 @@ export default function TodayBoard() {
                               )}
                               <div className="text-xs mb-2" style={{ color: 'var(--sf-muted)' }}>{job.vehicleInfo}</div>
                               <div className="text-sm font-medium mb-1" style={{ color: 'var(--sf-ink)' }}>{job.serviceType}</div>
+                              {(() => {
+                                const addons = parseAddonsFromNotes(job.notes);
+                                return addons.length > 0 && (
+                                  <div className="text-xs mb-1" style={{ color: 'var(--sf-muted)' }}>
+                                    <span className="font-medium">Add-ons:</span> {addons.join(', ')}
+                                  </div>
+                                );
+                              })()}
                               <div className="text-xs font-medium" style={{ color: 'var(--sf-muted)' }}>
                                 {new Date(job.scheduledStart).toLocaleTimeString(locale === 'ar' ? 'ar-SA' : locale === 'es' ? 'es-ES' : 'en-US', {
                                   hour: 'numeric',
