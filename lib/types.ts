@@ -117,7 +117,7 @@ export interface PostCompletionIssue {
 export interface StatusHistoryEntry {
   from: WorkStatus | null;
   to: WorkStatus | null;
-  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE' | 'PAYMENT_MARKED_PAID' | 'PAYMENT_MARKED_UNPAID' | 'NO_SHOW_MARKED' | 'NO_SHOW_RESOLVED';
+  event?: 'POST_COMPLETION_ISSUE_OPENED' | 'POST_COMPLETION_ISSUE_RESOLVED' | 'STATUS_CHANGE' | 'PAYMENT_MARKED_PAID' | 'PAYMENT_MARKED_UNPAID' | 'PAYMENT_AMOUNT_UPDATED' | 'NO_SHOW_MARKED' | 'NO_SHOW_RESOLVED';
   changedAt: string;
   changedBy: UserAudit;
   reason?: string;

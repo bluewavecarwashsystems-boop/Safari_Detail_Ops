@@ -580,24 +580,28 @@ export async function updateJobWithAudit(
         changedBy: userAudit,
       });
     } else if (updates.payment.status === PaymentStatus.UNPAID) {
-      // Mark as UNPAID
+      // Mark as UNPAID or update amount
       updateData.payment = {
         ...currentPayment,
         status: PaymentStatus.UNPAID,
         unpaidReason: updates.payment.unpaidReason,
         unpaidNote: updates.payment.unpaidNote,
+        // Update amount if provided (e.g., when add-ons change)
+        amountCents: updates.payment.amountCents !== undefined ? updates.payment.amountCents : currentPayment.amountCents,
         // Keep paidAt/paidBy for history if they exist
       };
 
-      // Add payment history entry
-      statusHistory.push({
-        from: null,
-        to: null,
-        event: 'PAYMENT_MARKED_UNPAID',
-        changedAt: now,
-        changedBy: userAudit,
-        reason: `${updates.payment.unpaidReason}${updates.payment.unpaidNote ? `: ${updates.payment.unpaidNote}` : ''}`,
-      });
+      // Add payment history entry only if status changed or unpaid reason provided
+      if (currentPayment.status !== PaymentStatus.UNPAID || updates.payment.unpaidReason) {
+        statusHistory.push({
+          from: null,
+          to: null,
+          event: updates.payment.unpaidReason ? 'PAYMENT_MARKED_UNPAID' : 'PAYMENT_AMOUNT_UPDATED',
+          changedAt: now,
+          changedBy: userAudit,
+          reason: updates.payment.unpaidReason ? `${updates.payment.unpaidReason}${updates.payment.unpaidNote ? `: ${updates.payment.unpaidNote}` : ''}` : undefined,
+        });
+      }
     }
   }
 

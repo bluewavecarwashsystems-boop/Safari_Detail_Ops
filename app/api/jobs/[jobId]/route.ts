@@ -13,6 +13,7 @@ import { requireAuth } from '@/lib/auth/requireAuth';
 import { updateJobWithAudit } from '@/lib/services/job-service';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { listServices } from '@/lib/square/catalog-api';
+import { retrieveBooking, updateBooking } from '@/lib/square/bookings-api';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -449,6 +450,57 @@ export const PATCH = requireAuth(async (
           jobId,
           paymentStatus: currentJob.payment.status,
         });
+      }
+      
+      // Sync add-ons back to Square booking if bookingId exists
+      if (currentJob.bookingId && baseNotes) {
+        try {
+          console.log('[JOB UPDATE] Syncing add-ons to Square booking', {
+            jobId,
+            bookingId: currentJob.bookingId,
+          });
+          
+          // Fetch current booking to get version
+          const currentBooking = await retrieveBooking(currentJob.bookingId);
+          
+          if (currentBooking && currentBooking.version) {
+            // Extract just the add-ons section from notes
+            const addonsMatch = baseNotes.match(/✅\s*ADD-ONS\s+REQUESTED:[\s\S]*?(?=\n\n⚠️|$)/i);
+            let sellerNote = '';
+            
+            if (addonsMatch) {
+              // Include the add-ons section and warning
+              sellerNote = addonsMatch[0];
+              if (baseNotes.includes('⚠️ Add-ons charged separately')) {
+                sellerNote += '\n\n⚠️ Add-ons charged separately';
+              }
+            }
+            
+            // Update booking with new seller_note
+            await updateBooking({
+              bookingId: currentJob.bookingId,
+              version: currentBooking.version,
+              sellerNote,
+            });
+            
+            console.log('[JOB UPDATE] Successfully synced add-ons to Square', {
+              jobId,
+              bookingId: currentJob.bookingId,
+            });
+          } else {
+            console.warn('[JOB UPDATE] Could not get booking version', {
+              jobId,
+              bookingId: currentJob.bookingId,
+            });
+          }
+        } catch (error: any) {
+          console.error('[JOB UPDATE] Failed to sync add-ons to Square', {
+            jobId,
+            bookingId: currentJob.bookingId,
+            error: error.message,
+          });
+          // Continue without failing the job update
+        }
       }
     }
 

@@ -385,3 +385,86 @@ export async function createBooking(params: {
     throw error;
   }
 }
+
+/**
+ * Update a Square booking
+ * Updates seller_note field to sync add-ons changes back to Square
+ * 
+ * @param bookingId - Square booking ID
+ * @param sellerNote - Updated seller note (with add-ons)
+ * @returns Updated booking
+ */
+export async function updateBooking(params: {
+  bookingId: string;
+  version: number;
+  sellerNote?: string;
+}): Promise<SquareBooking> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    const url = `${baseUrl}/v2/bookings/${params.bookingId}`;
+    
+    const bookingData = {
+      booking: {
+        version: params.version,
+        seller_note: params.sellerNote || '',
+      },
+    };
+    
+    console.log('[SQUARE BOOKINGS API] Updating booking', {
+      bookingId: params.bookingId,
+      version: params.version,
+      sellerNoteLength: params.sellerNote?.length || 0,
+    });
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[SQUARE BOOKINGS API] Update booking failed', {
+        status: response.status,
+        bookingId: params.bookingId,
+        error: errorText,
+      });
+      
+      throw new Error(`Failed to update booking: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors && data.errors.length > 0) {
+      const errorMsg = data.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+    
+    console.log('[SQUARE BOOKINGS API] Booking updated', {
+      bookingId: data.booking?.id,
+      newVersion: data.booking?.version,
+    });
+    
+    return data.booking as SquareBooking;
+  } catch (error: any) {
+    console.error('[SQUARE BOOKINGS API] Update booking error', {
+      bookingId: params.bookingId,
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}
