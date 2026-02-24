@@ -1,19 +1,20 @@
 /**
  * GET /api/square/services
  * 
- * Lists all available services from Square Catalog
+ * Lists all available services from Square Catalog FOR PHONE BOOKING ONLY
+ * RESTRICTED to location L9ZMZD9TTTTZJ
  * Used by phone booking form to populate service dropdown
  */
 
 import { NextResponse } from 'next/server';
-import { listServices } from '@/lib/square/catalog-api';
+import { listPhoneBookingServices } from '@/lib/square/catalog-api';
 import type { ApiResponse } from '@/lib/types';
 
 export async function GET() {
   try {
-    console.log('[SERVICES API] Fetching services from Square');
+    console.log('[SERVICES API] Fetching phone booking services (location-filtered)');
     
-    const services = await listServices();
+    const services = await listPhoneBookingServices();
     
     const response: ApiResponse = {
       success: true,

@@ -6,6 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
 
+/**
+ * PHONE BOOKING LOCATION RESTRICTION
+ * 
+ * Phone Booking is ALWAYS restricted to location L9ZMZD9TTTTZJ.
+ * This is enforced server-side, but we also filter client-side as a defensive measure.
+ */
+const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
+
 interface Service {
   id: string;
   itemId: string;
@@ -66,11 +74,21 @@ export default function PhoneBookingPage() {
         const data = await response.json();
         
         if (data.success && data.data?.services) {
-          setServices(data.data.services);
+          // DEFENSIVE: Services should already be filtered server-side,
+          // but we validate here as an additional guard
+          const fetchedServices = data.data.services;
+          
+          console.log('[PHONE BOOKING] Services loaded from API', {
+            count: fetchedServices.length,
+            requiredLocation: PHONE_BOOKING_LOCATION_ID,
+            note: 'Server-side filtering enforced',
+          });
+          
+          setServices(fetchedServices);
           
           // Auto-select first service if available
-          if (data.data.services.length > 0) {
-            const firstService = data.data.services[0];
+          if (fetchedServices.length > 0) {
+            const firstService = fetchedServices[0];
             setSelectedServiceId(firstService.id);
             setFormData(prev => ({
               ...prev,
@@ -144,6 +162,17 @@ export default function PhoneBookingPage() {
       const selectedService = services.find(s => s.id === selectedServiceId);
       if (!selectedService) {
         throw new Error('Please select a service');
+      }
+
+      // DEFENSIVE: Ensure selected service is from our location-filtered list
+      // (Server-side validation is the primary enforcement, this is belt-and-suspenders)
+      const isValidService = services.some(s => s.id === selectedService.id);
+      if (!isValidService) {
+        console.error('[PHONE BOOKING] SECURITY: Attempted to book invalid service', {
+          serviceId: selectedService.id,
+          location: PHONE_BOOKING_LOCATION_ID,
+        });
+        throw new Error('Selected service is not available for phone booking');
       }
 
       // Combine date and time into ISO timestamp

@@ -290,6 +290,8 @@ export interface CatalogService {
 /**
  * List all service items from Square Catalog
  * Filters for service-type items suitable for appointments
+ * 
+ * NOTE: Use listPhoneBookingServices() for phone booking to enforce location restriction
  */
 export async function listServices(): Promise<CatalogService[]> {
   const config = getConfig();
@@ -373,6 +375,141 @@ export async function listServices(): Promise<CatalogService[]> {
     return services;
   } catch (error: any) {
     console.error('[SQUARE CATALOG API] Error fetching services', {
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}
+
+/**
+ * List services for Phone Booking - RESTRICTED to PHONE_BOOKING_LOCATION_ID only
+ * 
+ * This function enforces server-side location filtering for Phone Booking.
+ * Services must be present at location L9ZMZD9TTTTZJ to be returned.
+ * 
+ * @returns Services available at the phone booking location only
+ */
+export async function listPhoneBookingServices(): Promise<CatalogService[]> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  // Import the constant (will be at top of file, but reference here for clarity)
+  const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    // Use catalog/search API with location filtering
+    const url = `${baseUrl}/v2/catalog/search`;
+    
+    console.log('[SQUARE CATALOG API] Fetching phone booking services', {
+      locationId: PHONE_BOOKING_LOCATION_ID,
+    });
+    
+    const searchBody = {
+      object_types: ['ITEM'],
+      include_related_objects: true,
+    };
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+      body: JSON.stringify(searchBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[SQUARE CATALOG API] Failed to fetch catalog', {
+        status: response.status,
+        error: errorText,
+      });
+      
+      throw new Error(`Failed to fetch catalog: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors && data.errors.length > 0) {
+      const errorMsg = data.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+
+    // Extract and filter services from catalog items
+    const services: CatalogService[] = [];
+    let totalServicesBeforeFilter = 0;
+    
+    if (data.objects) {
+      for (const item of data.objects) {
+        if (item.type === 'ITEM' && item.item_data) {
+          const itemData = item.item_data;
+          
+          // Check if item is present at the phone booking location
+          const isPresentAtLocation = 
+            itemData.present_at_all_locations === true ||
+            (itemData.present_at_location_ids && 
+             itemData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID));
+          
+          // Skip items not present at our location
+          if (!isPresentAtLocation) {
+            continue;
+          }
+          
+          // Include all items with variations (services are catalog items)
+          if (itemData.variations && itemData.variations.length > 0) {
+            for (const variation of itemData.variations) {
+              if (variation.type === 'ITEM_VARIATION' && variation.item_variation_data) {
+                const varData = variation.item_variation_data;
+                
+                totalServicesBeforeFilter++;
+                
+                // Additional filtering at variation level
+                const varPresentAtLocation =
+                  varData.present_at_all_locations === true ||
+                  (varData.present_at_location_ids && 
+                   varData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID)) ||
+                  // If variation doesn't have location info, inherit from item
+                  (!varData.present_at_location_ids && isPresentAtLocation);
+                
+                if (varPresentAtLocation) {
+                  services.push({
+                    id: variation.id,
+                    itemId: item.id,
+                    name: `${itemData.name || 'Service'}${varData.name && varData.name !== 'Regular' ? ` - ${varData.name}` : ''}`,
+                    description: itemData.description,
+                    durationMinutes: varData.service_duration ? Math.floor(varData.service_duration / 60000) : undefined,
+                    priceMoney: varData.price_money ? {
+                      amount: varData.price_money.amount || 0,
+                      currency: varData.price_money.currency || 'USD',
+                    } : undefined,
+                    version: variation.version || 1,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log('[SQUARE CATALOG API] Phone booking services filtered', {
+      locationId: PHONE_BOOKING_LOCATION_ID,
+      totalBeforeFilter: totalServicesBeforeFilter,
+      returnedAfterFilter: services.length,
+    });
+    
+    return services;
+  } catch (error: any) {
+    console.error('[SQUARE CATALOG API] Error fetching phone booking services', {
       error: error.message,
     });
     

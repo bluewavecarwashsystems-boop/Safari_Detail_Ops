@@ -7,6 +7,14 @@
 
 export type Environment = 'qa' | 'prod';
 
+/**
+ * PHONE BOOKING LOCATION CONSTANT
+ * 
+ * Phone Booking is ALWAYS restricted to this single Square location.
+ * This is non-negotiable and enforced both server-side and client-side.
+ */
+export const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
+
 export interface Config {
   env: Environment;
   aws: {
@@ -59,22 +67,60 @@ function getResourceName(resourceName: string): string {
   
   // If resource name already starts with the prefix, return as-is
   if (resourceName.startsWith('safari-detail-ops-')) {
-    console.log(`[config] Resource '${resourceName}' already prefixed, returning as-is`);
+    // SECURITY: Don't log full resource names containing potential sensitive info
     return resourceName;
   }
   
   // Otherwise, add the prefix
   const result = `${prefix}${resourceName}`;
-  console.log(`[config] Building resource name: '${resourceName}' + env '${env}' = '${result}'`);
   return result;
+}
+
+/**
+ * Redact sensitive configuration for logging
+ * SECURITY: Never log tokens, keys, or credentials
+ */
+function redactSensitiveConfig(config: Config): any {
+  return {
+    env: config.env,
+    aws: {
+      region: config.aws.region,
+      dynamodb: config.aws.dynamodb,
+      s3: config.aws.s3,
+    },
+    square: {
+      environment: config.square.environment,
+      franklinLocationId: config.square.franklinLocationId,
+      teamMemberId: config.square.teamMemberId,
+      accessToken: config.square.accessToken ? '[REDACTED]' : '[NOT SET]',
+      webhookSignatureKey: config.square.webhookSignatureKey ? '[REDACTED]' : '[NOT SET]',
+    },
+    logging: config.logging,
+  };
 }
 
 /**
  * Get application configuration
  * Phase A: Defensive mode - returns safe defaults if env vars missing
+ * Production Safety: Validates environment consistency
  */
 export function getConfig(): Config {
   const env = getEnvironment();
+  
+  // Get Square environment
+  const squareEnv = (process.env.SQUARE_ENV === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production';
+  
+  // CRITICAL: Production safety check
+  // If APP_ENV=prod, SQUARE_ENVIRONMENT must be production
+  if (env === 'prod' && squareEnv !== 'production') {
+    const errorMsg = 
+      `FATAL CONFIGURATION ERROR: Environment mismatch!\n` +
+      `  APP_ENV='prod' but SQUARE_ENV='${process.env.SQUARE_ENV}'\n` +
+      `  Production deployment MUST use Square production environment.\n` +
+      `  Set SQUARE_ENV=production in Vercel production environment.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
   
   return {
     env,

@@ -75,7 +75,11 @@ console.log(`✓ Booking is ${valid ? 'valid' : 'invalid'}\n`);
 console.log('Test 4: Signature validation');
 const testBody = JSON.stringify(mockBookingCreatedEvent);
 const testSignatureKey = 'test_signature_key_123';
-const testUrl = 'https://ops-qa.thesafaricarwash.com/api/square/webhooks/bookings';
+
+// Build webhook URL dynamically based on environment
+const webhookHost = process.env.WEBHOOK_TEST_URL || 'ops-qa.thesafaricarwash.com';
+const testUrl = `https://${webhookHost}/api/square/webhooks/bookings`;
+console.log(`Testing webhook URL: ${testUrl}`);
 
 // Generate a valid signature for testing
 import * as crypto from 'crypto';
