@@ -67,18 +67,23 @@ export default function PhoneBookingPage() {
         setLoadingServices(true);
         const response = await fetch('/api/square/services');
         
+        console.log('[PHONE BOOKING CLIENT] API Response Status:', response.status);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch services');
         }
         
         const data = await response.json();
         
+        console.log('[PHONE BOOKING CLIENT] Full API Response:', JSON.stringify(data, null, 2));
+        
         if (data.success && data.data?.services) {
           // Services are already filtered server-side (production only)
           const fetchedServices = data.data.services;
           
-          console.log('[PHONE BOOKING] Services loaded from API', {
+          console.log('[PHONE BOOKING CLIENT] Services loaded from API', {
             count: fetchedServices.length,
+            serviceIds: fetchedServices.map((s: Service) => s.id).slice(0, 3),
             note: 'Server-side filtering in production, all services in sandbox',
           });
           
