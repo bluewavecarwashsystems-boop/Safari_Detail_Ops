@@ -908,11 +908,13 @@ export default function JobDetail() {
         const data = await response.json();
         if (data.success && data.data?.addons) {
           setAvailableAddons(data.data.addons);
+          return data.data.addons; // Return fetched addons
         }
       }
     } catch (err) {
       console.error('Failed to fetch add-ons:', err);
     }
+    return []; // Return empty array on error
   };
 
   const handleEditVehicle = () => {
@@ -930,13 +932,13 @@ export default function JobDetail() {
     
     // Pre-select current add-ons by matching names
     const currentAddonNames = new Set(addons.map(a => a.name.toLowerCase()));
-    const preselectedIds = new Set<string>();
     
     // Load services and add-ons
     fetchServices();
-    fetchAvailableAddons().then(() => {
-      // Match current add-ons to available add-ons by name
-      availableAddons.forEach(addon => {
+    fetchAvailableAddons().then((fetchedAddons) => {
+      // Match current add-ons to available add-ons by name using fetched data
+      const preselectedIds = new Set<string>();
+      fetchedAddons.forEach((addon: { id: string; name: string; priceMoney?: { amount: number; currency: string } }) => {
         if (currentAddonNames.has(addon.name.toLowerCase())) {
           preselectedIds.add(addon.id);
         }
