@@ -73,7 +73,7 @@ async function syncBooking(bookingId: string) {
       
       if (serviceVariationId) {
         try {
-          const serviceName = await fetchServiceName(serviceVariationId);
+          const serviceName = await fetchServiceName(serviceVariationId!);
           parsedBooking.serviceType = serviceName;
           console.log('   Service Name:', serviceName);
         } catch (err: any) {
