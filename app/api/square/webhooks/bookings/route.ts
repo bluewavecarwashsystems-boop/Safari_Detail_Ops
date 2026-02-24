@@ -235,7 +235,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           notesLength: completeNotes.length,
           hasOrderId: !!fullBooking.order_id,
           orderId: fullBooking.order_id,
+          hasSellerNote: !!fullBooking.seller_note,
+          sellerNoteLength: fullBooking.seller_note?.length || 0,
         });
+        
+        // Check if seller_note contains add-ons (Square website puts them there)
+        if (fullBooking.seller_note && fullBooking.seller_note.includes('ADD-ONS REQUESTED')) {
+          console.log('[ADD-ONS FOUND IN SELLER NOTE]', {
+            bookingId: parsedBooking.bookingId,
+            sellerNotePreview: fullBooking.seller_note.substring(0, 200),
+          });
+          
+          // Extract the add-ons section from seller_note
+          const addonsMatch = fullBooking.seller_note.match(/✅\s*ADD-ONS\s+REQUESTED:\s*([\s\S]*?)(?:\n\n⚠️|$)/i);
+          
+          if (addonsMatch && addonsMatch[1]) {
+            const addonsSection = `\n\n✅ ADD-ONS REQUESTED:\n${addonsMatch[1].trim()}\n\n⚠️ Add-ons charged separately`;
+            completeNotes = (completeNotes + addonsSection).trim();
+            
+            console.log('[ADD-ONS EXTRACTED FROM SELLER NOTE]', {
+              bookingId: parsedBooking.bookingId,
+              addonsText: addonsMatch[1].trim(),
+            });
+          }
+        }
         
         // Check if booking has associated order with line items (add-ons)
         if (fullBooking.order_id) {
