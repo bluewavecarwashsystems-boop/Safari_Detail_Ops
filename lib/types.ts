@@ -459,6 +459,7 @@ export interface UpdateJobRequest {
   resolvePostCompletionIssue?: boolean;
   payment?: {
     status: PaymentStatus;
+    amountCents?: number; // Can be recalculated when add-ons change
     unpaidReason?: string;
     unpaidNote?: string;
   };

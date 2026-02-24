@@ -26,7 +26,7 @@ const TAX_RATE = 0.0975;
  * @param notes - Booking notes containing add-ons
  * @returns Payment amount in cents, or undefined if calculation fails
  */
-async function calculateBookingAmount(
+export async function calculateBookingAmount(
   serviceVariationId: string | undefined,
   notes: string | undefined
 ): Promise<number | undefined> {

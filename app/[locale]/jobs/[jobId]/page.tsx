@@ -998,6 +998,7 @@ export default function JobDetail() {
           vehicleInfo: data.data.job.vehicleInfo,
           serviceType: data.data.job.serviceType,
           notes: data.data.job.notes,
+          payment: data.data.job.payment,
         } : null);
         showToast('Vehicle info updated successfully', 'success');
         setEditingVehicle(false);

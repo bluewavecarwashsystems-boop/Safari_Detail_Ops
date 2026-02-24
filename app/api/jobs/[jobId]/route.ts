@@ -8,10 +8,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse, UpdateJobRequest } from '@/lib/types';
 import { WorkStatus, UserRole, PaymentStatus, ChecklistType } from '@/lib/types';
-import { getJobWithPhotos } from '@/lib/services/job-service';
+import { getJobWithPhotos, calculateBookingAmount } from '@/lib/services/job-service';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { updateJobWithAudit } from '@/lib/services/job-service';
 import * as dynamodb from '@/lib/aws/dynamodb';
+import { listServices } from '@/lib/square/catalog-api';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -398,6 +399,57 @@ export const PATCH = requireAuth(async (
         notesLength: baseNotes.length,
         hasAddons: baseNotes.includes('ADD-ONS'),
       });
+      
+      // Recalculate payment if job is unpaid
+      if (!currentJob.payment || currentJob.payment.status === PaymentStatus.UNPAID) {
+        try {
+          console.log('[JOB UPDATE] Recalculating payment for add-ons change', {
+            jobId,
+            serviceType: currentJob.serviceType,
+          });
+          
+          // Look up service variation ID by service name
+          const services = await listServices();
+          const matchingService = services.find(s => s.name === currentJob.serviceType);
+          
+          if (matchingService) {
+            const amountCents = await calculateBookingAmount(matchingService.id, baseNotes);
+            
+            if (amountCents) {
+              body.payment = {
+                status: PaymentStatus.UNPAID,
+                amountCents,
+              };
+              
+              console.log('[JOB UPDATE] Payment recalculated', {
+                jobId,
+                amountCents,
+                amountDollars: (amountCents / 100).toFixed(2),
+              });
+            } else {
+              console.warn('[JOB UPDATE] Payment recalculation returned undefined', {
+                jobId,
+              });
+            }
+          } else {
+            console.warn('[JOB UPDATE] Could not find service variation ID', {
+              jobId,
+              serviceType: currentJob.serviceType,
+            });
+          }
+        } catch (error: any) {
+          console.error('[JOB UPDATE] Payment recalculation failed', {
+            jobId,
+            error: error.message,
+          });
+          // Continue without failing the update
+        }
+      } else {
+        console.log('[JOB UPDATE] Skipping payment recalculation - job is paid', {
+          jobId,
+          paymentStatus: currentJob.payment.status,
+        });
+      }
     }
 
     // Auto-initialize checklists when transitioning to CHECKED_IN
