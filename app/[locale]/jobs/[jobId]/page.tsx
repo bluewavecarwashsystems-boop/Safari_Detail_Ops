@@ -16,6 +16,7 @@ interface Job {
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  notes?: string;
   vehicleInfo: {
     make?: string;
     model?: string;
@@ -142,11 +143,30 @@ export default function JobDetail() {
 
   // Add-ons state
   const [addons, setAddons] = useState<Array<{
-    id: string;
     name: string;
-    priceMoney?: { amount: number; currency: string };
   }>>([]);
   const [loadingAddons, setLoadingAddons] = useState(false);
+
+  /**
+   * Parse add-ons from booking notes
+   * Format: "✅ ADD-ONS REQUESTED:\n• Addon 1\n• Addon 2"
+   */
+  const parseAddonsFromNotes = (notes: string | undefined): Array<{ name: string }> => {
+    if (!notes) return [];
+    
+    // Look for the add-ons section
+    const addonsMatch = notes.match(/✅\s*ADD-ONS REQUESTED:\s*([\s\S]*?)(?:\n\n|$)/i);
+    if (!addonsMatch) return [];
+    
+    const addonsText = addonsMatch[1];
+    
+    // Extract individual add-ons (lines starting with •)
+    const addonLines = addonsText.split('\n').filter(line => line.trim().startsWith('•'));
+    
+    return addonLines.map(line => ({
+      name: line.replace(/^•\s*/, '').trim(),
+    }));
+  };
 
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {
@@ -201,6 +221,7 @@ export default function JobDetail() {
           customerName: apiJob.customerCached?.name || apiJob.customerName || 'Unknown Customer',
           customerPhone: apiJob.customerCached?.phone || apiJob.customerPhone,
           customerEmail: apiJob.customerCached?.email || apiJob.customerEmail,
+          notes: apiJob.notes,
           vehicleInfo: apiJob.vehicleInfo || {},
           serviceType: apiJob.serviceType || 'Service details pending',
           scheduledStart: apiJob.appointmentTime || apiJob.createdAt,
@@ -235,48 +256,35 @@ export default function JobDetail() {
     fetchJob();
   }, [jobId]);
 
-  // Fetch add-ons when job is loaded and has orderId
+  // Parse add-ons from job notes when job is loaded or updated
   useEffect(() => {
-    const fetchAddons = async () => {
-      if (!job?.orderId) {
-        setAddons([]);
-        return;
-      }
-      
-      setLoadingAddons(true);
-      
-      try {
-        console.log('[JOB DETAILS] Fetching add-ons from order', {
-          jobId: job.jobId,
-          orderId: job.orderId,
-        });
-        
-        const response = await fetch(`/api/orders/${job.orderId}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch order: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data?.addons) {
-          setAddons(data.data.addons);
-          console.log('[JOB DETAILS] Add-ons loaded', {
-            count: data.data.addons.length,
-          });
-        } else {
-          setAddons([]);
-        }
-      } catch (error) {
-        console.error('[JOB DETAILS] Failed to fetch add-ons', error);
-        setAddons([]);
-      } finally {
-        setLoadingAddons(false);
-      }
-    };
+    if (!job) {
+      setAddons([]);
+      return;
+    }
     
-    fetchAddons();
-  }, [job?.orderId]);
+    setLoadingAddons(true);
+    
+    try {
+      console.log('[JOB DETAILS] Parsing add-ons from notes', {
+        jobId: job.jobId,
+        hasNotes: !!job.notes,
+      });
+      
+      const parsedAddons = parseAddonsFromNotes(job.notes);
+      
+      setAddons(parsedAddons);
+      console.log('[JOB DETAILS] Add-ons parsed from notes', {
+        count: parsedAddons.length,
+        addons: parsedAddons,
+      });
+    } catch (error) {
+      console.error('[JOB DETAILS] Failed to parse add-ons', error);
+      setAddons([]);
+    } finally {
+      setLoadingAddons(false);
+    }
+  }, [job?.notes, job?.jobId]);
 
   // Phase 4: Polling for real-time updates
   const pollingFetcher = useCallback(async (): Promise<Job> => {
@@ -309,6 +317,7 @@ export default function JobDetail() {
         customerName: apiJob.customerCached?.name || apiJob.customerName || 'Unknown Customer',
         customerPhone: apiJob.customerCached?.phone || apiJob.customerPhone,
         customerEmail: apiJob.customerCached?.email || apiJob.customerEmail,
+        notes: apiJob.notes,
         vehicleInfo: apiJob.vehicleInfo || {},
         serviceType: apiJob.serviceType || 'Service details pending',
         scheduledStart: apiJob.appointmentTime || apiJob.createdAt,
@@ -1212,14 +1221,9 @@ export default function JobDetail() {
                     <div className="text-sm text-gray-500">Loading add-ons...</div>
                   ) : addons.length > 0 ? (
                     <div className="space-y-1">
-                      {addons.map((addon) => (
-                        <div key={addon.id} className="flex items-center justify-between text-sm">
-                          <span className="font-medium text-gray-900">{addon.name}</span>
-                          {addon.priceMoney && (
-                            <span className="text-gray-600">
-                              ${(addon.priceMoney.amount / 100).toFixed(2)}
-                            </span>
-                          )}
+                      {addons.map((addon, index) => (
+                        <div key={`addon-${index}`} className="flex items-center text-sm">
+                          <span className="font-medium text-gray-900">• {addon.name}</span>
                         </div>
                       ))}
                     </div>

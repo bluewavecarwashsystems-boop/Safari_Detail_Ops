@@ -574,8 +574,7 @@ export interface CreateManagerBookingRequest {
 export interface CreateManagerBookingResponse {
   jobId: string;
   bookingId: string;
-  orderId?: string; // Order ID if add-ons were selected
-  job: Job;
+  job: Job; // Add-ons stored in job.notes field
 }
 
 /**
