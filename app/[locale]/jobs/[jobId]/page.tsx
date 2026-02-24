@@ -1394,19 +1394,6 @@ export default function JobDetail() {
           )}
         </section>
 
-        {/* DEBUG: Booking Notes (temporary - to verify notes are being fetched) */}
-        {job.notes && (
-          <section className="bg-yellow-50 rounded-2xl p-6 mb-6 border-2 border-yellow-300">
-            <h2 className="text-lg font-semibold mb-4 text-yellow-900">🔍 DEBUG: Booking Notes</h2>
-            <pre className="text-xs bg-white p-4 rounded border border-yellow-200 overflow-x-auto whitespace-pre-wrap">
-              {job.notes}
-            </pre>
-            <div className="mt-3 text-sm text-yellow-800">
-              <strong>Parsed Add-ons:</strong> {addons.length > 0 ? addons.map(a => a.name).join(', ') : 'None found'}
-            </div>
-          </section>
-        )}
-
         {/* Status & Actions */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--sf-ink)' }}>📊 {t('status.title')}</h2>
