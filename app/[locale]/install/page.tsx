@@ -296,38 +296,6 @@ export default function InstallPage() {
           </div>
         )}
 
-        {/* Benefits */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-            <div className="text-3xl mb-2">⚡</div>
-            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Instant Access</h3>
-            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
-              Launch directly from your home screen
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-            <div className="text-3xl mb-2">📱</div>
-            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Full Screen</h3>
-            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
-              Works like a native app
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-            <div className="text-3xl mb-2">🔒</div>
-            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Secure</h3>
-            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
-              All data encrypted and protected
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
-            <div className="text-3xl mb-2">📶</div>
-            <h3 className="font-bold mb-1" style={{ color: 'var(--sf-ink)' }}>Works Offline</h3>
-            <p className="text-sm" style={{ color: 'var(--sf-muted)' }}>
-              Basic functions available without internet
-            </p>
-          </div>
-        </div>
-
         {/* Action Button */}
         <div className="text-center">
           <Link
