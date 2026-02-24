@@ -2288,7 +2288,7 @@ export default function JobDetail() {
           onClose={() => setShowEditBookingModal(false)}
           onSuccess={() => {
             // Refresh job data after successful edit
-            refreshJob();
+            fetchJob();
             showToast('Booking updated successfully', 'success');
           }}
         />
