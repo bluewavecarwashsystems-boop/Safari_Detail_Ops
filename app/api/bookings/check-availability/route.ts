@@ -69,13 +69,18 @@ export const POST = requireRole([UserRole.MANAGER], async (
     // Build availability search request
     // Note: segment_filters only accepts service_variation_id
     // Duration is inferred from the service variation
+    
+    // Calculate end time (Square requires min 1 hour range)
+    const startTime = new Date(body.startAt);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Add 1 hour
+    
     const availabilityBody = {
       query: {
         filter: {
           location_id: locationId,
           start_at_range: {
             start_at: body.startAt,
-            end_at: body.startAt, // Check exact time
+            end_at: endTime.toISOString(),
           },
           segment_filters: [
             {
