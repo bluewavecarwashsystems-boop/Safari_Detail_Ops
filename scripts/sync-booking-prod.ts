@@ -71,12 +71,14 @@ async function syncBooking(bookingId: string) {
       
       console.log('   Service Variation ID:', serviceVariationId);
       
-      try {
-        const serviceName = await fetchServiceName(serviceVariationId);
-        parsedBooking.serviceType = serviceName;
-        console.log('   Service Name:', serviceName);
-      } catch (err: any) {
-        console.warn('   ⚠️  Could not fetch service name:', err.message);
+      if (serviceVariationId) {
+        try {
+          const serviceName = await fetchServiceName(serviceVariationId);
+          parsedBooking.serviceType = serviceName;
+          console.log('   Service Name:', serviceName);
+        } catch (err: any) {
+          console.warn('   ⚠️  Could not fetch service name:', err.message);
+        }
       }
     }
 
