@@ -10,6 +10,7 @@ import { requireRole } from '@/lib/auth/requireAuth';
 import { UserRole } from '@/lib/types';
 import type { ApiResponse } from '@/lib/types';
 import { retrieveBooking, updateBookingDetails } from '@/lib/square/bookings-api';
+import { fetchServiceName } from '@/lib/square/catalog-api';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { getConfig } from '@/lib/config';
 
@@ -137,7 +138,17 @@ export const PATCH = requireRole([UserRole.MANAGER], async (
       newVersion: updatedBooking.version,
     });
 
-    // Step 5: Update internal job record
+    // Step 5: Fetch service name for the new service
+    let serviceName: string | undefined;
+    try {
+      serviceName = await fetchServiceName(body.serviceVariationId);
+      console.log('[booking-edit] Fetched service name', { serviceName });
+    } catch (err: any) {
+      console.warn('[booking-edit] Could not fetch service name', { error: err.message });
+      // Continue without service name - appointmentTime will still be updated
+    }
+
+    // Step 6: Update internal job record
     const job = await dynamodb.getJob(bookingId);
 
     if (job) {
@@ -151,14 +162,17 @@ export const PATCH = requireRole([UserRole.MANAGER], async (
         },
       };
 
-      // Note: serviceType is updated separately via catalog lookup if needed
-      // For now, we just update the core booking fields
+      // Update serviceType if we successfully fetched the name
+      if (serviceName) {
+        updates.serviceType = serviceName;
+      }
 
       const updatedJob = await dynamodb.updateJob(bookingId, updates);
 
       console.log('[booking-edit] Job record updated', {
         jobId: bookingId,
         newStart: updates.appointmentTime,
+        newServiceType: updates.serviceType,
       });
 
       return NextResponse.json({
