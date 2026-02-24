@@ -304,6 +304,8 @@ export default function JobDetail() {
       
       return {
         jobId: apiJob.jobId,
+        bookingId: apiJob.bookingId,
+        orderId: apiJob.orderId,
         customerName: apiJob.customerCached?.name || apiJob.customerName || 'Unknown Customer',
         customerPhone: apiJob.customerCached?.phone || apiJob.customerPhone,
         customerEmail: apiJob.customerCached?.email || apiJob.customerEmail,
