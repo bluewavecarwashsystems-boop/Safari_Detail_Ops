@@ -156,7 +156,7 @@ export function NotificationBell({ onNewNotification }: NotificationBellProps) {
       {/* Dropdown */}
       {isOpen && (
         <div 
-          className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+          className="absolute right-0 mt-2 w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
           style={{ maxHeight: '500px' }}
         >
           {/* Header */}
