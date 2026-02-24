@@ -602,12 +602,14 @@ export const PATCH = requireAuth(async (
           updatedJob,
           currentJob.status,
           body.workStatus,
-          session.sub
+          session.sub,
+          session.email
         );
         console.log('[NOTIFICATION] Status change notification sent', {
           jobId,
           oldStatus: currentJob.status,
           newStatus: body.workStatus,
+          actorEmail: session.email,
         });
       }
 
@@ -617,11 +619,13 @@ export const PATCH = requireAuth(async (
         await notificationService.notifyChecklistUpdated(
           updatedJob,
           checklistType,
-          session.sub
+          session.sub,
+          session.email
         );
         console.log('[NOTIFICATION] Checklist update notification sent', {
           jobId,
           checklistType,
+          actorEmail: session.email,
         });
       }
 
@@ -630,11 +634,13 @@ export const PATCH = requireAuth(async (
         await notificationService.notifyAddonsUpdated(
           updatedJob,
           body.addonNames,
-          session.sub
+          session.sub,
+          session.email
         );
         console.log('[NOTIFICATION] Add-ons update notification sent', {
           jobId,
           addons: body.addonNames,
+          actorEmail: session.email,
         });
       }
     } catch (notificationError: any) {

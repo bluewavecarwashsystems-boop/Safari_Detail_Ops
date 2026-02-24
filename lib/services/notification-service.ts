@@ -171,7 +171,8 @@ export async function notifyJobStatusChanged(
   job: Job,
   oldStatus: WorkStatus,
   newStatus: WorkStatus,
-  userId?: string
+  userId?: string,
+  actorEmail?: string
 ): Promise<Notification | null> {
   // Only notify for meaningful status changes
   const notifiableStatuses = [
@@ -199,16 +200,20 @@ export async function notifyJobStatusChanged(
     'CANCELLED': 'Cancelled',
   };
   
+  // Use employee email prefix if provided, otherwise use customer name
+  const displayName = actorEmail ? actorEmail.split('@')[0] : job.customerName;
+  
   return await createNotification({
     type: 'JOB_STATUS_CHANGED' as NotificationType,
     jobId: job.jobId,
     bookingId: job.bookingId,
     title: 'Status Updated',
-    message: `${job.customerName} • ${statusLabels[newStatus]}`,
+    message: `${displayName} • ${statusLabels[newStatus]}`,
     payload: {
       oldStatus,
       newStatus,
       customerName: job.customerName,
+      actorEmail,
     },
     actor: userId ? `user:${userId}` : 'system',
   });
@@ -280,19 +285,24 @@ export async function notifyTeamMemberChanged(
 export async function notifyChecklistUpdated(
   job: Job,
   checklistType: 'tech' | 'qc',
-  userId?: string
+  userId?: string,
+  actorEmail?: string
 ): Promise<Notification | null> {
   const typeLabel = checklistType === 'tech' ? 'Tech' : 'QC';
+  
+  // Use employee email prefix if provided, otherwise use customer name
+  const displayName = actorEmail ? actorEmail.split('@')[0] : job.customerName;
   
   return await createNotification({
     type: 'CHECKLIST_UPDATED' as NotificationType,
     jobId: job.jobId,
     bookingId: job.bookingId,
     title: `${typeLabel} Checklist Updated`,
-    message: `${job.customerName}`,
+    message: `${displayName}`,
     payload: {
       checklistType,
       customerName: job.customerName,
+      actorEmail,
     },
     actor: userId ? `user:${userId}` : 'system',
   });
@@ -304,17 +314,22 @@ export async function notifyChecklistUpdated(
 export async function notifyAddonsUpdated(
   job: Job,
   addons: string[],
-  userId?: string
+  userId?: string,
+  actorEmail?: string
 ): Promise<Notification | null> {
+  // Use employee email prefix if provided, otherwise use customer name
+  const displayName = actorEmail ? actorEmail.split('@')[0] : job.customerName;
+  
   return await createNotification({
     type: 'ADDONS_UPDATED' as NotificationType,
     jobId: job.jobId,
     bookingId: job.bookingId,
     title: 'Add-ons Updated',
-    message: `${job.customerName} • ${addons.join(', ')}`,
+    message: `${displayName} • ${addons.join(', ')}`,
     payload: {
       addons,
       customerName: job.customerName,
+      actorEmail,
     },
     actor: userId ? `user:${userId}` : 'system',
   });
