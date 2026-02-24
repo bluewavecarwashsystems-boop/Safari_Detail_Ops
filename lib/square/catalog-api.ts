@@ -467,15 +467,18 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
           }
           
           // Check if item is present at the phone booking location
-          // In production with locationId: filter by location
-          // In sandbox or without locationId: include all services
-          const isPresentAtLocation = 
-            !isProduction || // Sandbox: include all
-            !locationId || // No location configured: include all
-            itemData.present_at_all_locations === true ||
-            (itemData.present_at_location_ids && 
-             itemData.present_at_location_ids.includes(locationId)) ||
-            (!itemData.present_at_all_locations && !itemData.present_at_location_ids);
+          let isPresentAtLocation: boolean;
+          
+          if (!isProduction || !locationId) {
+            // Sandbox or no location configured: include all services
+            isPresentAtLocation = true;
+          } else {
+            // Production with location: strict filtering
+            isPresentAtLocation = 
+              itemData.present_at_all_locations === true ||
+              (itemData.present_at_location_ids && 
+               itemData.present_at_location_ids.includes(locationId));
+          }
           
           // Include all items with variations (services are catalog items)
           if (itemData.variations && itemData.variations.length > 0) {
@@ -502,16 +505,20 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
                 allServices.push(serviceObj);
                 
                 // Additional filtering at variation level
-                // In production with locationId: filter by location
-                // In sandbox or without locationId: inherit from item
-                const varPresentAtLocation =
-                  !isProduction || // Sandbox: include all
-                  !locationId || // No location configured: include all
-                  varData.present_at_all_locations === true ||
-                  (varData.present_at_location_ids && 
-                   varData.present_at_location_ids.includes(locationId)) ||
-                  // If variation doesn't have location info, inherit from item
-                  (!varData.present_at_all_locations && !varData.present_at_location_ids && isPresentAtLocation);
+                let varPresentAtLocation: boolean;
+                
+                if (!isProduction || !locationId) {
+                  // Sandbox or no location configured: include all
+                  varPresentAtLocation = true;
+                } else {
+                  // Production with location: strict filtering
+                  varPresentAtLocation =
+                    varData.present_at_all_locations === true ||
+                    (varData.present_at_location_ids && 
+                     varData.present_at_location_ids.includes(locationId)) ||
+                    // If variation doesn't have location info, inherit from item
+                    (!varData.present_at_location_ids && !varData.present_at_all_locations && isPresentAtLocation);
+                }
                 
                 if (varPresentAtLocation) {
                   services.push(serviceObj);
