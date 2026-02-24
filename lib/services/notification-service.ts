@@ -68,23 +68,34 @@ async function createNotification(params: {
 export async function notifyJobCreated(
   job: Job,
   source: 'square' | 'phone',
-  eventId?: string
+  eventId?: string,
+  actorEmail?: string
 ): Promise<Notification | null> {
   const sourceLabel = source === 'square' ? 'Online' : 'Phone';
+  
+  // For phone bookings, use employee email prefix; for online, use customer name
+  let message: string;
+  if (source === 'phone' && actorEmail) {
+    const emailPrefix = actorEmail.split('@')[0];
+    message = `${emailPrefix} • ${job.serviceType}`;
+  } else {
+    message = `${job.customerName} • ${job.serviceType}`;
+  }
   
   return await createNotification({
     type: 'JOB_CREATED' as NotificationType,
     jobId: job.jobId,
     bookingId: job.bookingId,
     title: `New ${sourceLabel} Booking`,
-    message: `${job.customerName} • ${job.serviceType}`,
+    message,
     payload: {
       source,
       customerName: job.customerName,
       serviceType: job.serviceType,
       appointmentTime: job.appointmentTime,
+      actorEmail,
     },
-    actor: source === 'square' ? (eventId ? `square:${eventId}` : 'square') : 'system',
+    actor: source === 'square' ? (eventId ? `square:${eventId}` : 'square') : (actorEmail ? `phone:${actorEmail}` : 'system'),
     dedupeKey: eventId ? `square:${eventId}` : undefined,
   });
 }

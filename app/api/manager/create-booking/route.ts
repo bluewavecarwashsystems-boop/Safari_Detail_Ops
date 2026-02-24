@@ -350,10 +350,11 @@ export const POST = requireAuth(async (
 
     // Generate notification for phone booking
     try {
-      await notificationService.notifyJobCreated(job, 'phone');
+      await notificationService.notifyJobCreated(job, 'phone', undefined, session.email);
       console.log('[PHONE BOOKING] Notification sent', {
         jobId: job.jobId,
         bookingId: squareBooking.id,
+        actorEmail: session.email,
       });
     } catch (notificationError: any) {
       // Don't fail the request if notification fails
