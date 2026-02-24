@@ -38,6 +38,9 @@ import {
 import { 
   retrieveBooking 
 } from '@/lib/square/bookings-api';
+import {
+  retrieveOrder
+} from '@/lib/square/orders-api';
 import { 
   createJobFromBooking, 
   updateJobFromBooking 
@@ -224,19 +227,84 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const fullBooking = await retrieveBooking(parsedBooking.bookingId);
       
       if (fullBooking) {
-        // Update notes with complete customer_note from Square
-        if (fullBooking.customer_note) {
-          parsedBooking.notes = fullBooking.customer_note;
+        // Start with the customer_note from Square
+        let completeNotes = fullBooking.customer_note || '';
+        
+        console.log('[BOOKING ENRICHMENT] Initial notes', {
+          bookingId: parsedBooking.bookingId,
+          notesLength: completeNotes.length,
+          hasOrderId: !!fullBooking.order_id,
+          orderId: fullBooking.order_id,
+        });
+        
+        // Check if booking has associated order with line items (add-ons)
+        if (fullBooking.order_id) {
+          try {
+            const order = await retrieveOrder(fullBooking.order_id);
+            
+            if (order && order.line_items && order.line_items.length > 0) {
+              console.log('[ORDER FETCHED]', {
+                orderId: order.id,
+                lineItemCount: order.line_items.length,
+              });
+              
+              // Extract add-on names from line items
+              // Filter out the main service (service items are in appointment_segments)
+              const serviceVariationIds = fullBooking.appointment_segments?.map(
+                seg => seg.service_variation_id
+              ) || [];
+              
+              const addonItems = order.line_items.filter(item => 
+                item.catalog_object_id && 
+                !serviceVariationIds.includes(item.catalog_object_id)
+              );
+              
+              if (addonItems.length > 0) {
+                const addonNames = addonItems
+                  .map(item => item.name || 'Unknown Add-on')
+                  .filter(name => name);
+                
+                // Format add-ons in notes format (matching phone booking format)
+                const addonsText = `\n\n✅ ADD-ONS REQUESTED:\n${addonNames.map(name => `• ${name}`).join('\n')}\n\n⚠️ Add-ons charged separately`;
+                
+                completeNotes = (completeNotes + addonsText).trim();
+                
+                console.log('[ADD-ONS EXTRACTED FROM ORDER]', {
+                  bookingId: parsedBooking.bookingId,
+                  orderId: order.id,
+                  addonCount: addonNames.length,
+                  addons: addonNames,
+                });
+              } else {
+                console.log('[NO ADD-ONS IN ORDER]', {
+                  bookingId: parsedBooking.bookingId,
+                  orderId: order.id,
+                  note: 'All line items are main services',
+                });
+              }
+            }
+          } catch (orderError: any) {
+            console.warn('[ORDER FETCH FAILED]', {
+              orderId: fullBooking.order_id,
+              error: orderError.message,
+              note: 'Continuing without add-ons',
+            });
+          }
+        }
+        
+        // Update notes with complete customer_note + add-ons
+        if (completeNotes) {
+          parsedBooking.notes = completeNotes;
           console.log('[BOOKING NOTES ENRICHED]', {
             bookingId: parsedBooking.bookingId,
-            notesLength: fullBooking.customer_note.length,
-            notesPreview: fullBooking.customer_note.substring(0, 100),
-            hasAddons: fullBooking.customer_note.includes('ADD-ONS'),
+            notesLength: completeNotes.length,
+            notesPreview: completeNotes.substring(0, 100),
+            hasAddons: completeNotes.includes('ADD-ONS'),
           });
         } else {
           console.warn('[BOOKING NOTES EMPTY]', {
             bookingId: parsedBooking.bookingId,
-            note: 'Square API returned booking but customer_note is empty',
+            note: 'Square API returned booking but customer_note is empty and no order',
           });
         }
       } else {

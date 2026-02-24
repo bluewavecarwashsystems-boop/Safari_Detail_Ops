@@ -35,6 +35,11 @@ export interface SquareBooking {
     creator_type?: string;
   };
   source?: string;
+  // Additional fields that might contain add-ons
+  all_day?: boolean;
+  localized_start_at?: string;
+  order_id?: string; // Link to Square Order with line items
+  [key: string]: any; // Allow additional fields for debugging
 }
 
 /**
@@ -256,12 +261,18 @@ export async function retrieveBooking(bookingId: string): Promise<SquareBooking 
     const data = await response.json();
     const booking = data.booking as SquareBooking;
     
+    // Log FULL booking object to diagnose add-ons issue
     console.log('[SQUARE BOOKINGS API] Booking retrieved', {
       bookingId,
       status: booking.status,
       hasCustomerNote: !!booking.customer_note,
       customerNoteLength: booking.customer_note?.length || 0,
       customerNotePreview: booking.customer_note?.substring(0, 200) || '(empty)',
+    });
+    
+    console.log('[SQUARE BOOKINGS API] FULL BOOKING OBJECT', {
+      bookingId,
+      fullBooking: JSON.stringify(booking, null, 2),
     });
     
     return booking;
