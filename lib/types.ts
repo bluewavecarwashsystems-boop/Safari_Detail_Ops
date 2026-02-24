@@ -476,6 +476,52 @@ export interface UpdateJobRequest {
 }
 
 /**
+ * Notification Event Types
+ */
+export enum NotificationType {
+  JOB_CREATED = 'JOB_CREATED',
+  JOB_UPDATED = 'JOB_UPDATED',
+  JOB_CANCELLED = 'JOB_CANCELLED',
+  JOB_RESCHEDULED = 'JOB_RESCHEDULED',
+  JOB_STATUS_CHANGED = 'JOB_STATUS_CHANGED',
+  JOB_REASSIGNED = 'JOB_REASSIGNED',
+  SERVICE_CHANGED = 'SERVICE_CHANGED',
+  CHECKLIST_UPDATED = 'CHECKLIST_UPDATED',
+  ADDONS_UPDATED = 'ADDONS_UPDATED',
+  PAYMENT_STATUS_CHANGED = 'PAYMENT_STATUS_CHANGED',
+}
+
+/**
+ * Notification record (DynamoDB)
+ */
+export interface Notification {
+  notificationId: string;
+  locationId: string; // L9ZMZD9TTTTZJ for Franklin
+  type: NotificationType;
+  jobId: string;
+  bookingId?: string;
+  title: string;
+  message: string;
+  payload?: {
+    oldValue?: any;
+    newValue?: any;
+    changes?: string[];
+  };
+  actor: string; // 'square' | 'system' | 'user:<userId>'
+  createdAt: string;
+  readAt?: string;
+}
+
+/**
+ * Notification list response
+ */
+export interface NotificationListResponse {
+  notifications: Notification[];
+  unreadCount: number;
+  hasMore: boolean;
+}
+
+/**
  * POST /api/jobs/[jobId]/photos/presign request/response
  */
 export interface PresignPhotoRequest {

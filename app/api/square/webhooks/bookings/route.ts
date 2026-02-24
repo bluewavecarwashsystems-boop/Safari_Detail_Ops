@@ -46,6 +46,7 @@ import {
   updateJobFromBooking 
 } from '@/lib/services/job-service';
 import { getJobByBookingId, getJob } from '@/lib/aws/dynamodb';
+import * as notificationService from '@/lib/services/notification-service';
 
 /**
  * GET handler - Square webhook UI validation
@@ -455,6 +456,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Create or update job in DynamoDB (idempotent)
     let job;
     let jobAction: 'created' | 'updated' | 'none' = 'none';
+    let existingJobSnapshot: any = null; // For change detection
 
     try {
       if (action === 'create') {
@@ -474,6 +476,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
         
         if (existingJob) {
+          existingJobSnapshot = { ...existingJob };
           console.log('[JOB EXISTS]', {
             jobId: existingJob.jobId,
             bookingId: parsedBooking.bookingId,
@@ -506,6 +509,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
         
         if (existingJob) {
+          existingJobSnapshot = { ...existingJob };
           console.log('[JOB UPDATING]', {
             jobId: existingJob.jobId,
             bookingId: parsedBooking.bookingId,
@@ -530,6 +534,71 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         bookingId: parsedBooking.bookingId,
         action: jobAction,
       });
+
+      // Generate notifications for major events
+      if (job) {
+        try {
+          if (jobAction === 'created') {
+            // New booking notification
+            await notificationService.notifyJobCreated(
+              job,
+              'square',
+              webhookEvent.event_id
+            );
+            console.log('[NOTIFICATION] Job created notification sent', {
+              jobId: job.jobId,
+              eventId: webhookEvent.event_id,
+            });
+          } else if (jobAction === 'updated' && existingJobSnapshot) {
+            // Check for cancellation
+            if (job.status === 'CANCELLED' && existingJobSnapshot.status !== 'CANCELLED') {
+              await notificationService.notifyJobCancelled(
+                job,
+                'square',
+                webhookEvent.event_id
+              );
+              console.log('[NOTIFICATION] Job cancelled notification sent', {
+                jobId: job.jobId,
+              });
+            }
+            
+            // Check for reschedule (time change)
+            if (job.appointmentTime && existingJobSnapshot.appointmentTime && 
+                job.appointmentTime !== existingJobSnapshot.appointmentTime) {
+              await notificationService.notifyJobRescheduled(
+                job,
+                existingJobSnapshot.appointmentTime,
+                job.appointmentTime,
+                webhookEvent.event_id
+              );
+              console.log('[NOTIFICATION] Job rescheduled notification sent', {
+                jobId: job.jobId,
+              });
+            }
+            
+            // Check for service change
+            if (job.serviceType && existingJobSnapshot.serviceType && 
+                job.serviceType !== existingJobSnapshot.serviceType) {
+              await notificationService.notifyServiceChanged(
+                job,
+                existingJobSnapshot.serviceType,
+                job.serviceType,
+                webhookEvent.event_id
+              );
+              console.log('[NOTIFICATION] Service changed notification sent', {
+                jobId: job.jobId,
+              });
+            }
+          }
+        } catch (notificationError: any) {
+          // Don't fail the webhook if notification fails
+          console.error('[NOTIFICATION ERROR]', {
+            jobId: job.jobId,
+            error: notificationError.message,
+            stack: notificationError.stack,
+          });
+        }
+      }
     } catch (dbError: any) {
       console.error('[DATABASE ERROR]', {
         eventId: webhookEvent.event_id,

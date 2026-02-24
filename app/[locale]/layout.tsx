@@ -7,6 +7,7 @@ import { Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/i18n';
 import { I18nProvider } from '@/lib/i18n/provider';
+import { ToastProvider } from '@/app/components/ToastProvider';
 import type { Metadata } from 'next';
 
 // Import all messages statically for Edge Runtime compatibility
@@ -51,9 +52,11 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <I18nProvider locale={locale} messages={messages[locale as Locale]}>
-          <div className="min-h-screen bg-gray-50">
-            {children}
-          </div>
+          <ToastProvider>
+            <div className="min-h-screen bg-gray-50">
+              {children}
+            </div>
+          </ToastProvider>
         </I18nProvider>
       </body>
     </html>

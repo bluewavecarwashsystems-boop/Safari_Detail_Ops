@@ -12,6 +12,7 @@ export interface AWSTableNames {
   jobs: string;
   users: string;
   checklistTemplates: string;
+  notifications: string;
   
   // S3 buckets
   photosBucket: string;
@@ -62,6 +63,9 @@ export function getAWSTableNames(): AWSTableNames {
     checklistTemplates: buildResourceName(
       process.env.DYNAMODB_CHECKLIST_TEMPLATES_TABLE || 'checklist-templates'
     ),
+    notifications: buildResourceName(
+      process.env.DYNAMODB_NOTIFICATIONS_TABLE || 'notifications'
+    ),
     
     // S3 Buckets
     photosBucket: buildResourceName(
@@ -79,6 +83,7 @@ export function getAWSTableNames(): AWSTableNames {
 export function getTableNamesSummary(): Record<string, string> {
   const tables = getAWSTableNames();
   return {
+    'DynamoDB Notifications': tables.notifications,
     'DynamoDB Jobs': tables.jobs,
     'DynamoDB Users': tables.users,
     'DynamoDB Checklist Templates': tables.checklistTemplates,

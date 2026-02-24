@@ -4,6 +4,9 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 import type { Locale } from '@/i18n';
+import { NotificationBell } from './NotificationBell';
+import { useToast } from './ToastProvider';
+import type { Notification } from '@/lib/types';
 
 interface ManagerHeaderProps {
   title: string;
@@ -25,6 +28,7 @@ export function ManagerHeader({
   const router = useRouter();
   const params = useParams();
   const locale = (params.locale as Locale) || 'en';
+  const { showToast } = useToast();
 
   const homeRoute = `/${locale}/`;
 
@@ -37,6 +41,19 @@ export function ManagerHeader({
 
   const handleHome = () => {
     router.push(homeRoute);
+  };
+
+  const handleNewNotification = (notification: Notification) => {
+    // Show toast for new notification
+    const typeLabels: Record<string, string> = {
+      'JOB_CREATED': '🆕 New Booking',
+      'JOB_CANCELLED': '❌ Booking Cancelled',
+      'JOB_RESCHEDULED': '📅 Booking Rescheduled',
+      'JOB_STATUS_CHANGED': '🔄 Status Updated',
+    };
+    
+    const title = typeLabels[notification.type] || notification.title;
+    showToast(`${title}: ${notification.message}`, 'info');
   };
 
   return (
@@ -77,6 +94,9 @@ export function ManagerHeader({
 
           {/* Right: Navigation + Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Notification Bell */}
+            <NotificationBell onNewNotification={handleNewNotification} />
+
             {/* Back button (secondary, only if history exists) */}
             {showBackButton && canGoBack && (
               <button

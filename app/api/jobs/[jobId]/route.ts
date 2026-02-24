@@ -14,6 +14,7 @@ import { updateJobWithAudit } from '@/lib/services/job-service';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { listServices } from '@/lib/square/catalog-api';
 import { retrieveBooking, updateBooking } from '@/lib/square/bookings-api';
+import * as notificationService from '@/lib/services/notification-service';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -591,6 +592,58 @@ export const PATCH = requireAuth(async (
         timestamp: new Date().toISOString(),
       };
       return NextResponse.json(response, { status: 404 });
+    }
+
+    // Generate notifications for major changes
+    try {
+      // Status change notification
+      if (body.workStatus && currentJob && body.workStatus !== currentJob.status) {
+        await notificationService.notifyJobStatusChanged(
+          updatedJob,
+          currentJob.status,
+          body.workStatus,
+          session.sub
+        );
+        console.log('[NOTIFICATION] Status change notification sent', {
+          jobId,
+          oldStatus: currentJob.status,
+          newStatus: body.workStatus,
+        });
+      }
+
+      // Checklist update notification
+      if (body.checklist) {
+        const checklistType = body.checklist.tech ? 'tech' : 'qc';
+        await notificationService.notifyChecklistUpdated(
+          updatedJob,
+          checklistType,
+          session.sub
+        );
+        console.log('[NOTIFICATION] Checklist update notification sent', {
+          jobId,
+          checklistType,
+        });
+      }
+
+      // Add-ons update notification
+      if (body.addonNames && body.addonNames.length > 0) {
+        await notificationService.notifyAddonsUpdated(
+          updatedJob,
+          body.addonNames,
+          session.sub
+        );
+        console.log('[NOTIFICATION] Add-ons update notification sent', {
+          jobId,
+          addons: body.addonNames,
+        });
+      }
+    } catch (notificationError: any) {
+      // Don't fail the request if notification fails
+      console.error('[NOTIFICATION ERROR]', {
+        jobId,
+        error: notificationError.message,
+        stack: notificationError.stack,
+      });
     }
 
     const response: ApiResponse = {

@@ -16,6 +16,7 @@ import { createBooking } from '@/lib/square/bookings-api';
 import { listPhoneBookingServices, validateAddonVariation, listAddons } from '@/lib/square/catalog-api';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { getConfig } from '@/lib/config';
+import * as notificationService from '@/lib/services/notification-service';
 
 /**
  * POST /api/manager/create-booking
@@ -346,6 +347,21 @@ export const POST = requireAuth(async (
         },
       ],
     });
+
+    // Generate notification for phone booking
+    try {
+      await notificationService.notifyJobCreated(job, 'phone');
+      console.log('[PHONE BOOKING] Notification sent', {
+        jobId: job.jobId,
+        bookingId: squareBooking.id,
+      });
+    } catch (notificationError: any) {
+      // Don't fail the request if notification fails
+      console.error('[PHONE BOOKING] Notification error', {
+        error: notificationError.message,
+        stack: notificationError.stack,
+      });
+    }
 
     console.log('[MANAGER BOOKING] Job created in DynamoDB', {
       jobId: job.jobId,

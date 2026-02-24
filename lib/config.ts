@@ -15,6 +15,7 @@ export interface Config {
       jobsTable: string;
       usersTable: string;
       checklistTemplatesTable: string;
+      notificationsTable: string;
     };
     s3: {
       photosBucket: string;
@@ -122,6 +123,7 @@ export function getConfig(): Config {
         jobsTable: getResourceName(process.env.DYNAMODB_JOBS_TABLE || 'jobs'),
         usersTable: getResourceName(process.env.DYNAMODB_USERS_TABLE || 'users'),
         checklistTemplatesTable: getResourceName(process.env.DYNAMODB_CHECKLIST_TEMPLATES_TABLE || 'checklist-templates'),
+        notificationsTable: getResourceName(process.env.DYNAMODB_NOTIFICATIONS_TABLE || 'notifications'),
       },
       s3: {
         photosBucket: getResourceName(process.env.S3_PHOTOS_BUCKET || 'photos'),
