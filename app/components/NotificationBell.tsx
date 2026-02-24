@@ -156,8 +156,8 @@ export function NotificationBell({ onNewNotification }: NotificationBellProps) {
       {/* Dropdown */}
       {isOpen && (
         <div 
-          className="absolute right-0 mt-2 w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-          style={{ maxHeight: '500px' }}
+          className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 mt-2 w-auto sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+          style={{ maxHeight: '500px', top: '70px' }}
         >
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
