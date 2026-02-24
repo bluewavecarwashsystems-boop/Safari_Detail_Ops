@@ -467,14 +467,15 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
             itemsWithLocationInfo++;
           }
           
-          // Debug logging for first few items
-          if (allServices.length < 3) {
+          // Debug logging for ALL items in production
+          if (isProduction && locationId) {
             console.log('[SQUARE CATALOG API] Item location debug', {
               itemName: itemData.name,
               present_at_all_locations: itemData.present_at_all_locations,
               present_at_location_ids: itemData.present_at_location_ids,
               targetLocationId: locationId,
-              isProduction,
+              willBeIncluded: itemData.present_at_all_locations === true ||
+                (itemData.present_at_location_ids && itemData.present_at_location_ids.includes(locationId)),
             });
           }
           
