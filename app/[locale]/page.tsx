@@ -8,6 +8,9 @@ import { useTranslations } from '@/lib/i18n/provider';
 import { WorkStatus, PaymentStatus } from '@/lib/types';
 import type { Locale } from '@/i18n';
 import { PaymentBadge } from './components/PaymentBadge';
+import { NotificationBell } from '../components/NotificationBell';
+import { useToast } from '../components/ToastProvider';
+import type { Notification } from '@/lib/types';
 
 interface JobCard {
   jobId: string;
@@ -178,6 +181,19 @@ export default function TodayBoard() {
     })}`;
   };
 
+  const handleNewNotification = (notification: Notification) => {
+    // Show toast for new notification
+    const typeLabels: Record<string, string> = {
+      'JOB_CREATED': '🆕 New Booking',
+      'JOB_CANCELLED': '❌ Booking Cancelled',
+      'JOB_RESCHEDULED': '📅 Booking Rescheduled',
+      'JOB_STATUS_CHANGED': '🔄 Status Updated',
+    };
+    
+    const title = typeLabels[notification.type] || notification.title;
+    showToast(`${title}: ${notification.message}`, 'success');
+  };
+
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -255,7 +271,8 @@ export default function TodayBoard() {
               <Image src="/safari-logo.png" alt="Safari Car Wash" width={50} height={50} className="object-contain sm:w-[60px] sm:h-[60px]" />
               <h1 className="text-lg sm:text-2xl font-bold whitespace-nowrap" style={{ color: 'var(--sf-ink)' }}>{t('title')}</h1>
             </div>
-            <div className="flex gap-1.5 sm:gap-3">
+            <div className="flex gap-1.5 sm:gap-3 items-center">
+              <NotificationBell onNewNotification={handleNewNotification} />
               {userRole === 'MANAGER' && (
                 <Link 
                   href={`/${locale}/manager/phone-booking`}
