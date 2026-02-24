@@ -223,8 +223,24 @@ async function processBooking(
       }
       result.cancelled++;
     } else {
-      // Cancelled booking with no job - skip
-      result.skipped++;
+      // Cancelled booking with no job - create it as cancelled
+      console.log('[RECONCILE] Creating cancelled booking as job', {
+        bookingId,
+        status: booking.status,
+      });
+      
+      if (!dryRun) {
+        await createJobFromBooking(booking, dryRun, result);
+        console.log('[RECONCILE] Cancelled job created', {
+          bookingId,
+        });
+      } else {
+        console.log('[RECONCILE] [DRY RUN] Would create cancelled job', {
+          bookingId,
+        });
+        result.created++;
+      }
+      result.cancelled++;
     }
     return;
   }

@@ -13,7 +13,11 @@
     "test:integration": "ts-node test/integration-test.ts",
     "seed-admin": "ts-node scripts/seed-admin-user.ts",
     "check-booking-profile": "ts-node scripts/check-booking-profile.ts",
-    "refresh-notes": "npx tsx scripts/refresh-booking-notes.ts"
+    "refresh-notes": "npx tsx scripts/refresh-booking-notes.ts",
+    "sync-booking": "npx tsx scripts/sync-cancelled-booking.ts",
+    "mark-cancelled": "npx tsx scripts/mark-cancelled.ts",
+    "check-job": "npx tsx scripts/check-job.ts",
+    "list-jobs": "npx tsx scripts/list-recent-jobs.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.679.0",
