@@ -152,20 +152,50 @@ export default function JobDetail() {
    * Format: "✅ ADD-ONS REQUESTED:\n• Addon 1\n• Addon 2"
    */
   const parseAddonsFromNotes = (notes: string | undefined): Array<{ name: string }> => {
-    if (!notes) return [];
+    console.log('[ADDONS PARSER] Parsing notes', {
+      hasNotes: !!notes,
+      notesLength: notes?.length,
+      notesPreview: notes?.substring(0, 200),
+    });
     
-    // Look for the add-ons section
-    const addonsMatch = notes.match(/✅\s*ADD-ONS REQUESTED:\s*([\s\S]*?)(?:\n\n|$)/i);
-    if (!addonsMatch) return [];
+    if (!notes) {
+      console.log('[ADDONS PARSER] No notes to parse');
+      return [];
+    }
+    
+    // Look for the add-ons section (support both emoji and text variants)
+    const addonsMatch = notes.match(/[✅✓]\s*ADD[-\s]ONS\s+REQUESTED:\s*([\s\S]*?)(?:\n\n|⚠️|$)/i);
+    
+    console.log('[ADDONS PARSER] Regex match result', {
+      matched: !!addonsMatch,
+      matchedText: addonsMatch?.[1]?.substring(0, 100),
+    });
+    
+    if (!addonsMatch) {
+      console.log('[ADDONS PARSER] No add-ons section found in notes');
+      return [];
+    }
     
     const addonsText = addonsMatch[1];
     
-    // Extract individual add-ons (lines starting with •)
-    const addonLines = addonsText.split('\n').filter(line => line.trim().startsWith('•'));
+    // Extract individual add-ons (lines starting with • or -)
+    const addonLines = addonsText.split('\n').filter(line => {
+      const trimmed = line.trim();
+      return trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+    });
     
-    return addonLines.map(line => ({
-      name: line.replace(/^•\s*/, '').trim(),
+    console.log('[ADDONS PARSER] Extracted addon lines', {
+      count: addonLines.length,
+      lines: addonLines,
+    });
+    
+    const parsedAddons = addonLines.map(line => ({
+      name: line.replace(/^[•\-*]\s*/, '').trim(),
     }));
+    
+    console.log('[ADDONS PARSER] Final parsed add-ons', parsedAddons);
+    
+    return parsedAddons;
   };
 
   // Format last updated time
@@ -1235,6 +1265,19 @@ export default function JobDetail() {
             </div>
           )}
         </section>
+
+        {/* DEBUG: Booking Notes (temporary - to verify notes are being fetched) */}
+        {job.notes && (
+          <section className="bg-yellow-50 rounded-2xl p-6 mb-6 border-2 border-yellow-300">
+            <h2 className="text-lg font-semibold mb-4 text-yellow-900">🔍 DEBUG: Booking Notes</h2>
+            <pre className="text-xs bg-white p-4 rounded border border-yellow-200 overflow-x-auto whitespace-pre-wrap">
+              {job.notes}
+            </pre>
+            <div className="mt-3 text-sm text-yellow-800">
+              <strong>Parsed Add-ons:</strong> {addons.length > 0 ? addons.map(a => a.name).join(', ') : 'None found'}
+            </div>
+          </section>
+        )}
 
         {/* Status & Actions */}
         <section className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: 'var(--sf-shadow)', border: '1px solid var(--sf-border)' }}>
