@@ -241,6 +241,21 @@ export default function EditBookingModal({
     }
   };
 
+  // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:MM in local timezone)
+  const toDateTimeLocalFormat = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
   const formatPrice = (cents?: number) => {
     if (!cents) return 'N/A';
     return `$${(cents / 100).toFixed(2)}`;
@@ -311,7 +326,7 @@ export default function EditBookingModal({
                 </label>
                 <input
                   type="datetime-local"
-                  value={startTime.slice(0, 16)} // Format for datetime-local input
+                  value={toDateTimeLocalFormat(startTime)}
                   onChange={(e) => handleTimeChange(e.target.value ? new Date(e.target.value).toISOString() : '')}
                   onBlur={checkAvailability}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
