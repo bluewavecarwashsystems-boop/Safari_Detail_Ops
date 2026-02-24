@@ -15,7 +15,9 @@
     "check-booking-profile": "ts-node scripts/check-booking-profile.ts",
     "refresh-notes": "npx tsx scripts/refresh-booking-notes.ts",
     "sync-booking": "npx tsx scripts/sync-cancelled-booking.ts",
+    "sync-booking-prod": "npx tsx scripts/sync-booking-prod.ts",
     "mark-cancelled": "npx tsx scripts/mark-cancelled.ts",
+    "mark-cancelled-prod": "npx tsx scripts/mark-cancelled-prod.ts",
     "check-job": "npx tsx scripts/check-job.ts",
     "list-jobs": "npx tsx scripts/list-recent-jobs.ts"
   },
