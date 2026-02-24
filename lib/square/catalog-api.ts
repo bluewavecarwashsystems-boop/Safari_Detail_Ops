@@ -411,7 +411,8 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
     console.log('[SQUARE CATALOG API] Fetching phone booking services', {
       environment: config.square.environment,
       locationId,
-      filteringEnabled: isProduction,
+      filteringEnabled: isProduction && !!locationId,
+      note: isProduction ? 'Production filtering active' : 'Sandbox mode - all services',
     });
     
     const searchBody = {
@@ -464,6 +465,17 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
           
           if (hasLocationInfo) {
             itemsWithLocationInfo++;
+          }
+          
+          // Debug logging for first few items
+          if (allServices.length < 3) {
+            console.log('[SQUARE CATALOG API] Item location debug', {
+              itemName: itemData.name,
+              present_at_all_locations: itemData.present_at_all_locations,
+              present_at_location_ids: itemData.present_at_location_ids,
+              targetLocationId: locationId,
+              isProduction,
+            });
           }
           
           // Check if item is present at the phone booking location
