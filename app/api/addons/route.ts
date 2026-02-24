@@ -23,6 +23,7 @@ export async function GET() {
       data: {
         addons,
       },
+      timestamp: new Date().toISOString(),
     };
 
     return NextResponse.json(response, { status: 200 });
@@ -34,7 +35,11 @@ export async function GET() {
 
     const response: ApiResponse = {
       success: false,
-      error: error.message || 'Failed to fetch add-ons',
+      error: {
+        code: 'ADDONS_FETCH_ERROR',
+        message: error.message || 'Failed to fetch add-ons',
+      },
+      timestamp: new Date().toISOString(),
     };
 
     return NextResponse.json(response, { status: 500 });
