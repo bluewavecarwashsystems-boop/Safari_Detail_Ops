@@ -16,6 +16,12 @@ export async function GET() {
     
     const services = await listPhoneBookingServices();
     
+    // Add diagnostic info to response in development/debug
+    console.log('[SERVICES API] Services fetched', {
+      count: services.length,
+      serviceIds: services.map(s => s.id).slice(0, 3),
+    });
+    
     const response: ApiResponse = {
       success: true,
       data: {
@@ -28,6 +34,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('[SERVICES API ERROR]', {
       error: error.message,
+      stack: error.stack,
     });
     
     const response: ApiResponse = {
