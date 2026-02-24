@@ -584,3 +584,244 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
     throw error;
   }
 }
+
+/**
+ * Add-on item variation for phone bookings
+ */
+export interface CatalogAddon {
+  id: string; // Variation ID
+  itemId: string; // Item ID
+  name: string;
+  description?: string;
+  priceMoney?: {
+    amount: number;
+    currency: string;
+  };
+  version: number;
+}
+
+/**
+ * Catalog search API response
+ */
+interface CatalogSearchResponse {
+  objects?: any[];
+  cursor?: string;
+  errors?: any[];
+}
+
+/**
+ * Fetch add-ons from Square Catalog
+ * 
+ * Add-ons are ITEM_VARIATION objects in reporting category "Add-on's"
+ * present at location L9ZMZD9TTTTZJ
+ * 
+ * @returns List of add-on variations
+ */
+export async function listAddons(): Promise<CatalogAddon[]> {
+  const config = getConfig();
+  
+  if (!config.square.accessToken) {
+    throw new Error('Square access token not configured');
+  }
+
+  const locationId = config.square.franklinLocationId;
+
+  try {
+    const baseUrl = config.square.environment === 'sandbox' 
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+    
+    console.log('[SQUARE CATALOG API] Fetching add-ons', {
+      environment: config.square.environment,
+      locationId,
+    });
+    
+    // First, get all categories to find "Add-on's" category
+    const categoriesUrl = `${baseUrl}/v2/catalog/list?types=CATEGORY`;
+    const categoriesResponse = await fetch(categoriesUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+    });
+
+    if (!categoriesResponse.ok) {
+      const errorText = await categoriesResponse.text();
+      console.error('[SQUARE CATALOG API] Failed to fetch categories', {
+        status: categoriesResponse.status,
+        error: errorText,
+      });
+      throw new Error(`Failed to fetch categories: ${categoriesResponse.status}`);
+    }
+
+    const categoriesData = await categoriesResponse.json();
+    
+    // Find "Add-on's" category
+    let addonsCategoryId: string | null = null;
+    if (categoriesData.objects) {
+      for (const category of categoriesData.objects) {
+        if (category.type === 'CATEGORY' && category.category_data) {
+          const categoryName = category.category_data.name || '';
+          // Match "Add-on's" (case insensitive, ignore apostrophe variations)
+          if (categoryName.toLowerCase().replace(/[']/g, '') === 'add-ons' || 
+              categoryName.toLowerCase() === "add-on's") {
+            addonsCategoryId = category.id;
+            console.log('[SQUARE CATALOG API] Found Add-ons category', {
+              categoryId: addonsCategoryId,
+              categoryName,
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    if (!addonsCategoryId) {
+      console.warn('[SQUARE CATALOG API] Add-ons category not found in catalog');
+      return []; // Return empty if category doesn't exist
+    }
+
+    // Now fetch items in the Add-ons category
+    const itemsUrl = `${baseUrl}/v2/catalog/list?types=ITEM`;
+    const itemsResponse = await fetch(itemsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.square.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+    });
+
+    if (!itemsResponse.ok) {
+      const errorText = await itemsResponse.text();
+      console.error('[SQUARE CATALOG API] Failed to fetch items', {
+        status: itemsResponse.status,
+        error: errorText,
+      });
+      throw new Error(`Failed to fetch items: ${itemsResponse.status}`);
+    }
+
+    const itemsData = await itemsResponse.json();
+    
+    if (itemsData.errors && itemsData.errors.length > 0) {
+      const errorMsg = itemsData.errors.map((e: any) => `${e.code}: ${e.detail || e.category}`).join(', ');
+      throw new Error(`Square API errors: ${errorMsg}`);
+    }
+
+    const addons: CatalogAddon[] = [];
+    
+    if (itemsData.objects) {
+      for (const item of itemsData.objects) {
+        if (item.type === 'ITEM' && item.item_data) {
+          const itemData = item.item_data;
+          
+          // Check if item is in Add-ons category
+          if (itemData.reporting_category?.id !== addonsCategoryId && 
+              itemData.category_id !== addonsCategoryId) {
+            continue; // Skip items not in Add-ons category
+          }
+          
+          // Check if item is present at the required location
+          const isPresentAtLocation = 
+            item.present_at_all_locations === true ||
+            (item.present_at_location_ids && 
+             item.present_at_location_ids.includes(locationId));
+          
+          if (!isPresentAtLocation) {
+            console.log('[SQUARE CATALOG API] Skipping add-on item not at location', {
+              itemName: itemData.name,
+              locationId,
+            });
+            continue;
+          }
+          
+          // Extract variations
+          if (itemData.variations && itemData.variations.length > 0) {
+            for (const variation of itemData.variations) {
+              if (variation.type === 'ITEM_VARIATION' && variation.item_variation_data) {
+                const varData = variation.item_variation_data;
+                
+                // Additional location check at variation level
+                const varPresentAtLocation =
+                  variation.present_at_all_locations === true ||
+                  (variation.present_at_location_ids && 
+                   variation.present_at_location_ids.includes(locationId)) ||
+                  // If variation doesn't have location info, inherit from item
+                  (!variation.present_at_location_ids && !variation.present_at_all_locations && isPresentAtLocation);
+                
+                if (!varPresentAtLocation) {
+                  continue;
+                }
+                
+                addons.push({
+                  id: variation.id,
+                  itemId: item.id,
+                  name: `${itemData.name || 'Add-on'}${varData.name && varData.name !== 'Regular' ? ` - ${varData.name}` : ''}`,
+                  description: itemData.description,
+                  priceMoney: varData.price_money ? {
+                    amount: varData.price_money.amount || 0,
+                    currency: varData.price_money.currency || 'USD',
+                  } : undefined,
+                  version: variation.version || 1,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Sort by price
+    addons.sort((a, b) => {
+      const priceA = a.priceMoney?.amount || 0;
+      const priceB = b.priceMoney?.amount || 0;
+      return priceB - priceA; // Descending order
+    });
+    
+    console.log('[SQUARE CATALOG API] Add-ons fetched', {
+      count: addons.length,
+      locationId,
+    });
+    
+    return addons;
+  } catch (error: any) {
+    console.error('[SQUARE CATALOG API] Error fetching add-ons', {
+      error: error.message,
+    });
+    
+    throw error;
+  }
+}
+
+/**
+ * Validate if a catalog variation ID is a valid add-on
+ * 
+ * @param variationId - Variation ID to validate
+ * @returns True if the variation is a valid add-on
+ */
+export async function validateAddonVariation(variationId: string): Promise<boolean> {
+  const config = getConfig();
+  const locationId = config.square.franklinLocationId;
+  
+  try {
+    const addons = await listAddons();
+    const isValid = addons.some(addon => addon.id === variationId);
+    
+    console.log('[SQUARE CATALOG API] Addon validation', {
+      variationId,
+      isValid,
+      locationId,
+    });
+    
+    return isValid;
+  } catch (error: any) {
+    console.error('[SQUARE CATALOG API] Error validating addon', {
+      variationId,
+      error: error.message,
+    });
+    
+    return false;
+  }
+}

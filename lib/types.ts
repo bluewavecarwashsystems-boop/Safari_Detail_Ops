@@ -286,6 +286,7 @@ export interface Job {
   status: WorkStatus; // Phase B: Use WorkStatus instead of JobStatus
   workStatus?: WorkStatus; // Phase 3: Alias for status (for backward compatibility)
   bookingId?: string; // Square booking ID
+  orderId?: string; // Square Order ID (for add-ons)
   appointmentTime?: string;
   photos?: string[]; // S3 keys (legacy)
   photosMeta?: PhotoMeta[]; // Phase 3: Enhanced photo metadata
@@ -561,6 +562,10 @@ export interface CreateManagerBookingRequest {
     startAt: string; // ISO timestamp
   };
   notes?: string;
+  /**
+   * Add-on item variation IDs (Square ITEM_VARIATION IDs from "Add-on's" category)
+   */
+  addonItemVariationIds?: string[];
 }
 
 /**
@@ -569,6 +574,7 @@ export interface CreateManagerBookingRequest {
 export interface CreateManagerBookingResponse {
   jobId: string;
   bookingId: string;
+  orderId?: string; // Order ID if add-ons were selected
   job: Job;
 }
 

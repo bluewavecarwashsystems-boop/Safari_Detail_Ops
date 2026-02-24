@@ -13,7 +13,9 @@ import { WorkStatus, UserRole } from '@/lib/types';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { findOrCreateCustomer } from '@/lib/square/customers-api';
 import { createBooking } from '@/lib/square/bookings-api';
-import { listPhoneBookingServices } from '@/lib/square/catalog-api';
+import { listPhoneBookingServices, validateAddonVariation } from '@/lib/square/catalog-api';
+import { createOrder } from '@/lib/square/orders-api';
+import type { OrderLineItem } from '@/lib/square/orders-api';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { getConfig } from '@/lib/config';
 
@@ -212,6 +214,92 @@ export const POST = requireAuth(async (
       bookingId: squareBooking.id,
     });
 
+    // Step 3.5: Create order with add-ons if provided
+    let orderId: string | undefined = undefined;
+    
+    if (body.addonItemVariationIds && body.addonItemVariationIds.length > 0) {
+      console.log('[MANAGER BOOKING] Validating add-ons', {
+        addonCount: body.addonItemVariationIds.length,
+        addonIds: body.addonItemVariationIds,
+      });
+      
+      // Server-side validation: Ensure all add-on IDs are valid
+      const validationResults = await Promise.all(
+        body.addonItemVariationIds.map(async (addonId) => {
+          const isValid = await validateAddonVariation(addonId);
+          return { addonId, isValid };
+        })
+      );
+      
+      const invalidAddons = validationResults.filter(r => !r.isValid);
+      
+      if (invalidAddons.length > 0) {
+        console.error('[MANAGER BOOKING] SECURITY: Invalid add-on variation IDs', {
+          invalidAddons: invalidAddons.map(r => r.addonId),
+          locationId,
+        });
+        
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'INVALID_ADDONS',
+            message: `Invalid add-on variation IDs: ${invalidAddons.map(r => r.addonId).join(', ')}`,
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 400 });
+      }
+      
+      console.log('[MANAGER BOOKING] Add-ons validated successfully');
+      
+      // Create order with add-on line items
+      const lineItems: OrderLineItem[] = body.addonItemVariationIds.map((addonId) => ({
+        catalog_object_id: addonId,
+        quantity: '1',
+        metadata: {
+          source: 'detail-ops-addon',
+        },
+      }));
+      
+      console.log('[MANAGER BOOKING] Creating Square order', {
+        bookingId: squareBooking.id,
+        lineItemCount: lineItems.length,
+        locationId,
+      });
+      
+      try {
+        const order = await createOrder({
+          locationId: locationId,
+          lineItems: lineItems,
+          metadata: {
+            booking_id: squareBooking.id,
+            source: 'phone-booking',
+          },
+        });
+        
+        orderId = order.id;
+        
+        console.log('[MANAGER BOOKING] Square order created', {
+          orderId: order.id,
+          bookingId: squareBooking.id,
+          lineItemCount: order.line_items?.length || 0,
+        });
+      } catch (orderError: any) {
+        console.error('[MANAGER BOOKING] Failed to create order', {
+          error: orderError.message,
+          bookingId: squareBooking.id,
+        });
+        
+        // Don't fail the entire booking if order creation fails
+        // The booking is still valid, just without add-ons tracked
+        console.warn('[MANAGER BOOKING] Continuing without order (add-ons not tracked)', {
+          bookingId: squareBooking.id,
+        });
+      }
+    } else {
+      console.log('[MANAGER BOOKING] No add-ons selected, skipping order creation');
+    }
+
     // Step 4: Create job in DynamoDB immediately (don't wait for webhook)
     const jobId = squareBooking.id; // Use booking ID as job ID for consistency
 
@@ -234,6 +322,7 @@ export const POST = requireAuth(async (
         data: {
           jobId: existingJob.jobId,
           bookingId: squareBooking.id,
+          orderId: existingJob.orderId,
           job: existingJob,
         },
         timestamp: new Date().toISOString(),
@@ -269,6 +358,7 @@ export const POST = requireAuth(async (
       serviceType: body.service.serviceName,
       status: WorkStatus.SCHEDULED,
       bookingId: squareBooking.id,
+      orderId: orderId, // Store order ID if add-ons were created
       appointmentTime: body.appointmentTime.startAt,
       notes: body.notes,
       createdAt: now,
@@ -300,6 +390,8 @@ export const POST = requireAuth(async (
 
     console.log('[MANAGER BOOKING] Job created in DynamoDB', {
       jobId: job.jobId,
+      orderId: orderId || 'none',
+      addonCount: body.addonItemVariationIds?.length || 0,
     });
 
     const response: ApiResponse<CreateManagerBookingResponse> = {
@@ -307,6 +399,7 @@ export const POST = requireAuth(async (
       data: {
         jobId: job.jobId,
         bookingId: squareBooking.id,
+        orderId: orderId,
         job: job,
       },
       timestamp: new Date().toISOString(),

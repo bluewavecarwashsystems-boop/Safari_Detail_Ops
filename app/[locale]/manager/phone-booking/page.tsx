@@ -7,11 +7,12 @@ import { useTranslations } from '@/lib/i18n/provider';
 import type { Locale } from '@/i18n';
 
 /**
- * PHONE BOOKING LOCATION RESTRICTION
+ * PHONE BOOKING WITH ADD-ONS SUPPORT
  * 
- * In PRODUCTION: Services are filtered to FRANKLIN_SQUARE_LOCATION_ID (from env)
- * In SANDBOX/QA: All services are available
- * Server-side enforcement is primary, client displays what backend returns
+ * - Base services: Square Booking Services (one required)
+ * - Add-ons: Square Items in "Add-on's" category (multi-select optional)
+ * - Location: L9ZMZD9TTTTZJ (enforced server-side)
+ * - Orders: Add-ons stored as Square Order line items, linked to booking
  */
 
 interface Service {
@@ -27,6 +28,18 @@ interface Service {
   version: number;
 }
 
+interface Addon {
+  id: string;
+  itemId: string;
+  name: string;
+  description?: string;
+  priceMoney?: {
+    amount: number;
+    currency: string;
+  };
+  version: number;
+}
+
 export default function PhoneBookingPage() {
   const t = useTranslations('manager.phoneBooking');
   const tCommon = useTranslations('common');
@@ -35,8 +48,10 @@ export default function PhoneBookingPage() {
   const locale = params.locale as Locale;
 
   const [services, setServices] = useState<Service[]>([]);
-  const [loadingServices, setLoadingServices] = useState(true);
+  const [addons, setAddons] = useState<Addon[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [selectedAddonIds, setSelectedAddonIds] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -60,34 +75,32 @@ export default function PhoneBookingPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
-  // Fetch services from Square on component mount
+  // Fetch catalog (services + add-ons) on component mount
   useEffect(() => {
-    async function fetchServices() {
+    async function fetchCatalog() {
       try {
-        setLoadingServices(true);
-        const response = await fetch('/api/square/services');
+        setLoadingCatalog(true);
+        const response = await fetch('/api/phone-booking/catalog');
         
-        console.log('[PHONE BOOKING CLIENT] API Response Status:', response.status);
+        console.log('[PHONE BOOKING CLIENT] Catalog API Response Status:', response.status);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch services');
+          throw new Error('Failed to fetch catalog');
         }
         
         const data = await response.json();
         
-        console.log('[PHONE BOOKING CLIENT] Full API Response:', JSON.stringify(data, null, 2));
+        console.log('[PHONE BOOKING CLIENT] Catalog loaded:', {
+          servicesCount: data.data?.services?.length || 0,
+          addonsCount: data.data?.addons?.length || 0,
+        });
         
-        if (data.success && data.data?.services) {
-          // Services are already filtered server-side (production only)
-          const fetchedServices = data.data.services;
-          
-          console.log('[PHONE BOOKING CLIENT] Services loaded from API', {
-            count: fetchedServices.length,
-            serviceIds: fetchedServices.map((s: Service) => s.id).slice(0, 3),
-            note: 'Server-side filtering in production, all services in sandbox',
-          });
+        if (data.success && data.data) {
+          const fetchedServices = data.data.services || [];
+          const fetchedAddons = data.data.addons || [];
           
           setServices(fetchedServices);
+          setAddons(fetchedAddons);
           
           // Auto-select first service if available
           if (fetchedServices.length > 0) {
@@ -102,14 +115,14 @@ export default function PhoneBookingPage() {
           }
         }
       } catch (error) {
-        console.error('Failed to fetch services:', error);
-        alert('Failed to load services from Square. Please refresh the page.');
+        console.error('Failed to fetch catalog:', error);
+        alert('Failed to load services and add-ons from Square. Please refresh the page.');
       } finally {
-        setLoadingServices(false);
+        setLoadingCatalog(false);
       }
     }
 
-    fetchServices();
+    fetchCatalog();
   }, []);
 
   const handleServiceChange = (serviceId: string) => {
@@ -123,6 +136,27 @@ export default function PhoneBookingPage() {
         serviceAmount: service.priceMoney ? (service.priceMoney.amount / 100).toString() : prev.serviceAmount,
       }));
     }
+  };
+
+  const handleAddonToggle = (addonId: string) => {
+    setSelectedAddonIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(addonId)) {
+        newSet.delete(addonId);
+      } else {
+        newSet.add(addonId);
+      }
+      return newSet;
+    });
+  };
+
+  const calculateTotalPrice = (): number => {
+    const servicePrice = parseFloat(formData.serviceAmount) || 0;
+    const addonsPrice = Array.from(selectedAddonIds).reduce((sum, addonId) => {
+      const addon = addons.find(a => a.id === addonId);
+      return sum + ((addon?.priceMoney?.amount || 0) / 100);
+    }, 0);
+    return servicePrice + addonsPrice;
   };
 
   const validateForm = () => {
@@ -204,6 +238,8 @@ export default function PhoneBookingPage() {
           startAt,
         },
         notes: formData.bookingNotes || undefined,
+        // Include add-on variation IDs
+        addonItemVariationIds: Array.from(selectedAddonIds),
       };
 
       const response = await fetch('/api/manager/create-booking', {
@@ -241,16 +277,29 @@ export default function PhoneBookingPage() {
       vehicleYear: '',
       vehicleColor: '',
       vehicleNotes: '',
-      serviceName: 'Full Detail',
-      serviceDuration: '90',
+      serviceName: '',
+      serviceDuration: '',
       serviceAmount: '',
       appointmentDate: '',
       appointmentTime: '',
       bookingNotes: '',
     });
+    setSelectedAddonIds(new Set());
     setErrors({});
     setShowSuccess(false);
     setCreatedJobId(null);
+    
+    // Auto-select first service again
+    if (services.length > 0) {
+      const firstService = services[0];
+      setSelectedServiceId(firstService.id);
+      setFormData(prev => ({
+        ...prev,
+        serviceName: firstService.name,
+        serviceDuration: firstService.durationMinutes?.toString() || '60',
+        serviceAmount: firstService.priceMoney ? (firstService.priceMoney.amount / 100).toString() : '',
+      }));
+    }
   };
 
   const handleViewJob = () => {
@@ -433,9 +482,9 @@ export default function PhoneBookingPage() {
                   value={selectedServiceId}
                   onChange={(e) => handleServiceChange(e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${errors.serviceName ? 'border-red-500' : 'border-gray-300'}`}
-                  disabled={creating || loadingServices}
+                  disabled={creating || loadingCatalog}
                 >
-                  {loadingServices ? (
+                  {loadingCatalog ? (
                     <option value="">Loading services...</option>
                   ) : services.length === 0 ? (
                     <option value="">No services available</option>
@@ -484,6 +533,71 @@ export default function PhoneBookingPage() {
                   step="0.01"
                   placeholder="0.00"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Add-ons Selection */}
+          {addons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Add-ons (Optional)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {addons.map((addon) => (
+                  <label
+                    key={addon.id}
+                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedAddonIds.has(addon.id)
+                        ? 'bg-blue-50 border-blue-500'
+                        : 'bg-white border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAddonIds.has(addon.id)}
+                      onChange={() => handleAddonToggle(addon.id)}
+                      disabled={creating || loadingCatalog}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="ml-3 flex-1">
+                      <span className="block font-medium text-gray-900">{addon.name}</span>
+                      {addon.priceMoney && (
+                        <span className="block text-sm text-gray-600">
+                          ${(addon.priceMoney.amount / 100).toFixed(2)}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Price Summary */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Price Summary</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Base Service:</span>
+                <span className="font-medium text-gray-900">
+                  ${parseFloat(formData.serviceAmount || '0').toFixed(2)}
+                </span>
+              </div>
+              {selectedAddonIds.size > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Add-ons ({selectedAddonIds.size}):</span>
+                  <span className="font-medium text-gray-900">
+                    ${Array.from(selectedAddonIds).reduce((sum, addonId) => {
+                      const addon = addons.find(a => a.id === addonId);
+                      return sum + ((addon?.priceMoney?.amount || 0) / 100);
+                    }, 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between">
+                <span className="font-semibold text-gray-900">Estimated Total:</span>
+                <span className="font-bold text-lg" style={{ color: 'var(--sf-orange)' }}>
+                  ${calculateTotalPrice().toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
