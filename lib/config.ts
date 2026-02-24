@@ -7,14 +7,6 @@
 
 export type Environment = 'qa' | 'prod';
 
-/**
- * PHONE BOOKING LOCATION CONSTANT
- * 
- * Phone Booking is ALWAYS restricted to this single Square location.
- * This is non-negotiable and enforced both server-side and client-side.
- */
-export const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
-
 export interface Config {
   env: Environment;
   aws: {

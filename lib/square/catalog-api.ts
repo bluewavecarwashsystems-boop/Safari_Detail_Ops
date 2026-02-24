@@ -383,12 +383,12 @@ export async function listServices(): Promise<CatalogService[]> {
 }
 
 /**
- * List services for Phone Booking - RESTRICTED to PHONE_BOOKING_LOCATION_ID only
+ * List services for Phone Booking with location filtering
  * 
- * This function enforces server-side location filtering for Phone Booking.
- * Services must be present at location L9ZMZD9TTTTZJ to be returned.
+ * In PRODUCTION: Only returns services assigned to location from FRANKLIN_SQUARE_LOCATION_ID env var
+ * In SANDBOX/QA: Returns all services (no location filtering)
  * 
- * @returns Services available at the phone booking location only
+ * @returns Services available for phone booking
  */
 export async function listPhoneBookingServices(): Promise<CatalogService[]> {
   const config = getConfig();
@@ -397,19 +397,21 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
     throw new Error('Square access token not configured');
   }
 
-  // Import the constant (will be at top of file, but reference here for clarity)
-  const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
+  const locationId = config.square.franklinLocationId;
+  const isProduction = config.square.environment === 'production';
 
   try {
     const baseUrl = config.square.environment === 'sandbox' 
       ? 'https://connect.squareupsandbox.com'
       : 'https://connect.squareup.com';
     
-    // Use catalog/search API with location filtering
+    // Use catalog/search API
     const url = `${baseUrl}/v2/catalog/search`;
     
     console.log('[SQUARE CATALOG API] Fetching phone booking services', {
-      locationId: PHONE_BOOKING_LOCATION_ID,
+      environment: config.square.environment,
+      locationId,
+      filteringEnabled: isProduction,
     });
     
     const searchBody = {
@@ -465,11 +467,14 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
           }
           
           // Check if item is present at the phone booking location
-          // If no location info exists, assume it's available (sandbox fallback)
+          // In production with locationId: filter by location
+          // In sandbox or without locationId: include all services
           const isPresentAtLocation = 
+            !isProduction || // Sandbox: include all
+            !locationId || // No location configured: include all
             itemData.present_at_all_locations === true ||
             (itemData.present_at_location_ids && 
-             itemData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID)) ||
+             itemData.present_at_location_ids.includes(locationId)) ||
             (!itemData.present_at_all_locations && !itemData.present_at_location_ids);
           
           // Include all items with variations (services are catalog items)
@@ -497,10 +502,14 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
                 allServices.push(serviceObj);
                 
                 // Additional filtering at variation level
+                // In production with locationId: filter by location
+                // In sandbox or without locationId: inherit from item
                 const varPresentAtLocation =
+                  !isProduction || // Sandbox: include all
+                  !locationId || // No location configured: include all
                   varData.present_at_all_locations === true ||
                   (varData.present_at_location_ids && 
-                   varData.present_at_location_ids.includes(PHONE_BOOKING_LOCATION_ID)) ||
+                   varData.present_at_location_ids.includes(locationId)) ||
                   // If variation doesn't have location info, inherit from item
                   (!varData.present_at_all_locations && !varData.present_at_location_ids && isPresentAtLocation);
                 
@@ -514,21 +523,23 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
       }
     }
 
-    console.log('[SQUARE CATALOG API] Phone booking services filtered', {
-      locationId: PHONE_BOOKING_LOCATION_ID,
+    console.log('[SQUARE CATALOG API] Phone booking services result', {
+      environment: config.square.environment,
+      locationId,
+      filteringEnabled: isProduction && !!locationId,
       totalBeforeFilter: totalServicesBeforeFilter,
       itemsWithLocationInfo,
       returnedAfterFilter: services.length,
-      environment: config.square.environment,
     });
     
-    // SANDBOX FALLBACK: If no services have location info (common in sandbox), return all services
-    if (services.length === 0 && allServices.length > 0 && itemsWithLocationInfo === 0) {
-      console.warn('[SQUARE CATALOG API] No location data found in catalog - returning all services (sandbox fallback)', {
-        totalServices: allServices.length,
-        note: 'In production, ensure services are assigned to location L9ZMZD9TTTTZJ',
+    // Warning if production filtering returns no services
+    if (isProduction && locationId && services.length === 0 && allServices.length > 0) {
+      console.warn('[SQUARE CATALOG API] No services found for location in production', {
+        locationId,
+        totalServicesInCatalog: allServices.length,
+        itemsWithLocationInfo,
+        action: `Assign services to location ${locationId} in Square Dashboard`,
       });
-      return allServices;
     }
     
     return services;

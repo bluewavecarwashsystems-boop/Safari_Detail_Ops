@@ -9,10 +9,10 @@ import type { Locale } from '@/i18n';
 /**
  * PHONE BOOKING LOCATION RESTRICTION
  * 
- * Phone Booking is ALWAYS restricted to location L9ZMZD9TTTTZJ.
- * This is enforced server-side, but we also filter client-side as a defensive measure.
+ * In PRODUCTION: Services are filtered to FRANKLIN_SQUARE_LOCATION_ID (from env)
+ * In SANDBOX/QA: All services are available
+ * Server-side enforcement is primary, client displays what backend returns
  */
-const PHONE_BOOKING_LOCATION_ID = 'L9ZMZD9TTTTZJ';
 
 interface Service {
   id: string;
@@ -74,14 +74,12 @@ export default function PhoneBookingPage() {
         const data = await response.json();
         
         if (data.success && data.data?.services) {
-          // DEFENSIVE: Services should already be filtered server-side,
-          // but we validate here as an additional guard
+          // Services are already filtered server-side (production only)
           const fetchedServices = data.data.services;
           
           console.log('[PHONE BOOKING] Services loaded from API', {
             count: fetchedServices.length,
-            requiredLocation: PHONE_BOOKING_LOCATION_ID,
-            note: 'Server-side filtering enforced',
+            note: 'Server-side filtering in production, all services in sandbox',
           });
           
           setServices(fetchedServices);
@@ -164,15 +162,14 @@ export default function PhoneBookingPage() {
         throw new Error('Please select a service');
       }
 
-      // DEFENSIVE: Ensure selected service is from our location-filtered list
-      // (Server-side validation is the primary enforcement, this is belt-and-suspenders)
+      // DEFENSIVE: Ensure selected service is from the services list
+      // (Server-side validation handles production filtering)
       const isValidService = services.some(s => s.id === selectedService.id);
       if (!isValidService) {
-        console.error('[PHONE BOOKING] SECURITY: Attempted to book invalid service', {
+        console.error('[PHONE BOOKING] Invalid service selection', {
           serviceId: selectedService.id,
-          location: PHONE_BOOKING_LOCATION_ID,
         });
-        throw new Error('Selected service is not available for phone booking');
+        throw new Error('Selected service is not available');
       }
 
       // Combine date and time into ISO timestamp

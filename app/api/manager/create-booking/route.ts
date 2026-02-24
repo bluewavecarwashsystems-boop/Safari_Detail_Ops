@@ -14,7 +14,6 @@ import { requireAuth } from '@/lib/auth/requireAuth';
 import { findOrCreateCustomer } from '@/lib/square/customers-api';
 import { createBooking } from '@/lib/square/bookings-api';
 import { listPhoneBookingServices } from '@/lib/square/catalog-api';
-import { PHONE_BOOKING_LOCATION_ID } from '@/lib/config';
 import * as dynamodb from '@/lib/aws/dynamodb';
 import { getConfig } from '@/lib/config';
 
@@ -83,7 +82,7 @@ export const POST = requireAuth(async (
     }
 
     const config = getConfig();
-    const locationId = PHONE_BOOKING_LOCATION_ID; // Use constant instead of config
+    const locationId = config.square.franklinLocationId;
 
     console.log('[MANAGER BOOKING] Configuration:', {
       locationId,
@@ -134,38 +133,46 @@ export const POST = requireAuth(async (
     }
 
     const serviceVariationId = body.service.serviceVariationId;
+    const isProduction = config.square.environment === 'production';
     
-    // SERVER-SIDE VALIDATION: Ensure service is from the allowed location
-    console.log('[MANAGER BOOKING] Validating service variation', {
-      serviceVariationId,
-      requiredLocation: locationId,
-    });
-    
-    const allowedServices = await listPhoneBookingServices();
-    const isValidService = allowedServices.some(s => s.id === serviceVariationId);
-    
-    if (!isValidService) {
-      console.error('[MANAGER BOOKING] SECURITY: Attempted to book service not from allowed location', {
+    // SERVER-SIDE VALIDATION: In production, ensure service is from the allowed location
+    if (isProduction && locationId) {
+      console.log('[MANAGER BOOKING] Validating service variation (production)', {
         serviceVariationId,
-        allowedLocation: locationId,
-        allowedServiceIds: allowedServices.map(s => s.id),
+        requiredLocation: locationId,
       });
       
-      const response: ApiResponse = {
-        success: false,
-        error: {
-          code: 'INVALID_SERVICE',
-          message: `Service variation ${serviceVariationId} is not available at location ${locationId}`,
-        },
-        timestamp: new Date().toISOString(),
-      };
-      return NextResponse.json(response, { status: 400 });
+      const allowedServices = await listPhoneBookingServices();
+      const isValidService = allowedServices.some(s => s.id === serviceVariationId);
+      
+      if (!isValidService) {
+        console.error('[MANAGER BOOKING] SECURITY: Attempted to book service not from allowed location', {
+          serviceVariationId,
+          allowedLocation: locationId,
+          allowedServiceIds: allowedServices.map(s => s.id),
+        });
+        
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: 'INVALID_SERVICE',
+            message: `Service variation ${serviceVariationId} is not available at location ${locationId}`,
+          },
+          timestamp: new Date().toISOString(),
+        };
+        return NextResponse.json(response, { status: 400 });
+      }
+      
+      console.log('[MANAGER BOOKING] Service validated successfully', {
+        serviceVariationId,
+        locationId,
+      });
+    } else {
+      console.log('[MANAGER BOOKING] Skipping service validation (sandbox/qa)', {
+        serviceVariationId,
+        environment: config.square.environment,
+      });
     }
-    
-    console.log('[MANAGER BOOKING] Service validated successfully', {
-      serviceVariationId,
-      locationId,
-    });
 
     // Step 3: Create booking in Square
     console.log('[MANAGER BOOKING] Service validated successfully', {
