@@ -405,8 +405,8 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
       ? 'https://connect.squareupsandbox.com'
       : 'https://connect.squareup.com';
     
-    // Use catalog/search API
-    const url = `${baseUrl}/v2/catalog/search`;
+    // Use catalog/list API (returns location data unlike catalog/search)
+    const url = `${baseUrl}/v2/catalog/list?types=ITEM`;
     
     console.log('[SQUARE CATALOG API] Fetching phone booking services', {
       environment: config.square.environment,
@@ -415,19 +415,13 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
       note: isProduction ? 'Production filtering active' : 'Sandbox mode - all services',
     });
     
-    const searchBody = {
-      object_types: ['ITEM'],
-      include_related_objects: true,
-    };
-    
     const response = await fetch(url, {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${config.square.accessToken}`,
         'Content-Type': 'application/json',
         'Square-Version': '2024-01-18',
       },
-      body: JSON.stringify(searchBody),
     });
 
     if (!response.ok) {
