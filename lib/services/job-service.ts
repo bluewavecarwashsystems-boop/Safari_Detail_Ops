@@ -35,14 +35,37 @@ async function calculateBookingAmount(
 
     // 1. Get service price
     if (serviceVariationId) {
+      console.log('[PAYMENT CALC] Fetching service price', {
+        variationId: serviceVariationId,
+      });
+      
       const serviceObj = await fetchCatalogObject(serviceVariationId);
+      
+      if (serviceObj) {
+        console.log('[PAYMENT CALC] Service object found', {
+          variationId: serviceVariationId,
+          hasItemVariationData: !!serviceObj.item_variation_data,
+          hasPriceMoney: !!serviceObj.item_variation_data?.price_money,
+          amount: serviceObj.item_variation_data?.price_money?.amount,
+        });
+      } else {
+        console.warn('[PAYMENT CALC] Service object not found', {
+          variationId: serviceVariationId,
+          note: 'fetchCatalogObject returned null',
+        });
+      }
+      
       if (serviceObj?.item_variation_data?.price_money?.amount) {
         subtotalCents += serviceObj.item_variation_data.price_money.amount;
-        console.log('[PAYMENT CALC] Service price', {
+        console.log('[PAYMENT CALC] Service price added', {
           variationId: serviceVariationId,
           priceCents: serviceObj.item_variation_data.price_money.amount,
         });
       }
+    } else {
+      console.warn('[PAYMENT CALC] No service variation ID provided', {
+        note: 'Cannot calculate service price without variation ID',
+      });
     }
 
     // 2. Parse add-ons from notes and get prices
@@ -144,7 +167,7 @@ export async function createJobFromBooking(booking: ParsedBooking): Promise<Job>
     (booking.customerId ? `Customer ${booking.customerId.substring(0, 8)}...` : 'Unknown Customer');
   
   // Calculate payment amount from service + add-ons + tax
-  const amountCents = await calculateBookingAmount(booking.serviceType, booking.notes);
+  const amountCents = await calculateBookingAmount(booking.serviceVariationId, booking.notes);
   
   const job: Job = {
     jobId,
@@ -199,7 +222,7 @@ export async function updateJobFromBooking(
   // Recalculate payment amount if not yet paid (in case add-ons or service changed)
   let paymentUpdate: Partial<Job>['payment'] | undefined;
   if (!currentJob?.payment || currentJob.payment.status === PaymentStatus.UNPAID) {
-    const amountCents = await calculateBookingAmount(booking.serviceType, booking.notes);
+    const amountCents = await calculateBookingAmount(booking.serviceVariationId, booking.notes);
     if (amountCents) {
       paymentUpdate = {
         status: PaymentStatus.UNPAID,

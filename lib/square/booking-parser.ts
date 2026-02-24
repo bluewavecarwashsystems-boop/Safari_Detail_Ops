@@ -15,7 +15,8 @@ export interface ParsedBooking {
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
-  serviceType?: string;
+  serviceType?: string; // Service name (for display)
+  serviceVariationId?: string; // Service variation ID (for pricing)
   appointmentTime?: string;
   status: string;
   notes?: string;
@@ -47,7 +48,7 @@ export function parseBookingEvent(event: SquareBookingWebhook): ParsedBooking {
   
   // Extract service information from appointment segments
   const segments = booking.appointment_segments || [];
-  const serviceType = segments.length > 0 
+  const serviceVariationId = segments.length > 0 
     ? segments[0].service_variation_id 
     : undefined;
 
@@ -57,7 +58,8 @@ export function parseBookingEvent(event: SquareBookingWebhook): ParsedBooking {
     customerName: undefined, // Not included in webhook - need to fetch from API
     customerEmail: undefined, // Not included in webhook - need to fetch from API
     customerPhone: undefined, // Not included in webhook - need to fetch from API
-    serviceType,
+    serviceType: undefined, // Will be enriched with service name
+    serviceVariationId, // Keep variation ID for pricing
     appointmentTime: startAt,
     status: booking.status || 'PENDING',
     notes: booking.customer_note,

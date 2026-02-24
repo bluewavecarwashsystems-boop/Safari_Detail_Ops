@@ -227,6 +227,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const fullBooking = await retrieveBooking(parsedBooking.bookingId);
       
       if (fullBooking) {
+        // Enrich serviceVariationId from fullBooking if not in webhook
+        if (!parsedBooking.serviceVariationId && fullBooking.appointment_segments && fullBooking.appointment_segments.length > 0) {
+          parsedBooking.serviceVariationId = fullBooking.appointment_segments[0].service_variation_id;
+          console.log('[SERVICE VARIATION ID ENRICHED]', {
+            bookingId: parsedBooking.bookingId,
+            variationId: parsedBooking.serviceVariationId,
+          });
+        }
+        
         // Start with the customer_note from Square
         let completeNotes = fullBooking.customer_note || '';
         
@@ -375,24 +384,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Enrich booking with service name from Square Catalog API
-    if (parsedBooking.serviceType) {
+    if (parsedBooking.serviceVariationId) {
       try {
-        const serviceName = await fetchServiceName(parsedBooking.serviceType);
+        const serviceName = await fetchServiceName(parsedBooking.serviceVariationId);
         
         console.log('[SERVICE ENRICHED]', {
-          variationId: parsedBooking.serviceType,
+          variationId: parsedBooking.serviceVariationId,
           serviceName,
         });
         
-        // Update parsed booking with service name
+        // Set service name for display (keep serviceVariationId for pricing)
         parsedBooking.serviceType = serviceName;
       } catch (serviceError: any) {
         console.warn('[SERVICE FETCH FAILED]', {
-          variationId: parsedBooking.serviceType,
+          variationId: parsedBooking.serviceVariationId,
           error: serviceError.message,
           note: 'Continuing with variation ID',
         });
-        // Continue processing - will use variation ID as fallback
+        // Fallback: use variation ID as service type
+        parsedBooking.serviceType = parsedBooking.serviceVariationId;
       }
     }
 
