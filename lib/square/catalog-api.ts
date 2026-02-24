@@ -540,17 +540,33 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
       }
     }
 
+    // Filter out example/demo services
+    const filteredServices = services.filter(service => 
+      !service.name.toLowerCase().includes('consultation') &&
+      !service.name.toLowerCase().includes('example')
+    );
+    
+    // Sort by price in descending order (highest first)
+    filteredServices.sort((a, b) => {
+      const priceA = a.priceMoney?.amount || 0;
+      const priceB = b.priceMoney?.amount || 0;
+      return priceB - priceA; // Descending order
+    });
+    
     console.log('[SQUARE CATALOG API] Phone booking services result', {
       environment: config.square.environment,
       locationId,
       filteringEnabled: isProduction && !!locationId,
       totalBeforeFilter: totalServicesBeforeFilter,
       itemsWithLocationInfo,
-      returnedAfterFilter: services.length,
+      returnedAfterFilter: filteredServices.length,
+      priceRangeDisplay: filteredServices.length > 0 ? 
+        `$${(filteredServices[0].priceMoney?.amount || 0) / 100} - $${(filteredServices[filteredServices.length - 1].priceMoney?.amount || 0) / 100}` : 
+        'N/A',
     });
     
     // Warning if production filtering returns no services
-    if (isProduction && locationId && services.length === 0 && allServices.length > 0) {
+    if (isProduction && locationId && filteredServices.length === 0 && allServices.length > 0) {
       console.warn('[SQUARE CATALOG API] No services found for location in production', {
         locationId,
         totalServicesInCatalog: allServices.length,
@@ -559,7 +575,7 @@ export async function listPhoneBookingServices(): Promise<CatalogService[]> {
       });
     }
     
-    return services;
+    return filteredServices;
   } catch (error: any) {
     console.error('[SQUARE CATALOG API] Error fetching phone booking services', {
       error: error.message,
