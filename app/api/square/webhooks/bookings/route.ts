@@ -36,6 +36,9 @@ import {
   fetchServiceName
 } from '@/lib/square/catalog-api';
 import { 
+  retrieveBooking 
+} from '@/lib/square/bookings-api';
+import { 
   createJobFromBooking, 
   updateJobFromBooking 
 } from '@/lib/services/job-service';
@@ -209,6 +212,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
       
       throw new Error('Booking validation failed: missing required fields');
+    }
+
+    // Enrich booking with COMPLETE booking details from Square API
+    // This is critical for getting the full customer_note with add-ons
+    try {
+      const fullBooking = await retrieveBooking(parsedBooking.bookingId);
+      
+      if (fullBooking) {
+        // Update notes with complete customer_note from Square
+        if (fullBooking.customer_note) {
+          parsedBooking.notes = fullBooking.customer_note;
+          console.log('[BOOKING NOTES ENRICHED]', {
+            bookingId: parsedBooking.bookingId,
+            notesLength: fullBooking.customer_note.length,
+            notesPreview: fullBooking.customer_note.substring(0, 100),
+            hasAddons: fullBooking.customer_note.includes('ADD-ONS'),
+          });
+        }
+      }
+    } catch (bookingError: any) {
+      console.warn('[BOOKING FETCH FAILED]', {
+        bookingId: parsedBooking.bookingId,
+        error: bookingError.message,
+        note: 'Continuing with webhook notes only',
+      });
+      // Continue processing - will use partial notes from webhook
     }
 
     // Enrich booking with customer details from Square API
