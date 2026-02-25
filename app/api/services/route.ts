@@ -2,7 +2,7 @@
  * GET /api/services
  * 
  * Get all service types from Square Catalog for checklist template selection.
- * Returns service names from the configured location (Franklin in production).
+ * Returns all services from Square without location filtering.
  * 
  * Auth: All authenticated users
  */
@@ -18,13 +18,13 @@ export interface ServiceTypeResponse {
 
 /**
  * GET /api/services
- * Returns service type names from Square catalog (filtered by location in production)
+ * Returns service type names from Square catalog (all services)
  */
 export const GET = requireAuth(
   async (request: NextRequest, session): Promise<NextResponse> => {
     try {
-      // Fetch services from Square (location-filtered in production)
-      const services = await catalogApi.listPhoneBookingServices();
+      // Fetch all services from Square (no location filtering)
+      const services = await catalogApi.listServices();
 
       // Extract unique full service names
       const serviceNamesSet = new Set<string>();
