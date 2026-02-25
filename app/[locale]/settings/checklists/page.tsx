@@ -77,19 +77,8 @@ export default function ChecklistTemplatesPage() {
       const data: ApiResponse<ServiceTypeResponse> = await response.json();
 
       if (response.ok && data.success && data.data) {
-        // Filter to only show Franklin location services
-        const franklinServices = [
-          'Full Detail - Sedan/Coupe',
-          'Full Detail - SUV/Truck',
-          'Interior Detail – Sedan/Coupe',
-          'Interior Detail – SUV/Truck',
-          'Showroom Shine - Sedan/Coupe',
-          'Showroom Shine - SUV/Truck',
-        ];
-        
-        const serviceTypes = data.data.serviceTypes.filter(service => 
-          franklinServices.includes(service)
-        );
+        // Services are already filtered by location in the API
+        const serviceTypes = data.data.serviceTypes;
         
         setAvailableServiceTypes(serviceTypes);
         
