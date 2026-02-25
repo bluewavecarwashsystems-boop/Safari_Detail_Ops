@@ -130,7 +130,7 @@ interface ServiceConfig {
 }
 
 const SERVICE_CONFIGS: ServiceConfig[] = [
-  // Interior Detail (with vehicle type - matches Square exactly)
+  // Interior Detail (uses en-dash – in Square)
   {
     serviceType: 'Interior Detail – Sedan/Coupe',
     techItems: INTERIOR_DETAIL_TECH_ITEMS,
@@ -141,37 +141,25 @@ const SERVICE_CONFIGS: ServiceConfig[] = [
     techItems: INTERIOR_DETAIL_TECH_ITEMS,
     qcItems: INTERIOR_DETAIL_QC_ITEMS,
   },
-  // Full Detail (base service without vehicle type - matches Square)
+  // Full Detail (uses regular hyphen - in Square)
   {
-    serviceType: 'Full Detail',
-    techItems: FULL_DETAIL_TECH_ITEMS,
-    qcItems: FULL_DETAIL_QC_ITEMS,
-  },
-  // Full Detail (with vehicle type variants - for flexibility)
-  {
-    serviceType: 'Full Detail – Sedan/Coupe',
+    serviceType: 'Full Detail - Sedan/Coupe',
     techItems: FULL_DETAIL_TECH_ITEMS,
     qcItems: FULL_DETAIL_QC_ITEMS,
   },
   {
-    serviceType: 'Full Detail – SUV/Truck',
+    serviceType: 'Full Detail - SUV/Truck',
     techItems: FULL_DETAIL_TECH_ITEMS,
     qcItems: FULL_DETAIL_QC_ITEMS,
   },
-  // Showroom Shine (base service without vehicle type - matches Square)
+  // Showroom Shine (uses regular hyphen - in Square)
   {
-    serviceType: 'Showroom Shine',
-    techItems: SHOWROOM_SHINE_TECH_ITEMS,
-    qcItems: SHOWROOM_SHINE_QC_ITEMS,
-  },
-  // Showroom Shine (with vehicle type variants - for flexibility)
-  {
-    serviceType: 'Showroom Shine – Sedan/Coupe',
+    serviceType: 'Showroom Shine - Sedan/Coupe',
     techItems: SHOWROOM_SHINE_TECH_ITEMS,
     qcItems: SHOWROOM_SHINE_QC_ITEMS,
   },
   {
-    serviceType: 'Showroom Shine – SUV/Truck',
+    serviceType: 'Showroom Shine - SUV/Truck',
     techItems: SHOWROOM_SHINE_TECH_ITEMS,
     qcItems: SHOWROOM_SHINE_QC_ITEMS,
   },
