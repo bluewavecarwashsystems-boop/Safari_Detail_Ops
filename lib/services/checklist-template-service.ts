@@ -395,3 +395,61 @@ export async function getAllServiceTypes(): Promise<string[]> {
 
   return Array.from(serviceTypes).sort();
 }
+
+/**
+ * Bulk insert checklist items into a template
+ * Used for seeding default items. Will NOT overwrite existing items.
+ * 
+ * @param serviceType - Service type name
+ * @param type - Checklist type (TECH or QC)
+ * @param itemLabels - Array of item labels to insert
+ * @param updatedBy - User performing the operation
+ * @returns Updated template with new items
+ */
+export async function bulkInsertChecklistItems(
+  serviceType: string,
+  type: ChecklistType,
+  itemLabels: string[],
+  updatedBy?: UserAudit
+): Promise<ChecklistTemplate> {
+  const template = await getOrCreateTemplate(serviceType, type, updatedBy);
+
+  // Only seed if template has zero items
+  if (template.items.length > 0) {
+    console.log(`[Checklist Template Service] Template ${serviceType}#${type} already has ${template.items.length} items, skipping bulk insert`);
+    return template;
+  }
+
+  // Create new items
+  const newItems: ChecklistTemplateItem[] = itemLabels.map((label, index) => ({
+    id: uuidv4(),
+    label,
+    sortOrder: index,
+    isRequired: true,
+    isActive: true,
+  }));
+
+  // Update template
+  const client = getDynamoClient();
+  const config = getConfig();
+  const timestamp = new Date().toISOString();
+
+  const updatedTemplate: ChecklistTemplate = {
+    ...template,
+    items: newItems,
+    version: template.version + 1,
+    updatedAt: timestamp,
+    ...(updatedBy && { updatedBy }),
+  };
+
+  await client.send(
+    new PutCommand({
+      TableName: config.aws.dynamodb.checklistTemplatesTable,
+      Item: updatedTemplate,
+    })
+  );
+
+  console.log(`[Checklist Template Service] Bulk inserted ${newItems.length} items into ${serviceType}#${type}`);
+
+  return updatedTemplate;
+}
