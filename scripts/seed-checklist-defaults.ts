@@ -130,7 +130,7 @@ interface ServiceConfig {
 }
 
 const SERVICE_CONFIGS: ServiceConfig[] = [
-  // Interior Detail
+  // Interior Detail (with vehicle type - matches Square exactly)
   {
     serviceType: 'Interior Detail – Sedan/Coupe',
     techItems: INTERIOR_DETAIL_TECH_ITEMS,
@@ -141,7 +141,13 @@ const SERVICE_CONFIGS: ServiceConfig[] = [
     techItems: INTERIOR_DETAIL_TECH_ITEMS,
     qcItems: INTERIOR_DETAIL_QC_ITEMS,
   },
-  // Full Detail
+  // Full Detail (base service without vehicle type - matches Square)
+  {
+    serviceType: 'Full Detail',
+    techItems: FULL_DETAIL_TECH_ITEMS,
+    qcItems: FULL_DETAIL_QC_ITEMS,
+  },
+  // Full Detail (with vehicle type variants - for flexibility)
   {
     serviceType: 'Full Detail – Sedan/Coupe',
     techItems: FULL_DETAIL_TECH_ITEMS,
@@ -152,7 +158,13 @@ const SERVICE_CONFIGS: ServiceConfig[] = [
     techItems: FULL_DETAIL_TECH_ITEMS,
     qcItems: FULL_DETAIL_QC_ITEMS,
   },
-  // Showroom Shine
+  // Showroom Shine (base service without vehicle type - matches Square)
+  {
+    serviceType: 'Showroom Shine',
+    techItems: SHOWROOM_SHINE_TECH_ITEMS,
+    qcItems: SHOWROOM_SHINE_QC_ITEMS,
+  },
+  // Showroom Shine (with vehicle type variants - for flexibility)
   {
     serviceType: 'Showroom Shine – Sedan/Coupe',
     techItems: SHOWROOM_SHINE_TECH_ITEMS,
