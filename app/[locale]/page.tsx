@@ -89,7 +89,10 @@ export default function TodayBoard() {
   const [userRole, setUserRole] = useState<'TECH' | 'MANAGER' | null>(null);
   const [boardDate, setBoardDate] = useState<string>(() => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
 
   const columns = [
@@ -165,8 +168,12 @@ export default function TodayBoard() {
   };
 
   const isToday = () => {
-    const today = new Date().toISOString().split('T')[0];
-    return boardDate === today;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    return boardDate === todayStr;
   };
 
   const getBoardTitle = () => {
@@ -324,9 +331,13 @@ export default function TodayBoard() {
               </label>
               <button
                 onClick={() => {
-                  const currentDate = new Date(boardDate);
+                  const [year, month, day] = boardDate.split('-').map(Number);
+                  const currentDate = new Date(year, month - 1, day);
                   currentDate.setDate(currentDate.getDate() - 1);
-                  setBoardDate(currentDate.toISOString().split('T')[0]);
+                  const newYear = currentDate.getFullYear();
+                  const newMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+                  const newDay = String(currentDate.getDate()).padStart(2, '0');
+                  setBoardDate(`${newYear}-${newMonth}-${newDay}`);
                 }}
                 className="px-2 py-2 sm:px-3 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
                 style={{ color: 'var(--sf-ink)' }}
@@ -346,9 +357,13 @@ export default function TodayBoard() {
               />
               <button
                 onClick={() => {
-                  const currentDate = new Date(boardDate);
+                  const [year, month, day] = boardDate.split('-').map(Number);
+                  const currentDate = new Date(year, month - 1, day);
                   currentDate.setDate(currentDate.getDate() + 1);
-                  setBoardDate(currentDate.toISOString().split('T')[0]);
+                  const newYear = currentDate.getFullYear();
+                  const newMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+                  const newDay = String(currentDate.getDate()).padStart(2, '0');
+                  setBoardDate(`${newYear}-${newMonth}-${newDay}`);
                 }}
                 className="px-2 py-2 sm:px-3 bg-white border border-[#E7E2D8] rounded-lg hover:bg-[#FAF6EF] sf-button-transition"
                 style={{ color: 'var(--sf-ink)' }}
@@ -360,8 +375,11 @@ export default function TodayBoard() {
               </button>
               <button
                 onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setBoardDate(today);
+                  const today = new Date();
+                  const year = today.getFullYear();
+                  const month = String(today.getMonth() + 1).padStart(2, '0');
+                  const day = String(today.getDate()).padStart(2, '0');
+                  setBoardDate(`${year}-${month}-${day}`);
                 }}
                 className="px-4 py-2 text-sm font-medium bg-[#F47C20] text-white rounded-lg hover:bg-[#DB6E1C] sf-button-transition shadow-sm"
               >
