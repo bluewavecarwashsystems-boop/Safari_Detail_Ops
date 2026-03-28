@@ -124,7 +124,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.error('[JOBS LIST ERROR]', {
       error: error.message,
       stack: error.stack,
-      errorDetails: error,
     });
 
     const response: ApiResponse = {
@@ -133,7 +132,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         code: 'JOBS_LIST_ERROR',
         message: error.message || 'Failed to list jobs',
         details: error.stack || undefined,
-        fullError: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined,
       },
       timestamp: new Date().toISOString(),
     };
