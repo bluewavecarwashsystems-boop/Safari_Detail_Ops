@@ -87,26 +87,29 @@ export default function TodayBoard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [updatingJobs, setUpdatingJobs] = useState<Set<string>>(new Set());
   const [userRole, setUserRole] = useState<'TECH' | 'MANAGER' | null>(null);
-  const [boardDate, setBoardDate] = useState<string>(''); // Will be set by useEffect
-  const [todayFetched, setTodayFetched] = useState(false);
+  const [boardDate, setBoardDate] = useState<string>(() => {
+    // Calculate today in Central Time (business timezone)
+    // This is a fallback - will be updated via API after mount
+    const now = new Date();
+    const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+    const centralTime = new Date(utcTime - 6 * 60 * 60000); // CDT is UTC-6 (or UTC-5 during standard time, but let's use -6 for consistency)
+    const year = centralTime.getFullYear();
+    const month = String(centralTime.getMonth() + 1).padStart(2, '0');
+    const day = String(centralTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
 
-  // Fetch today's date in business timezone on mount
+  // Fetch today's date from server to ensure timezone is correct
   useEffect(() => {
     const fetchToday = async () => {
       try {
         const response = await fetch('/api/today');
         const data = await response.json();
+        console.log('[PAGE] Fetched today from API:', data.today);
         setBoardDate(data.today);
-        setTodayFetched(true);
       } catch (error) {
-        console.error('Failed to fetch today\'s date:', error);
-        // Fallback to browser timezone if API fails
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        setBoardDate(`${year}-${month}-${day}`);
-        setTodayFetched(true);
+        console.error('[PAGE] Failed to fetch today\'s date - using client calculation:', error);
+        // Keep the initial value calculated above
       }
     };
     
@@ -235,12 +238,8 @@ export default function TodayBoard() {
     }
 
     async function fetchJobs() {
-      // Wait until boardDate is set by the useEffect that fetches today's date
-      if (!boardDate) {
-        return;
-      }
-
       try {
+        console.log('[PAGE] Fetching jobs for boardDate:', boardDate);
         setLoading(true);
         const response = await fetch(`/api/jobs?boardDate=${boardDate}`);
         
@@ -249,6 +248,7 @@ export default function TodayBoard() {
         }
         
         const data = await response.json();
+        console.log('[PAGE] Jobs API response:', data);
         
         if (data.success && data.data?.jobs) {
           const formattedJobs: JobCard[] = data.data.jobs.map((job: any) => ({
@@ -266,6 +266,7 @@ export default function TodayBoard() {
             noShow: job.noShow,
             notes: job.notes,
           }));
+          console.log('[PAGE] Formatted jobs:', formattedJobs);
           setJobs(formattedJobs);
         } else {
           console.warn('API returned no jobs, using mock data');
