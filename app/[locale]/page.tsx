@@ -87,13 +87,31 @@ export default function TodayBoard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [updatingJobs, setUpdatingJobs] = useState<Set<string>>(new Set());
   const [userRole, setUserRole] = useState<'TECH' | 'MANAGER' | null>(null);
-  const [boardDate, setBoardDate] = useState<string>(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  });
+  const [boardDate, setBoardDate] = useState<string>(''); // Will be set by useEffect
+  const [todayFetched, setTodayFetched] = useState(false);
+
+  // Fetch today's date in business timezone on mount
+  useEffect(() => {
+    const fetchToday = async () => {
+      try {
+        const response = await fetch('/api/today');
+        const data = await response.json();
+        setBoardDate(data.today);
+        setTodayFetched(true);
+      } catch (error) {
+        console.error('Failed to fetch today\'s date:', error);
+        // Fallback to browser timezone if API fails
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        setBoardDate(`${year}-${month}-${day}`);
+        setTodayFetched(true);
+      }
+    };
+    
+    fetchToday();
+  }, []);
 
   const columns = [
     { status: WorkStatus.SCHEDULED, title: t('status.scheduled'), color: '#64748B' },
@@ -217,6 +235,11 @@ export default function TodayBoard() {
     }
 
     async function fetchJobs() {
+      // Wait until boardDate is set by the useEffect that fetches today's date
+      if (!boardDate) {
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await fetch(`/api/jobs?boardDate=${boardDate}`);
