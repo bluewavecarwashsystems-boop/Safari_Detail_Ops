@@ -154,6 +154,13 @@ export async function listJobs(options?: {
   const client = getDynamoClient();
   const config = getConfig();
   
+  console.log('[DynamoDB] listJobs called with options:', JSON.stringify({
+    status: options?.status,
+    customerId: options?.customerId,
+    limit: options?.limit,
+    hasNextToken: !!options?.nextToken,
+  }, null, 2));
+  
   let filterExpression: string | undefined;
   const expressionAttributeValues: Record<string, any> = {};
   
@@ -170,7 +177,7 @@ export async function listJobs(options?: {
     expressionAttributeValues[':customerId'] = options.customerId;
   }
   
-  const result = await client.send(new ScanCommand({
+  const scanParams = {
     TableName: config.aws.dynamodb.jobsTable,
     FilterExpression: filterExpression,
     ExpressionAttributeNames: filterExpression ? { '#status': 'status' } : undefined,
@@ -181,7 +188,22 @@ export async function listJobs(options?: {
     ExclusiveStartKey: options?.nextToken 
       ? JSON.parse(Buffer.from(options.nextToken, 'base64').toString())
       : undefined,
-  }));
+  };
+  
+  console.log('[DynamoDB] Scan parameters:', JSON.stringify({
+    TableName: scanParams.TableName,
+    FilterExpression: scanParams.FilterExpression,
+    Limit: scanParams.Limit,
+    hasExpressionAttributeValues: !!scanParams.ExpressionAttributeValues,
+  }, null, 2));
+  
+  const result = await client.send(new ScanCommand(scanParams));
+  
+  console.log('[DynamoDB] Scan result:', {
+    itemsCount: result.Items?.length || 0,
+    hasLastEvaluatedKey: !!result.LastEvaluatedKey,
+    scannedCount: result.ScannedCount,
+  });
   
   return {
     jobs: (result.Items as Job[]) || [],

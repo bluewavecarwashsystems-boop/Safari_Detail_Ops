@@ -35,19 +35,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       limit,
       nextToken,
       boardDate,
+      statusType: typeof status,
+      statusIsNull: status === null,
+      statusIsUndefined: status === undefined,
     });
 
-    // List jobs with filters
-    const result = await listJobs({
+    // List jobs with filters - pass options explicitly
+    const listJobsOptions = {
       status,
       customerId,
       limit,
       nextToken,
-    });
+    };
+    
+    console.log('[JOBS API] Calling listJobs with options:', JSON.stringify(listJobsOptions, null, 2));
+    
+    const result = await listJobs(listJobsOptions);
 
     console.log('[JOBS API] listJobs returned', {
       totalJobs: result.jobs.length,
       hasNextToken: !!result.nextToken,
+      firstJobId: result.jobs[0]?.jobId,
+      firstJobStatus: result.jobs[0]?.status,
     });
 
     // Apply board date filtering ONLY if boardDate is explicitly provided
