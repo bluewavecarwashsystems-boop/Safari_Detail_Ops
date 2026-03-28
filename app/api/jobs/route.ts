@@ -41,13 +41,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // List jobs with filters - pass options explicitly
-    // If we have a boardDate, pass it to listJobs so it can filter at DB level
+    // For now, don't pass boardDate to listJobs to avoid filter expression issues
+    // We'll filter at the application level instead
     const listJobsOptions = {
       status,
       customerId,
-      limit,
+      limit: 200, // Increased limit to scan more jobs instead of using DB-level date filter
       nextToken,
-      boardDate: boardDate || undefined, // Pass for DB-level filtering
+      // boardDate: boardDate || undefined, // Temporarily disabled - filter at app level instead
     };
     
     console.log('[JOBS API] Calling listJobs with options:', JSON.stringify(listJobsOptions, null, 2));
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.error('[JOBS LIST ERROR]', {
       error: error.message,
       stack: error.stack,
+      errorDetails: error,
     });
 
     const response: ApiResponse = {
@@ -130,7 +132,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       error: {
         code: 'JOBS_LIST_ERROR',
         message: error.message || 'Failed to list jobs',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        details: error.stack || undefined,
+        fullError: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined,
       },
       timestamp: new Date().toISOString(),
     };

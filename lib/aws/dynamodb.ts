@@ -182,23 +182,29 @@ export async function listJobs(options?: {
   // If boardDate is provided, add filter for appointments on that date
   // This filters at DB level to avoid scanning irrelevant jobs
   if (options?.boardDate) {
-    // boardDate is in format YYYY-MM-DD (America/Chicago timezone)
-    // Use timezone utilities to get UTC boundaries
-    const dayStart = getStartOfDayInTimezone(options.boardDate);
-    const dayEnd = getEndOfDayInTimezone(options.boardDate);
-    
-    const dateFilter = 'appointmentTime BETWEEN :dayStart AND :dayEnd';
-    filterExpression = filterExpression 
-      ? `${filterExpression} AND ${dateFilter}`
-      : dateFilter;
-    expressionAttributeValues[':dayStart'] = dayStart;
-    expressionAttributeValues[':dayEnd'] = dayEnd;
-    
-    console.log('[DynamoDB] Applied boardDate filter:', {
-      boardDate: options.boardDate,
-      dayStart,
-      dayEnd,
-    });
+    try {
+      // boardDate is in format YYYY-MM-DD (America/Chicago timezone)
+      // Use timezone utilities to get UTC boundaries
+      const dayStart = getStartOfDayInTimezone(options.boardDate);
+      const dayEnd = getEndOfDayInTimezone(options.boardDate);
+      
+      // Use comparison operators (>= and <) instead of BETWEEN for better compatibility
+      const dateFilter = '(appointmentTime >= :dayStart AND appointmentTime < :dayEnd)';
+      filterExpression = filterExpression 
+        ? `(${filterExpression}) AND ${dateFilter}`
+        : dateFilter;
+      expressionAttributeValues[':dayStart'] = dayStart;
+      expressionAttributeValues[':dayEnd'] = dayEnd;
+      
+      console.log('[DynamoDB] Applied boardDate filter:', {
+        boardDate: options.boardDate,
+        dayStart,
+        dayEnd,
+      });
+    } catch (dateError: any) {
+      console.warn('[DynamoDB] Failed to apply boardDate filter, skipping:', dateError.message);
+      // Continue without date filter rather than failing completely
+    }
   }
   
   const scanParams = {
