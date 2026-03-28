@@ -23,7 +23,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get('status') as WorkStatus | undefined;
+    const status = (searchParams.get('status') || undefined) as WorkStatus | undefined;
     const customerId = searchParams.get('customerId') || undefined;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
     const nextToken = searchParams.get('nextToken') || undefined;
@@ -97,6 +97,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           boardDate,
           timezone: getDayBoundaries(boardDate).timezone 
         }),
+        // DEBUG INFO
+        _debug: {
+          queryStatus: status,
+          queryCustomerId: customerId,
+          jobsFromListJobs: result.jobs.length,
+          jobsAfterFiltering: filteredJobs.length,
+          boardDateProvided: !!boardDate,
+          firstRawJob: result.jobs[0] ? {
+            jobId: result.jobs[0].jobId,
+            status: result.jobs[0].status,
+            appointmentTime: result.jobs[0].appointmentTime,
+          } : null,
+        },
       },
       timestamp: new Date().toISOString(),
     };
