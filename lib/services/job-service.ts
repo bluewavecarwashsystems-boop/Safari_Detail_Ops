@@ -440,6 +440,7 @@ export async function listJobs(options?: {
   customerId?: string;
   limit?: number;
   nextToken?: string;
+  boardDate?: string;
 }): Promise<{ jobs: Job[]; nextToken?: string }> {
   return dynamodb.listJobs(options);
 }

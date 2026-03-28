@@ -41,11 +41,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // List jobs with filters - pass options explicitly
+    // If we have a boardDate, pass it to listJobs so it can filter at DB level
     const listJobsOptions = {
       status,
       customerId,
       limit,
       nextToken,
+      boardDate: boardDate || undefined, // Pass for DB-level filtering
     };
     
     console.log('[JOBS API] Calling listJobs with options:', JSON.stringify(listJobsOptions, null, 2));
@@ -57,10 +59,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       hasNextToken: !!result.nextToken,
       firstJobId: result.jobs[0]?.jobId,
       firstJobStatus: result.jobs[0]?.status,
+      firstJobAppointment: result.jobs[0]?.appointmentTime,
     });
 
     // Apply board date filtering ONLY if boardDate is explicitly provided
-    // This allows calendar view to show all jobs, while Today's Board shows filtered jobs
+    // Note: When boardDate is provided, listJobs already pre-filtered at DB level
+    // This is additional validation to ensure data consistency
     const filteredJobs = boardDate 
       ? filterJobsByBoardDate(result.jobs, boardDate)
       : result.jobs;

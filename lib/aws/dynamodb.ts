@@ -150,6 +150,7 @@ export async function listJobs(options?: {
   customerId?: string;
   limit?: number;
   nextToken?: string;
+  boardDate?: string; // YYYY-MM-DD format from America/Chicago timezone
 }): Promise<{ jobs: Job[]; nextToken?: string }> {
   const client = getDynamoClient();
   const config = getConfig();
@@ -175,6 +176,31 @@ export async function listJobs(options?: {
       ? `${filterExpression} AND ${customerFilter}`
       : customerFilter;
     expressionAttributeValues[':customerId'] = options.customerId;
+  }
+  
+  // If boardDate is provided, add filter for appointments on that date
+  // This filters at DB level to avoid scanning irrelevant jobs
+  if (options?.boardDate) {
+    // boardDate is in format YYYY-MM-DD (America/Chicago timezone)
+    // We need to find jobs with appointmentTime between 
+    // start of day and end of day UTC
+    const [year, month, day] = options.boardDate.split('-');
+    const chicagoDate = new Date(`${year}-${month}-${day}T00:00:00-06:00`);
+    const dayStart = chicagoDate.toISOString();
+    const dayEnd = new Date(chicagoDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    
+    const dateFilter = 'appointmentTime BETWEEN :dayStart AND :dayEnd';
+    filterExpression = filterExpression 
+      ? `${filterExpression} AND ${dateFilter}`
+      : dateFilter;
+    expressionAttributeValues[':dayStart'] = dayStart;
+    expressionAttributeValues[':dayEnd'] = dayEnd;
+    
+    console.log('[DynamoDB] Applied boardDate filter:', {
+      boardDate: options.boardDate,
+      dayStart,
+      dayEnd,
+    });
   }
   
   const scanParams = {
