@@ -29,12 +29,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const nextToken = searchParams.get('nextToken') || undefined;
     const boardDate = searchParams.get('boardDate') || null; // Only filter if explicitly provided
 
+    console.log('[JOBS API] GET request', {
+      status,
+      customerId,
+      limit,
+      nextToken,
+      boardDate,
+    });
+
     // List jobs with filters
     const result = await listJobs({
       status,
       customerId,
       limit,
       nextToken,
+    });
+
+    console.log('[JOBS API] listJobs returned', {
+      totalJobs: result.jobs.length,
+      hasNextToken: !!result.nextToken,
     });
 
     // Apply board date filtering ONLY if boardDate is explicitly provided
