@@ -17,6 +17,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { getConfig } from '../config';
 import type { Job, WorkStatus } from '../types';
+import { getStartOfDayInTimezone, getEndOfDayInTimezone } from '../utils/timezone';
 
 let dynamoClient: DynamoDBDocumentClient | null = null;
 
@@ -182,12 +183,9 @@ export async function listJobs(options?: {
   // This filters at DB level to avoid scanning irrelevant jobs
   if (options?.boardDate) {
     // boardDate is in format YYYY-MM-DD (America/Chicago timezone)
-    // We need to find jobs with appointmentTime between 
-    // start of day and end of day UTC
-    const [year, month, day] = options.boardDate.split('-');
-    const chicagoDate = new Date(`${year}-${month}-${day}T00:00:00-06:00`);
-    const dayStart = chicagoDate.toISOString();
-    const dayEnd = new Date(chicagoDate.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    // Use timezone utilities to get UTC boundaries
+    const dayStart = getStartOfDayInTimezone(options.boardDate);
+    const dayEnd = getEndOfDayInTimezone(options.boardDate);
     
     const dateFilter = 'appointmentTime BETWEEN :dayStart AND :dayEnd';
     filterExpression = filterExpression 
